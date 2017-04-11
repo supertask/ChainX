@@ -45,7 +45,7 @@ public class Group {
 	public long getTimestamp() { return this.timestamp; }
 
 	public override string ToString() {
-		return "(" + this.getGroupId() + ", " + this.getTimestamp().ToString() + ")";
+		return "(gid=" + this.getGroupId() + ", ts=" + this.getTimestamp().ToString() + ")";
 	}
 }
 

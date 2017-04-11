@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -31,13 +32,19 @@ public class ChainVoxel {
      */
 	private StructureTable stt;
 
+	/*
+	 * 
+	 */
+	private Shower shower;
+
 	/**
      * ChainVoxelのコンストラクタ
      */
-	public ChainVoxel() {
+	public ChainVoxel(Shower shower) {
 		this.atoms = new SortedDictionary<string, List<Voxel>>();
 		this.negativeVoxels = new SortedDictionary<string, Voxel>();
 		this.stt = new StructureTable();
+		this.shower = shower;
 	}
 
 	/**
@@ -48,6 +55,7 @@ public class ChainVoxel {
      */
 	public void apply(Operation op) {
 		string posID = op.getPosID();
+		//Debug.Log(op.getTimestamp()); OK(一貫性が保ててる)
 		switch (op.getOpType()) {
 		case Operation.INSERT:
 			if (this.stt.isGrouped(posID)) break;
@@ -66,10 +74,14 @@ public class ChainVoxel {
 		case Operation.LEAVE:
 			this.leave(op);
 			break;
+		case Operation.MOVE:
+			this.move(op);
+			break;
 		default:
 			Debug.Assert (false);
 			break;
 		}
+		this.shower.log.text = this.show ();
 		return;
 	}
 
@@ -80,7 +92,7 @@ public class ChainVoxel {
      */
 	public void insert(Operation op) {
 		int id = op.getId();
-		string posID = op.getPosID();
+		string posID = (op.getOpType() == Operation.MOVE) ? op.getDestPosID() : op.getPosID();
 		long timestamp = op.getTimestamp();
 		Voxel insertVoxel = new Voxel(id, timestamp);
 
@@ -88,14 +100,24 @@ public class ChainVoxel {
 
 		// step1: 負のvoxelの影響があるか調べる
 		// 負のvoxelより新しいtsの場合は以降の処理に進む，そうではない場合は，ここで終了
-		Voxel negativeVoxel = this.negativeVoxels[posID];
-		if (negativeVoxel != null && negativeVoxel.getTimestamp() >= timestamp) {
-			return; // 負のvoxelより前に挿入する操作は無駄な操作であるため
+		if (this.negativeVoxels.ContainsKey(posID)) {
+			//Debug.Log (this.negativeVoxels[posID]);
+
+			if (this.negativeVoxels[posID].getTimestamp() >= timestamp) {
+				return; // 負のvoxelより前に挿入する操作は無駄な操作であるため
+			}
 		}
 
 		// step2: insertVoxelを挿入する
 		voxelList.Add(insertVoxel);
-		voxelList.Sort();
+		voxelList.Sort(Voxel.Compare);
+		if (GameObject.Find (posID) == null)
+		{
+			string[] xyzs = posID.Split (':');
+			GameObject voxelObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+			voxelObj.name = posID;
+			voxelObj.transform.position = new Vector3(int.Parse(xyzs[0]), int.Parse(xyzs[2]), int.Parse(xyzs[1]) );
+		}
 		return;
 	}
 
@@ -105,28 +127,34 @@ public class ChainVoxel {
      * @see Operation
      */
 	public void delete(Operation op) {
-		int id = op.getId();
+		//int id = op.getId();
 		string posID = op.getPosID();
 		long timestamp = op.getTimestamp();
 
 		// step1: 負のvoxelをnegativeVoxelsに追加・更新
-		Voxel negativeVoxel = negativeVoxels[posID];
-		if (negativeVoxel == null || negativeVoxel.getTimestamp() < timestamp) {
-			negativeVoxels[posID] = new Voxel(timestamp);
+		//Voxel negativeVoxel = negativeVoxels[posID];
+		if (!this.negativeVoxels.ContainsKey(posID) || this.negativeVoxels[posID].getTimestamp() < timestamp) {
+			this.negativeVoxels[posID] = new Voxel(timestamp);
+			//Debug.Log (this.negativeVoxels[posID].getTimestamp());
 		}
 
 		List<Voxel> voxelList = this.getVoxelList(posID);
 
 		// step2: 負のvoxelより古いvoxelを削除する
-		negativeVoxel = negativeVoxels[posID];
 		for (int i = voxelList.Count - 1; i >= 0; --i) { // 先頭から削除するとイテレータがおかしくなる
-			if (negativeVoxel.getTimestamp() >= voxelList[i].getTimestamp()) {
+			if (this.negativeVoxels[posID].getTimestamp() >= voxelList[i].getTimestamp()) {
 				voxelList.RemoveAt(i); 
 			}
 		}
 
-		voxelList.Sort();
+		voxelList.Sort(Voxel.Compare);
+		GameObject.Destroy(GameObject.Find (posID));
 		return;
+	}
+
+	public void move(Operation op) {
+		this.delete (op);
+		this.insert (op); //posIDの異なるop
 	}
 
 	/**
@@ -187,18 +215,15 @@ public class ChainVoxel {
      * @return posIDに対応するvoxelのリスト
      * @see Voxel
      */
-	public List<Voxel> getVoxelList(string posID) {
-		List<Voxel> voxelList = this.atoms[posID];
-		if (voxelList == null) {
-			voxelList = new List<Voxel>();
-			this.atoms[posID] = voxelList;
+	public List<Voxel> getVoxelList(string posID){
+		if (!this.atoms.ContainsKey (posID)) {
+			this.atoms [posID] = new List<Voxel> ();
 		}
-		return voxelList;
+		return this.atoms [posID];
 	}
 
 	/**
-     * ChainVoxelの総容量を返すメソッド
-     * @return ChainVoxelの総容量
+     * ChainVoxelの総容量を返すメソッド * @return ChainVoxelの総容量
      */
 	public int size() {
 		int totalSize = 0;
@@ -221,21 +246,25 @@ public class ChainVoxel {
 	/**
      * ChainVoxelの状態を表示する
      */
-	public void show() {
+	public string show() {
+		string res="";
 		foreach (KeyValuePair<string, List<Voxel>> p in this.atoms)
 		{
 			if (p.Value.Count == 0) continue;
-			Debug.Log("|" + p.Key + "|");
+			res += "|" + p.Key + "|\n";
 
 			List<Voxel> voxelList = p.Value;
 			int n = voxelList.Count;
 			foreach (Voxel voxel in voxelList) {
 				string id = voxel.getId().ToString();
 				string timestamp = voxel.getTimestamp().ToString();
-				Debug.Log(" -> (" + id + "," + timestamp + ")");
+				res += " -> (" + id + "," + timestamp + ")\n";
 			}
-			Debug.Log("");
+			res += "\n";
 		}
-		Debug.Log("");
+		res += "\n";
+		//Debug.Log(res);
+
+		return res;
 	}
 }

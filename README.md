@@ -3,6 +3,9 @@
 
 このアプリケーションは、ChainVoxelを使った3D共有のアプリケーションです。ChainVoxelは、3Dデータの合意アルゴリズムにおいて、2相コミットやRaftによる合意アルゴリズムよりも、速い速度で合意を取ることのできることが証明されています（[ChainVoxel-Simulator](http://github.com/kengo92i/ChainVoxel-Simulator)）。そして、このChainXは、ChainVoxelのデータ構造を使った初めてのアプリケーションです。
 
+現在の段階では、ChainVoxelのデータ構造を可視化しています。
+![screenshot](./images/ChainX_screenshot.gif)
+
 ## ChainVoxelの性能
 
 以下の図は、操作のために必要なメッセージ数を示しています。このようにChainVoxelは従来の3D共有のためのアルゴリズムよりも早く操作を終えることができます。共同研究者のkengo92iによって、このデータ構造が従来のものよりも優位であることが証明されています。

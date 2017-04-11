@@ -35,6 +35,11 @@ public class Operation {
 	public const int LEAVE = 4;
 
 	/**
+     * move操作を示す定数
+     */
+	public const int MOVE = 5;
+
+	/**
      * appendEntriesを示す定数（Raftのために使用）
      * @see Site#runBehaviorOfRaft
      */
@@ -74,12 +79,17 @@ public class Operation {
      * プリミティブ層の操作は{@link Operation#INSERT INSERT}と{@link Operation#DELETE DELETE}が存在．
      * 構造層の操作は{@link Operation#CREATE CREATE}，{@link Operation#JOIN JOIN}と{@link Operation#LEAVE LEAVE}が存在．
      */
-	private int opType; // 0:insert, 1:delete, 2:create, 3:join, 4:leave
+	private int opType; // 0:insert, 1:delete, 2:create, 3:join, 4:leave, 5:move
 
 	/**
      * voxelの識別子を示す文字列（形式: "X:Y:Z"）
      */
 	private string posID;
+
+	/**
+     * voxelの宛先識別子を示す文字列（形式: "X:Y:Z"）
+     */
+	private string destPosID;
 
 	/**
      * groupの識別子を示す文字列（形式: v4 UUID）
@@ -103,12 +113,25 @@ public class Operation {
      * @param id 操作を作成したSiteの識別子
      * @param opType 操作のタイプ
      * @param posID voxelの識別子
+     * @param destPosID 移動先voxelの識別子
      */
-	public Operation(int id, int opType, string posID) {
+	public Operation(int id, int opType, string posID): this(id, opType, posID, "") { }
+
+
+	/**
+     * 指定されたタイプの操作オブジェクトを作成する．
+     * @deprecated プリミティブ操作以外にも対応したコンストラクタ {@link #Operation(int, java.util.Map)}
+     * @param id 操作を作成したSiteの識別子
+     * @param opType 操作のタイプ
+     * @param posID voxelの識別子
+     * @param destPosID 移動先voxelの識別子
+     */
+	public Operation(int id, int opType, string posID, string destPosID) {
 		this.id = id;
 		this.opType = opType;
 		this.timestamp = Util.currentTimeNanos();
 		this.posID = posID;
+		this.destPosID = destPosID;
 	}
 
 	/**
@@ -141,7 +164,8 @@ public class Operation {
 			new List<string>() {"sid", "ts", "posID"}, // delete
 			new List<string>() {"ts", "gid"}, // create
 			new List<string>() {"ts", "posID", "gid"}, // join
-			new List<string>() {"sid", "ts", "posID", "gid"} // leave
+			new List<string>() {"sid", "ts", "posID", "gid"}, // leave
+			new List<string>() {"sid", "ts", "posID","destPosID"} // move
 		};
 
 		foreach (string requirement in requirements[this.opType]) {
@@ -170,6 +194,12 @@ public class Operation {
      * @return voxelの識別子
      */
 	public string getPosID() { return this.posID != null ? this.posID : (string) this.opParams["posID"]; }
+
+	/**
+     * 移動先voxelの識別子を返す．
+     * @return voxelの識別子
+     */
+	public string getDestPosID() { return this.destPosID != null ? this.destPosID : (string) this.opParams["destPosID"]; }
 
 	/**
      * 操作のタイムスタンプを返す．

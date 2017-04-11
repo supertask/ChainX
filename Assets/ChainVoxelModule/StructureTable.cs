@@ -50,9 +50,8 @@ public class StructureTable {
      */
 	public void join(long ts, string posID, string gid) {
 		Group aGroup = new Group(gid, ts);
-		if (!this.groupMembersTable.ContainsKey(gid) || Mathf.Abs(this.getTimestamp(posID, gid)) >= ts) {
-			return;
-		}
+		if (!this.groupMembersTable.ContainsKey(gid)) { return; }
+		if (Mathf.Abs(this.getTimestamp(posID, gid)) >= ts) { return; }
 
 		// groupEntriesTable に Group(gid, ts) を追加
 		if (!this.groupEntriesTable.ContainsKey(posID)) {
@@ -78,12 +77,14 @@ public class StructureTable {
      */
 	public void leave(int sid, long ts, string posID, string gid) {
 		Group aGroup = new Group(gid, ts);
+		if (!this.groupEntriesTable.ContainsKey(posID)) { return; }
 		HashSet<Group> groupEntriesSet = this.groupEntriesTable[posID];
 
-		if (groupEntriesSet == null || !groupEntriesSet.Contains(aGroup) || Mathf.Abs(this.getTimestamp(posID, gid)) >= ts) {
+		if (!groupEntriesSet.Contains(aGroup) || Mathf.Abs(this.getTimestamp(posID, gid)) >= ts) {
 			return;
 		} 
 
+		//TODO(Tasuku): バグの元
 		// groupMembersTable から posID を削除 (グループからの脱退)
 		this.groupMembersTable[gid].Remove(posID);
 
@@ -99,8 +100,8 @@ public class StructureTable {
      * @return posIDが関連しているgidのタイムスタンプ，存在しない場合は0を返す．
      */
 	private long getTimestamp(string posID, string gid) {
+		if (!this.groupEntriesTable.ContainsKey(posID)) { return 0; }
 		HashSet<Group> groupEntries = this.groupEntriesTable[posID];
-		if (groupEntries == null) { return 0; }
 
 		foreach (Group aGroup in groupEntries) {
 			if (!aGroup.getGroupId().Equals(gid)) {
@@ -119,8 +120,8 @@ public class StructureTable {
      * @return 値の更新に成功した場合はtrueを返す．失敗した場合はfalseを返す．
      */
 	private bool setTimestamp(long ts, string posID, string gid) {
+		if (!this.groupEntriesTable.ContainsKey(posID)) { return false; }
 		HashSet<Group> groupEntries = this.groupEntriesTable[posID];
-		if (groupEntries == null) { return false; }
 
 		foreach (Group aGroup in groupEntries) {
 			if (aGroup.getGroupId().Equals(gid)) {
@@ -148,8 +149,8 @@ public class StructureTable {
      * @return グループ化中ならばtrue，そうでないならfalseを返す．
      */
 	public bool isGrouped(string posID) {
+		if (!this.groupEntriesTable.ContainsKey(posID)) { return false; }
 		HashSet<Group> groupEntries = this.groupEntriesTable[posID];
-		if (groupEntries == null) { return false; }
 
 		foreach (Group aGroup in groupEntries) {
 			if (aGroup.getTimestamp() > 0) {
@@ -166,49 +167,36 @@ public class StructureTable {
      */
 	public string getStatusString() {
 		string statusString = "";
+		statusString += "groupMembersTable:\n";
 		foreach (KeyValuePair<string,HashSet<string>> entry in this.groupMembersTable) {
-			statusString += entry.Key; 
+			statusString +=  "gid=" + entry.Key + " |\t"; 
 			foreach (string gid in entry.Value) {
-				statusString += gid;
+				statusString += gid + "\t";
 			}
+			statusString += "\n";
 		}
+		statusString += "\n";
 
+		statusString += "groupEntriesTable:\n";
 		foreach (KeyValuePair<string,HashSet<Group>> entry in this.groupEntriesTable) {
-			statusString += entry.Key;
+			statusString += entry.Key + " |\t";
 			foreach (Group g in entry.Value) {
-				statusString += g.ToString();
+				statusString += g.ToString() + "\t";
 			}
+			statusString += "\n";
 		}
+		statusString += "\n\n";
 
 		return statusString;
 	}
 
-	/**
-     * Structure Table の状態を出力する
-     */
-	public void show() {
-		string res = "groupMembersTable:\n";
-		for (Map.Entry<string, TreeSet<string>> entry : this.groupMembersTable.entrySet()) {
-			res += "| " + entry.getKey() + " | -> " + entry.getValue();
-		}
-		res += "\n";
-
-		res += "groupEntriesTable:";
-		for (Map.Entry<string, TreeSet<Group<string, long>>> entry : this.groupEntriesTable.entrySet()) {
-			res += "| " + entry.getKey() + " | -> " + entry.getValue();
-		}
-		res += "---\n";
-		Debug.Log(res);
-
-		return;
-	}
 
 	/**
      * Structure Table の状態を出力する
      * @param dumpMsg ダンプメッセージ
      */
 	public void show(string dumpMsg) {
-		System.out.println(dumpMsg);
-		this.show();
+		Debug.Log(dumpMsg);
+		Debug.Log(this.getStatusString());
 	}
 }

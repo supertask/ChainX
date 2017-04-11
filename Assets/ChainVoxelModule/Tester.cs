@@ -5,9 +5,11 @@ using UnityEngine;
 
 public class Tester : MonoBehaviour
 {
-	void Start () { Test(); }
+	void Start () {
+		Test();
+	}
 	void Update () { }
-	
+
 	private void Test() {
 		TestVoxel();	
 		TestOperation();
@@ -114,7 +116,7 @@ public class Tester : MonoBehaviour
 		long timestamp = Util.currentTimeNanos();
 		string groupId = "1:1:1";
 
-		Group g = new Group (groupId, timestamp);
+		Group g = new Group(groupId, timestamp);
 		Debug.Assert(g.getTimestamp() == timestamp);
 		Debug.Assert(g.getGroupId() == groupId);
 
@@ -131,50 +133,19 @@ public class Tester : MonoBehaviour
 	 * Test a StructureTable class.
 	 */
 	private void TestStructureTable() {
-		StructureTable aTable = new StructureTable ();	
-		aTable.create("");
-		StructureTable stt = new StructureTable();
-
-
+		/*
+		StructureTable stt = new StructureTable ();	
 
 		List<string> gids =  new List<string>();
-		List<string> posIDs = Arrays.<string>asList("1:1:1", "1:2:3", "5:1:9", "7:8:0", "9:4:1");
+		List<string> posIDs = new List<string>(){"1:1:1", "1:2:3", "5:1:9", "7:8:0", "9:4:1"};
 		for (int i = 0; i < 5; ++i) {
-			gids.Add(UUID.randomUUID().tostring());
+			gids.Add(i.ToString()); //UUID.randomUUID().tostring()
 		}
 
-		stt.create(gids.get(0));
-		stt.create(gids.get(0)); // 既にあるグループを作成
-
-		stt.join(1L, posIDs.get(0), gids.get(0));
-		stt.join(2L, posIDs.get(1), gids.get(0));
-		stt.join(3L, posIDs.get(2), gids.get(0));
-		stt.leave(1, 4L, posIDs.get(1), gids.get(0));
-		stt.show("正常な参加・脱退");
-
-		stt.join(5L, posIDs.get(0), gids.get(1)); // 存在しないグループへの参加
-		stt.leave(1, 5L, posIDs.get(1), gids.get(1)); // 参加していないグループからの脱退
-		stt.show("不正な参加・脱退");
-
-		stt.create(gids.get(1));
-		stt.create(gids.get(2));
-		stt.create(gids.get(3));
-		stt.join(6L, posIDs.get(0), gids.get(1));
-		stt.join(7L, posIDs.get(3), gids.get(3));
-		stt.leave(1, 8L, posIDs.get(3), gids.get(3));
-		stt.show("グループの追加");
-
-		stt.join(8L, posIDs.get(1), gids.get(2));
-		stt.join(9L, posIDs.get(1), gids.get(2));
-		stt.join(7L, posIDs.get(1), gids.get(2));
-		stt.leave(1, 8L, posIDs.get(0), gids.get(0));
-		stt.leave(1, 10L, posIDs.get(0), gids.get(0));
-		stt.leave(1, 11L, posIDs.get(0), gids.get(1));
-		stt.show("複数のjoin・leaveの収束結果");
-
 		for (int i = 0; i < 5; ++i) {
-			System.out.println(posIDs.get(i) + " isGrouped() = " + stt.isGrouped(posIDs.get(i)));
+			//System.out.println(posIDs.get(i) + " isGrouped() = " + stt.isGrouped(posIDs.get(i)));
 		}
+*/
 	}
 
 	/**
