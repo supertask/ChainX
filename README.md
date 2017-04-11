@@ -11,6 +11,8 @@
 以下の図は、操作のために必要なメッセージ数を示しています。このようにChainVoxelは従来の3D共有のためのアルゴリズムよりも早く操作を終えることができます。共同研究者のkengo92iによって、このデータ構造が従来のものよりも優位であることが証明されています。
 ![UnitX logo image](./Assets/img/graph_message_operation.png)
 
+## 参考リンク
+- [ChainVoxel-Simulator](http://github.com/kengo92i/ChainVoxel-Simulator) by K. Imae and N. Hayashibara, "ChainVoxel: A Data Structure for Scalable Distributed Collaborative Editing for 3D Models," In Proc. of The 14th IEEE International Conference on Dependable, Autonomic and Secure Computing (DASC-2016), August 2016. (Auckland, New Zealand)
 
 ## 環境
 
