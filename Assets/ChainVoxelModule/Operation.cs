@@ -193,7 +193,13 @@ public class Operation {
      * voxelの識別子を返す．
      * @return voxelの識別子
      */
-	public string getPosID() { return this.posID != null ? this.posID : (string) this.opParams["posID"]; }
+	public string getPosID() {
+		if (this.posID == null) {
+			return this.opParams.ContainsKey("posID") ? (string)this.opParams ["posID"] : null;
+		} else {
+			return this.posID;
+		}
+	}
 
 	/**
      * 移動先voxelの識別子を返す．

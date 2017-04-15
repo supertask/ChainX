@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 
-public class Shower : MonoBehaviour
+public class ChainXViewer : MonoBehaviour
 {
 	public Text log;
 
@@ -73,7 +73,14 @@ public class Shower : MonoBehaviour
 		return cv.show();
 	}
 
-	IEnumerator WaitForOne(ChainVoxel cv) {
+	IEnumerator WaitForOne(ChainVoxel cv)
+	{
+		/*
+		cv.apply(new Operation(Operation.CREATE,
+			new SortedDictionary<string, object>() {{"gid", "a_table"}} ));
+		cv.apply(new Operation(Operation.JOIN,
+			new SortedDictionary<string, object>() {{"gid", "a_table"}, {"posID", "1:1:1"}} ));
+		*/
 
 		yield return new WaitForSeconds(2.0f);
 		cv.apply(new Operation (3, Operation.INSERT, "1:1:1"));

@@ -35,16 +35,16 @@ public class ChainVoxel {
 	/*
 	 * 
 	 */
-	private Shower shower;
+	private ChainXViewer viewer;
 
 	/**
      * ChainVoxelのコンストラクタ
      */
-	public ChainVoxel(Shower shower) {
+	public ChainVoxel(ChainXViewer viewer) {
 		this.atoms = new SortedDictionary<string, List<Voxel>>();
 		this.negativeVoxels = new SortedDictionary<string, Voxel>();
 		this.stt = new StructureTable();
-		this.shower = shower;
+		this.viewer = viewer;
 	}
 
 	/**
@@ -55,7 +55,7 @@ public class ChainVoxel {
      */
 	public void apply(Operation op) {
 		string posID = op.getPosID();
-		//Debug.Log(op.getTimestamp()); OK(一貫性が保ててる)
+
 		switch (op.getOpType()) {
 		case Operation.INSERT:
 			if (this.stt.isGrouped(posID)) break;
@@ -81,7 +81,7 @@ public class ChainVoxel {
 			Debug.Assert (false);
 			break;
 		}
-		this.shower.log.text = this.show ();
+		this.viewer.log.text = this.show ();
 		return;
 	}
 
@@ -95,6 +95,7 @@ public class ChainVoxel {
 		string posID = (op.getOpType() == Operation.MOVE) ? op.getDestPosID() : op.getPosID();
 		long timestamp = op.getTimestamp();
 		Voxel insertVoxel = new Voxel(id, timestamp);
+		Debug.Log (GameObject.Find (posID));
 
 		List<Voxel> voxelList = this.getVoxelList(posID);
 
@@ -132,10 +133,8 @@ public class ChainVoxel {
 		long timestamp = op.getTimestamp();
 
 		// step1: 負のvoxelをnegativeVoxelsに追加・更新
-		//Voxel negativeVoxel = negativeVoxels[posID];
 		if (!this.negativeVoxels.ContainsKey(posID) || this.negativeVoxels[posID].getTimestamp() < timestamp) {
 			this.negativeVoxels[posID] = new Voxel(timestamp);
-			//Debug.Log (this.negativeVoxels[posID].getTimestamp());
 		}
 
 		List<Voxel> voxelList = this.getVoxelList(posID);
@@ -154,7 +153,7 @@ public class ChainVoxel {
 
 	public void move(Operation op) {
 		this.delete (op);
-		this.insert (op); //posIDの異なるop
+		this.insert (op);
 	}
 
 	/**
@@ -247,7 +246,7 @@ public class ChainVoxel {
      * ChainVoxelの状態を表示する
      */
 	public string show() {
-		string res="";
+		string res="ChainVoxel table\n";
 		foreach (KeyValuePair<string, List<Voxel>> p in this.atoms)
 		{
 			if (p.Value.Count == 0) continue;
