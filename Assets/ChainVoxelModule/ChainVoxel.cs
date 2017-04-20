@@ -35,16 +35,16 @@ public class ChainVoxel {
 	/*
 	 * 
 	 */
-	private ChainXViewer viewer;
+	private ChainXModel model;
 
 	/**
      * ChainVoxelのコンストラクタ
      */
-	public ChainVoxel(ChainXViewer viewer) {
+	public ChainVoxel(ChainXModel model) {
 		this.atoms = new SortedDictionary<string, List<Voxel>>();
 		this.negativeVoxels = new SortedDictionary<string, Voxel>();
 		this.stt = new StructureTable();
-		this.viewer = viewer;
+		this.model = model;
 	}
 
 	/**
@@ -81,7 +81,7 @@ public class ChainVoxel {
 			Debug.Assert (false);
 			break;
 		}
-		this.viewer.log.text = this.show ();
+		this.model.SetLog(this.show());
 		return;
 	}
 
