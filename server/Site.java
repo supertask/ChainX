@@ -478,20 +478,16 @@ public class Site extends Thread {
         catch(IOException anException) { anException.printStackTrace(); }
 
         String res = "";
+        Gson gson = new Gson();
         try {
             while(true)
             {
-                //this.writer.write(">>> ");
-                //this.writer.flush();
-                System.out.println("after flush()");
                 res = this.receive();
-                System.out.println("after receive()");
 
-                if (res == "exit") { break; }
+                if (res.indexOf("EXIT") > -1) { break; }
                 System.out.println(res);
-                Gson gson = new Gson();
-                Operation o1 = new Operation(99, Operation.ACK, "1:1:1");
-                this.send(0, gson.toJson(o1)); //別の宛先へ
+                Operation op = gson.fromJson(res, Operation.class);
+                this.send(op.getSID(), res); //別の宛先へ
             }
         }
         catch(IOException anException) { /*anException.printStackTrace();*/ }

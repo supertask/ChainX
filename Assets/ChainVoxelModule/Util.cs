@@ -21,4 +21,14 @@ public class Util {
 		if (left < right) { return left; }
 		else { return right; }
 	}
+
+	/*
+	public static dynamic ConvertType(dynamic anObject) {
+		if (anObject.GetType() == typeof(int)) { return (int) anObject; }
+		else if (anObject.GetType() == typeof(string)) { return (string) anObject; }
+		else if (anObject.GetType() == typeof(bool)) { return (bool) anObject; }
+		else if (anObject.GetType() == typeof(float)) { return (float) anObject; }
+		return anObject;
+	}
+	*/
 }

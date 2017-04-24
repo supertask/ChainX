@@ -7,6 +7,13 @@ public class ChainXModel
 {
 	private ChainXView view;
 	private string log;
+	ChainVoxel cv;
+
+	public ChainXModel() {
+		this.cv = new ChainVoxel(this);
+	}
+
+	public ChainVoxel getChainVoxel() { return this.cv; }
 
 	public void SetLog(string log) {
 		this.log = log;

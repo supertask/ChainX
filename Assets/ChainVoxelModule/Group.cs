@@ -47,6 +47,26 @@ public class Group {
 	public override string ToString() {
 		return "(gid=" + this.getGroupId() + ", ts=" + this.getTimestamp().ToString() + ")";
 	}
+
+	/**
+	 * Test a Group and GroupComparer class.
+	 */
+	public static void Test() {
+		long timestamp = Util.currentTimeNanos();
+		string groupId = "1:1:1";
+
+		Group g = new Group(groupId, timestamp);
+		Debug.Assert(g.getTimestamp() == timestamp);
+		Debug.Assert(g.getGroupId() == groupId);
+
+		HashSet<Group> set = new HashSet<Group>(new GroupComparer());
+		set.Add(new Group("1:1:1", 100));
+		set.Add(new Group("1:2:1", 200));
+		set.Add(new Group("1:1:1", 200));
+		int cnt=0;
+		foreach(Group aGroup in set) { cnt++; }
+		Debug.Assert(cnt == 2);
+	}
 }
 
 

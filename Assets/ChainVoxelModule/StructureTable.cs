@@ -199,4 +199,23 @@ public class StructureTable {
 		Debug.Log(dumpMsg);
 		Debug.Log(this.getStatusString());
 	}
+
+	/**
+	 * Test a StructureTable class.
+	 */
+	public static void Test() {
+		/*
+		StructureTable stt = new StructureTable ();	
+
+		List<string> gids =  new List<string>();
+		List<string> posIDs = new List<string>(){"1:1:1", "1:2:3", "5:1:9", "7:8:0", "9:4:1"};
+		for (int i = 0; i < 5; ++i) {
+			gids.Add(i.ToString()); //UUID.randomUUID().tostring()
+		}
+
+		for (int i = 0; i < 5; ++i) {
+			//System.out.println(posIDs.get(i) + " isGrouped() = " + stt.isGrouped(posIDs.get(i)));
+		}
+		*/
+	}
 }

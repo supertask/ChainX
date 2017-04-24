@@ -1,13 +1,15 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
 /**
  * 操作を表すクラス．<br>
  * Operationクラスを利用して，ChainVoxelクラスの操作を実行する．<br>
  * Operationクラスは内部状態の変更をされてはいけないため，setterを実装しない．
  * @author kengo92i
  */
+//[JsonObject("Operation")]
+//[System.Serializable]
 public class Operation {
 	/**
      * insert操作を示す定数
@@ -40,39 +42,9 @@ public class Operation {
 	public const int MOVE = 5;
 
 	/**
-     * appendEntriesを示す定数（Raftのために使用）
-     * @see Site#runBehaviorOfRaft
-     */
-	public const int APPEND_ENTRIES = 124;
-
-	/**
-     * requestVoteを示す定数（Raftのために使用）
-     * @see Site#runBehaviorOfRaft
-     */
-	public const int REQUEST_VOTE = 125;
-
-	/**
-     * VOTEを示す定数（Raftのために使用） 
-     * @see Site#runBehaviorOfRaft
-     */
-	public const int VOTE = 126;
-
-	/**
-     * requestを示す定数（２層コミットのために使用）
-     * @see Site#runBehaviorOfTwoPhaseCommit
-     */
-	public const int REQUEST = 127;
-
-	/**
-     * 確認応答を示す定数（２層コミットのために使用） 
-     * @see Site#runBehaviorOfTwoPhaseCommit
-     */
-	public const int ACK = 128;
-
-	/**
      * 操作を行なったSiteの識別子
      */
-	private int id = -1;
+	private int sid;
 
 	/**
      * 操作オブジェクトが表す操作を指定する整数．<br>
@@ -82,57 +54,14 @@ public class Operation {
 	private int opType; // 0:insert, 1:delete, 2:create, 3:join, 4:leave, 5:move
 
 	/**
-     * voxelの識別子を示す文字列（形式: "X:Y:Z"）
-     */
-	private string posID;
-
-	/**
-     * voxelの宛先識別子を示す文字列（形式: "X:Y:Z"）
-     */
-	private string destPosID;
-
-	/**
-     * groupの識別子を示す文字列（形式: v4 UUID）
-     */
-	private string gid;
-
-	/**
      * 操作のタイムスタンプ（作成時に自動的に設定される）
      */
 	private long timestamp;
 
-
 	/**
      * 操作のパラメータを保持するマップ
      */
-	private SortedDictionary<string, object> opParams;
-
-	/**
-     * 指定されたタイプの操作オブジェクトを作成する．
-     * @deprecated プリミティブ操作以外にも対応したコンストラクタ {@link #Operation(int, java.util.Map)}
-     * @param id 操作を作成したSiteの識別子
-     * @param opType 操作のタイプ
-     * @param posID voxelの識別子
-     * @param destPosID 移動先voxelの識別子
-     */
-	public Operation(int id, int opType, string posID): this(id, opType, posID, "") { }
-
-
-	/**
-     * 指定されたタイプの操作オブジェクトを作成する．
-     * @deprecated プリミティブ操作以外にも対応したコンストラクタ {@link #Operation(int, java.util.Map)}
-     * @param id 操作を作成したSiteの識別子
-     * @param opType 操作のタイプ
-     * @param posID voxelの識別子
-     * @param destPosID 移動先voxelの識別子
-     */
-	public Operation(int id, int opType, string posID, string destPosID) {
-		this.id = id;
-		this.opType = opType;
-		this.timestamp = Util.currentTimeNanos();
-		this.posID = posID;
-		this.destPosID = destPosID;
-	}
+	public JSONObject opParams;
 
 	/**
      * 指定されたタイプの操作オブジェクトを作成する．<br>
@@ -142,11 +71,11 @@ public class Operation {
      * @param opParams パラメータを保持するマップ
      * @see Operation#satisfyRequirements
      */
-	public Operation(int opType, SortedDictionary<string, object> opParams) {
+	public Operation(int sid, int opType, string opParamsJson) {
+		this.sid = sid;
 		this.opType = opType;
 		this.timestamp = Util.currentTimeNanos();
-		opParams["ts"] = this.timestamp;
-		this.opParams = opParams;
+		this.opParams = new JSONObject(opParamsJson);
 		if (!this.satisfyRequirements()) {
 			throw new System.InvalidOperationException("Insufficient parameters for operation.");
 		}
@@ -160,28 +89,25 @@ public class Operation {
      */
 	private bool satisfyRequirements() {
 		List<List<string>> requirements = new List<List<string>>() {
-			new List<string>() {"sid", "ts", "posID"}, // insert
-			new List<string>() {"sid", "ts", "posID"}, // delete
-			new List<string>() {"ts", "gid"}, // create
-			new List<string>() {"ts", "posID", "gid"}, // join
-			new List<string>() {"sid", "ts", "posID", "gid"}, // leave
-			new List<string>() {"sid", "ts", "posID","destPosID"} // move
+			new List<string>() {"posID"}, // insert
+			new List<string>() {"posID"}, // delete
+			new List<string>() {"gid"}, // create
+			new List<string>() {"posID", "gid"}, // join
+			new List<string>() {"posID", "gid"}, // leave
+			new List<string>() {"posID","destPosID"} // move
 		};
-
-		foreach (string requirement in requirements[this.opType]) {
-			if (!this.opParams.ContainsKey(requirement)) { return false; }
-		}
-
-		return true;
+		return this.opParams.HasFields(requirements[this.opType].ToArray() );
 	}
 
-	/* Not exist setter method. Because, class field should not be changed since init. */
+	public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+
+	/* Not exist setter method as much as possible. Because, class field should not be changed since init. */
 
 	/**
 	* 操作を行なったSiteの識別子を返す．
 	* @return Siteの識別子
 	*/
-	public int getId() { return this.id != -1 ? this.id : (int) this.opParams["sid"]; }
+	public int getSID() { return this.sid; }
 
 	/**
      * 操作のタイプを返す．
@@ -190,33 +116,169 @@ public class Operation {
 	public int getOpType() { return this.opType; }
 
 	/**
-     * voxelの識別子を返す．
-     * @return voxelの識別子
-     */
-	public string getPosID() {
-		if (this.posID == null) {
-			return this.opParams.ContainsKey("posID") ? (string)this.opParams ["posID"] : null;
-		} else {
-			return this.posID;
-		}
-	}
-
-	/**
-     * 移動先voxelの識別子を返す．
-     * @return voxelの識別子
-     */
-	public string getDestPosID() { return this.destPosID != null ? this.destPosID : (string) this.opParams["destPosID"]; }
-
-	/**
      * 操作のタイムスタンプを返す．
      * @return 操作のタイムスタンプ
      */
 	public long getTimestamp() { return this.timestamp; }
 
 	/**
-     * 指定したパラメータの値を取得する
-     * @param name パラメータ名
-     * @return パラメータの値
+     * voxelの識別子を返す．
+     * @return voxelの識別子
      */
-	public object getParam(string name) { return this.opParams[name]; }
+	public string getPosID() {
+		return this.opParams.HasField("posID") ? this.opParams.GetField("posID").str : "";
+	}
+
+	/**
+     * 移動先voxelの識別子を返す．
+     * @return voxelの識別子
+     */
+	public string getDestPosID() {
+		return this.opParams.HasField ("destPosID") ? this.opParams.GetField ("destPosID").str : ""; 
+	}
+
+	/**
+     * Group IDを返す．
+     * @return voxelの識別子
+     */
+	public string getGID() {
+		return this.opParams.HasField("gid") ? this.opParams.GetField("gid").str : "";
+	}
+
+	/**
+     * パラメータのインスタンスを取得する
+     * @return パラメータのインスタンス
+     */
+	public JSONObject getParams() { return this.opParams; }
+
+	/**
+     * Jsonの文字列を元にOperationのインスタンスを作成する。
+     * @param jsonMessage
+     */
+	public static Operation FromJson(string jsonMessage) {
+		JSONObject j = new JSONObject(jsonMessage);
+		int sid = int.Parse(j.GetField ("sid").str);
+		int opType = int.Parse(j.GetField ("opType").str);
+		JSONObject opParams = j.GetField ("opParams");
+		long ts = long.Parse(j.GetField ("ts").str);
+		Operation op = new Operation (sid, opType, opParams.Print());
+		op.setTimestamp(ts);
+
+		return op;
+	}
+	public static string ToJson(Operation op) {
+		JSONObject j = new JSONObject ();
+		j.AddField ("sid", op.getSID().ToString());
+		j.AddField ("ts", op.getTimestamp().ToString());
+		j.AddField ("opType", op.getOpType().ToString());
+		j.AddField("opParams", op.getParams());
+		return j.Print();
+	}
+
+
+	private static List<int> operation_types = new List<int>() {
+		Operation.INSERT, Operation.DELETE, Operation.CREATE, Operation.JOIN,
+		Operation.LEAVE, Operation.MOVE
+	};
+
+	public static string createRandomPosID() {
+		int x = UnityEngine.Random.Range (0, int.MaxValue);
+		int y = UnityEngine.Random.Range (0, int.MaxValue);
+		int z = UnityEngine.Random.Range (0, int.MaxValue);
+		return  String.Format("{0}:{1}:{2}", x, y, z);	
+	}
+
+	public static Operation CreateRandomOperation() {
+		int sid = UnityEngine.Random.Range (0, int.MaxValue);
+		int opIndex = UnityEngine.Random.Range (0, Operation.operation_types.Count);
+		string posID = Operation.createRandomPosID();
+		string destPosID = Operation.createRandomPosID();
+		string gid = Guid.NewGuid().ToString ("N");
+
+		JSONObject j = new JSONObject();
+		switch (Operation.operation_types [opIndex]) {
+			case Operation.INSERT:
+			case Operation.DELETE:
+				j.AddField ("posID", posID);
+				break;
+			case Operation.MOVE:
+				j.AddField ("posID", posID);
+				j.AddField ("destPosID", destPosID);
+				break;
+			case Operation.CREATE:
+				j.AddField ("gid", gid);
+				break;
+			case Operation.JOIN:
+			case Operation.LEAVE:
+				j.AddField ("posID", posID);
+				j.AddField ("gid", gid);
+				break;
+			default:
+				throw new System.InvalidOperationException (
+					String.Format("Operation{0} at CreateRandomOperation()",
+					Operation.operation_types[opIndex])
+				);
+		}
+		Operation op = new Operation (sid, Operation.operation_types [opIndex], j.Print () );
+		Debug.Assert(op.getSID() == sid);
+		Debug.Assert(op.getOpType() == Operation.operation_types[opIndex]);
+		Debug.Assert(op.getTimestamp() > 0);
+		if (op.getGID() != "") { Debug.Assert(op.getGID() == gid); }
+		if (op.getPosID() != "") { Debug.Assert(op.getPosID() == posID); }
+		if (op.getDestPosID() != "") { Debug.Assert(op.getDestPosID() == destPosID); }
+
+		return op;
+	}
+
+	/**
+	 * Test an Operation class
+	 */
+	public static void Test() {
+		Debug.Assert(Operation.INSERT == 0);
+		Debug.Assert(Operation.DELETE == 1);
+		Debug.Assert(Operation.CREATE == 2);
+		Debug.Assert(Operation.JOIN == 3);
+		Debug.Assert(Operation.LEAVE == 4);
+		Debug.Assert(Operation.MOVE == 5);
+
+		/*
+		 * Jsonへの変換とその逆ができているかをチェック
+		 * Operationへの初期値の値の変化がないかをチェック at CreateRandomOperation()
+		 */
+		string json = "";
+		Operation o1, o2;
+		for (int i = 0; i < 1000; ++i) {
+			o1 = Operation.CreateRandomOperation ();
+			json = Operation.ToJson (o1);
+			o2 = Operation.FromJson (json);
+			Debug.Assert (o1.getSID () == o2.getSID ());
+			Debug.Assert (o1.getOpType () == o2.getOpType ());
+			Debug.Assert (o1.getTimestamp () == o2.getTimestamp ());
+
+			switch (o1.getOpType ()) {
+				case Operation.INSERT:
+				case Operation.DELETE:
+					Debug.Assert (o1.getPosID () == o2.getPosID ());
+					break;
+				case Operation.MOVE:
+					Debug.Assert (o1.getPosID () == o2.getPosID ());
+					Debug.Assert (o1.getDestPosID () == o2.getDestPosID ());
+					break;
+				case Operation.CREATE:
+					Debug.Assert (o1.getGID () == o2.getGID ());
+					break;
+				case Operation.JOIN:
+				case Operation.LEAVE:
+					Debug.Assert (o1.getGID () == o2.getGID ());
+					Debug.Assert (o1.getPosID () == o2.getPosID ());
+					break;
+				default:
+					throw new System.InvalidOperationException (
+						String.Format("Operation{0} at CreateRandomOperation()",
+						o1.getOpType())
+					);
+			}
+		}
+	}
 }
+

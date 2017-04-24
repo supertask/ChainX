@@ -48,12 +48,12 @@ public class Server
     /*
      *
      */
-    private void cleanGarbageSites() {
+    public void cleanGarbageSites() {
         for (int i = 0; i < NUMBER_OF_LIMITED_SITE; ++i) {
             if (this.sites[i] == null) { continue; }
             if (this.sites[i].isAlive()) { continue; }
             this.sites[i] = null;
-            System.out.println("Cleaned garbage.");
+            System.out.println("Cleaned garbage sites!!!");
         }
     }
     

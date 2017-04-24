@@ -70,7 +70,7 @@ public class Operation {
     /**
      * 操作を行なったSiteの識別子
      */
-    private int id = -1;
+    private int sid = -1;
 
     /**
      * 操作オブジェクトが表す操作を指定する整数．<br>
@@ -103,12 +103,12 @@ public class Operation {
     /**
      * 指定されたタイプの操作オブジェクトを作成する．
      * @deprecated プリミティブ操作以外にも対応したコンストラクタ {@link #Operation(int, java.util.Map)}
-     * @param id 操作を作成したSiteの識別子
+     * @param sid 操作を作成したSiteの識別子
      * @param opType 操作のタイプ
      * @param posID voxelの識別子
      */
-    public Operation(int id, int opType, String posID) {
-        this.id = id;
+    public Operation(int sid, int opType, String posID) {
+        this.sid = sid;
         this.opType = opType;
         this.timestamp = System.currentTimeMillis();
         this.posID = posID;
@@ -163,8 +163,8 @@ public class Operation {
      * 操作を行なったSiteの識別子を返す．
      * @return Siteの識別子
      */
-    public int getId() {
-        return this.id != -1 ? this.id : (int) this.params.get("sid");
+    public int getSID() {
+        return this.sid != -1 ? this.sid : (int) this.params.get("sid");
     }
 
     /**

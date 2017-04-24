@@ -91,7 +91,7 @@ public class ChainVoxel {
      * @see Operation
      */
 	public void insert(Operation op) {
-		int id = op.getId();
+		int id = op.getSID();
 		string posID = (op.getOpType() == Operation.MOVE) ? op.getDestPosID() : op.getPosID();
 		long timestamp = op.getTimestamp();
 		Voxel insertVoxel = new Voxel(id, timestamp);
@@ -128,7 +128,7 @@ public class ChainVoxel {
      * @see Operation
      */
 	public void delete(Operation op) {
-		//int id = op.getId();
+		//int id = op.getSID();
 		string posID = op.getPosID();
 		long timestamp = op.getTimestamp();
 
@@ -162,8 +162,7 @@ public class ChainVoxel {
      * @see Operation
      */
 	public void create(Operation op) {
-		string gid = (string) op.getParam("gid"); 
-		this.stt.create(gid);
+		this.stt.create(op.getGID());
 	}
 
 	/**
@@ -172,11 +171,7 @@ public class ChainVoxel {
      * @see Operation
      */
 	public void join(Operation op) {
-		long ts = op.getTimestamp(); 
-		string posID = (string) op.getParam("posID"); 
-		string gid = (string) op.getParam("gid"); 
-
-		this.stt.join(ts, posID, gid);
+		this.stt.join(op.getTimestamp(), op.getPosID(), op.getGID());
 	}
 
 	/**
@@ -185,12 +180,7 @@ public class ChainVoxel {
      * @see Operation
      */
 	public void leave(Operation op) {
-		int sid = (int) op.getParam("sid"); 
-		long ts = op.getTimestamp(); 
-		string posID = (string) op.getParam("posID"); 
-		string gid = (string) op.getParam("gid"); 
-
-		this.stt.leave(sid, ts, posID, gid);
+		this.stt.leave(op.getSID(), op.getTimestamp(), op.getPosID(), op.getGID());
 		this.insert(op);
 	}
 
@@ -265,5 +255,14 @@ public class ChainVoxel {
 		//Debug.Log(res);
 
 		return res;
+	}
+
+	/**
+	 * Test a ChainVoxel class.
+	 */
+	public static void Test() {
+		//ChainVoxel cv = new ChainVoxel();		
+		//SortedDictionary<string, Voxel> s = new SortedDictionary<string, Voxel>();
+		//Debug.Log(s);
 	}
 }
