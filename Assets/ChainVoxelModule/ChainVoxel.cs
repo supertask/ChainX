@@ -37,6 +37,9 @@ public class ChainVoxel {
 	 */
 	private ChainXModel model;
 
+	public List<string> insertedPosIDs;
+	public List<string> deletedPosIDs;
+
 	/**
      * ChainVoxelのコンストラクタ
      */
@@ -45,6 +48,8 @@ public class ChainVoxel {
 		this.negativeVoxels = new SortedDictionary<string, Voxel>();
 		this.stt = new StructureTable();
 		this.model = model;
+		this.insertedPosIDs = new List<string> ();
+		this.deletedPosIDs = new List<string> ();
 	}
 
 	/**
@@ -93,9 +98,10 @@ public class ChainVoxel {
 	public void insert(Operation op) {
 		int id = op.getSID();
 		string posID = (op.getOpType() == Operation.MOVE) ? op.getDestPosID() : op.getPosID();
+		//Debug.Log (posID + " at insert()");
 		long timestamp = op.getTimestamp();
 		Voxel insertVoxel = new Voxel(id, timestamp);
-		Debug.Log (GameObject.Find (posID));
+		//Debug.Log (GameObject.Find (posID));
 
 		List<Voxel> voxelList = this.getVoxelList(posID);
 
@@ -112,13 +118,10 @@ public class ChainVoxel {
 		// step2: insertVoxelを挿入する
 		voxelList.Add(insertVoxel);
 		voxelList.Sort(Voxel.Compare);
-		if (GameObject.Find (posID) == null)
-		{
-			string[] xyzs = posID.Split (':');
-			GameObject voxelObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-			voxelObj.name = posID;
-			voxelObj.transform.position = new Vector3(int.Parse(xyzs[0]), int.Parse(xyzs[2]), int.Parse(xyzs[1]) );
-		}
+		this.insertedPosIDs.Add(posID);
+		/*
+
+		*/
 		return;
 	}
 
@@ -147,11 +150,12 @@ public class ChainVoxel {
 		}
 
 		voxelList.Sort(Voxel.Compare);
-		GameObject.Destroy(GameObject.Find (posID));
+		this.deletedPosIDs.Add(posID);
 		return;
 	}
 
 	public void move(Operation op) {
+		//op.getPosID() op.getDestPosID()をひも付けておいて、selectedObjectの遷移をposID(delete)からDestPosID先(insert)へ変更
 		this.delete (op);
 		this.insert (op);
 	}

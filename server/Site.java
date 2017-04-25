@@ -479,15 +479,23 @@ public class Site extends Thread {
 
         String res = "";
         Gson gson = new Gson();
+        //Pattern p = Pattern.compile("{[\"(.*)\":\".*\",]+}");
         try {
             while(true)
             {
                 res = this.receive();
-
                 if (res.indexOf("EXIT") > -1) { break; }
                 System.out.println(res);
                 Operation op = gson.fromJson(res, Operation.class);
-                this.send(op.getSID(), res); //別の宛先へ
+                int sid = Integer.parseInt(op.getSID());
+                if (sid < Server.NUMBER_OF_LIMITED_SITE) {
+                    this.send(sid, res); //別の宛先へ
+                }
+                else {
+                    this.send(this.id, "OPERATION_FAIL: sid number has been out of bounds.");
+                    //throw new IndexOutOfBoundsException(" is " + Server.NUMBER_OF_LIMITED_SITE+".");
+                }
+                //JSONObject json = JSONObject.fromObject(res);
             }
         }
         catch(IOException anException) { /*anException.printStackTrace();*/ }

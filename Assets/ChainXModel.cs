@@ -5,7 +5,8 @@ using UnityEngine.Networking;
 
 public class ChainXModel
 {
-	private ChainXView view;
+	//private ChainXView view;
+	private ChainXController controller;
 	private string log;
 	ChainVoxel cv;
 
@@ -17,13 +18,13 @@ public class ChainXModel
 
 	public void SetLog(string log) {
 		this.log = log;
-		this.view.Update ();
+		//this.controller.SetUpGUICompornets();
 	}
 
 	public string GetLog() { return this.log; } 
 
-	public void SetView(ChainXView view) {
-		this.view = view;
+	public void SetController(ChainXController controller) {
+		this.controller = controller;
 	}
 
 }

@@ -11,9 +11,9 @@ public class Tester : MonoBehaviour
 	void Update () { }
 
 	private void Test() {
-		Voxel.Test();	
-		Operation.Test();
-		Group.Test();
+		//Voxel.Test();	
+		//Operation.Test();
+		//Group.Test();
 		//ChainVoxel.Test();	
 		//StructureTable.Test();	
 	}

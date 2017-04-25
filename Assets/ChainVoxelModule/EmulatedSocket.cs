@@ -5,7 +5,6 @@ using System.Net;
 using System.Net.Sockets;
 using UnityEngine;
 using UnityEngine.Networking;
-using Newtonsoft.Json;
 
 public class EmulatedSocket
 {
@@ -50,16 +49,15 @@ public class EmulatedSocket
 
 		string receivedMessage = System.Text.Encoding.Default.GetString (this.socketBuffer, 0, len);
 		receivedMessage = receivedMessage.Trim();
-		Debug.Log ("中間（Operationに変換する前）" + receivedMessage);
-		Operation opX = Operation.FromJson(receivedMessage); //Slient Error!!!!!!!
-		Debug.Log ("受信したJson: " + Operation.ToJson(opX));
-		
-		/*
-		Debug.Log ("受信したJsonのID: " + op.getId());
-		Debug.Log ("受信したJsonのposID: " + op.getPosID());
-		Debug.Log ("受信したJsonのopType: " + op.getOpType());
-		*/
-		//this.controller.OperateVoxelOnLocal(op);
+		if (receivedMessage.IndexOf("OPERATION_FAIL") == 0) {
+			Debug.LogError(receivedMessage); //TODO(Tasuku): Think about this errors
+		}
+
+		//Debug.Log ("中間（Operationに変換する前）" + receivedMessage);
+		Operation op = Operation.FromJson(receivedMessage);
+		//Debug.Log ("受信したJson: " + Operation.ToJson(op));
+		this.controller.OperateVoxelOnLocal(op); //HERE!!!!!!!!!!!!
+
 		this.socket.BeginReceive (socketBuffer, 0, this.socketBuffer.Length,
 			SocketFlags.None, this.OnReceiveData, socket);
 	}

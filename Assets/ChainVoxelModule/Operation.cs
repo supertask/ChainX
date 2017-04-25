@@ -181,18 +181,23 @@ public class Operation {
 		Operation.LEAVE, Operation.MOVE
 	};
 
-	public static string createRandomPosID() {
-		int x = UnityEngine.Random.Range (0, int.MaxValue);
-		int y = UnityEngine.Random.Range (0, int.MaxValue);
-		int z = UnityEngine.Random.Range (0, int.MaxValue);
+
+	public static string CreateRandomPosID(int maxValue) {
+		int x = UnityEngine.Random.Range (0, maxValue);
+		int y = UnityEngine.Random.Range (0, maxValue);
+		int z = UnityEngine.Random.Range (0, maxValue);
 		return  String.Format("{0}:{1}:{2}", x, y, z);	
+	}
+
+	public static string CreateRandomPosID() {
+		return Operation.CreateRandomPosID (int.MaxValue);
 	}
 
 	public static Operation CreateRandomOperation() {
 		int sid = UnityEngine.Random.Range (0, int.MaxValue);
 		int opIndex = UnityEngine.Random.Range (0, Operation.operation_types.Count);
-		string posID = Operation.createRandomPosID();
-		string destPosID = Operation.createRandomPosID();
+		string posID = Operation.CreateRandomPosID();
+		string destPosID = Operation.CreateRandomPosID();
 		string gid = Guid.NewGuid().ToString ("N");
 
 		JSONObject j = new JSONObject();

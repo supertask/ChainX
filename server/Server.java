@@ -8,12 +8,12 @@ public class Server
 {
     private ServerSocket serverSocket;
     private Site[] sites;
-    private int NUMBER_OF_LIMITED_SITE = 1000;
+    public static int NUMBER_OF_LIMITED_SITE = 1000;
     
     public Server()
     {
         this.serverSocket = null;
-        this.sites = new Site[NUMBER_OF_LIMITED_SITE];
+        this.sites = new Site[Server.NUMBER_OF_LIMITED_SITE];
     }
     
     /*
@@ -28,7 +28,7 @@ public class Server
             {
                 Socket aSocket = this.serverSocket.accept();
                 this.cleanGarbageSites();
-                for (int i = 0; i < NUMBER_OF_LIMITED_SITE; ++i)
+                for (int i = 0; i < Server.NUMBER_OF_LIMITED_SITE; ++i)
                 {
                     if (this.sites[i] == null) {
                         this.sites[i] = new Site(i, aSocket);
@@ -49,7 +49,7 @@ public class Server
      *
      */
     public void cleanGarbageSites() {
-        for (int i = 0; i < NUMBER_OF_LIMITED_SITE; ++i) {
+        for (int i = 0; i < Server.NUMBER_OF_LIMITED_SITE; ++i) {
             if (this.sites[i] == null) { continue; }
             if (this.sites[i].isAlive()) { continue; }
             this.sites[i] = null;
