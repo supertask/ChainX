@@ -31,6 +31,7 @@ public class EmulatedSocket
 
 	private void OnReceiveData(IAsyncResult ar)
 	{
+
 		var aSocket = ar.AsyncState as Socket;
 
 		int len = 0;
@@ -53,10 +54,15 @@ public class EmulatedSocket
 			Debug.LogError(receivedMessage); //TODO(Tasuku): Think about this errors
 		}
 
-		//Debug.Log ("中間（Operationに変換する前）" + receivedMessage);
 		Operation op = Operation.FromJson(receivedMessage);
 		//Debug.Log ("受信したJson: " + Operation.ToJson(op));
-		this.controller.OperateVoxelOnLocal(op); //HERE!!!!!!!!!!!!
+
+		//Debug.Log ("始まり at OnReceiveData()");
+		//ChainVoxel cv = this.controller.getChainVoxel ();
+		ChainXController.cv.apply(op);
+
+		//Debug.Log ("終わり at OnReceiveData()");
+		//Debug.Log ("--------------------");
 
 		this.socket.BeginReceive (socketBuffer, 0, this.socketBuffer.Length,
 			SocketFlags.None, this.OnReceiveData, socket);

@@ -8,13 +8,13 @@ public class ChainXModel
 	//private ChainXView view;
 	private ChainXController controller;
 	private string log;
-	ChainVoxel cv;
+	public static ChainVoxel cv;
 
 	public ChainXModel() {
-		this.cv = new ChainVoxel(this);
+		//this.cv = new ChainVoxel(this);
 	}
 
-	public ChainVoxel getChainVoxel() { return this.cv; }
+	//public ChainVoxel getChainVoxel() { return this.cv; }
 
 	public void SetLog(string log) {
 		this.log = log;
@@ -22,9 +22,4 @@ public class ChainXModel
 	}
 
 	public string GetLog() { return this.log; } 
-
-	public void SetController(ChainXController controller) {
-		this.controller = controller;
-	}
-
 }

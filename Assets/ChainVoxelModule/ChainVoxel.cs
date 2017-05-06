@@ -32,24 +32,24 @@ public class ChainVoxel {
      */
 	private StructureTable stt;
 
-	/*
-	 * 
-	 */
-	private ChainXModel model;
+	private ChainXController controller;
 
 	public List<string> insertedPosIDs;
 	public List<string> deletedPosIDs;
+	public static Dictionary<string,string> movedPosIDs;
+
 
 	/**
      * ChainVoxelのコンストラクタ
      */
-	public ChainVoxel(ChainXModel model) {
+	public ChainVoxel(ChainXController controller) {
 		this.atoms = new SortedDictionary<string, List<Voxel>>();
 		this.negativeVoxels = new SortedDictionary<string, Voxel>();
 		this.stt = new StructureTable();
-		this.model = model;
+		this.controller = controller;
 		this.insertedPosIDs = new List<string> ();
 		this.deletedPosIDs = new List<string> ();
+		ChainVoxel.movedPosIDs = new Dictionary<string,string>();
 	}
 
 	/**
@@ -86,7 +86,7 @@ public class ChainVoxel {
 			Debug.Assert (false);
 			break;
 		}
-		this.model.SetLog(this.show());
+		ChainXController.log = this.show();
 		return;
 	}
 
@@ -118,10 +118,7 @@ public class ChainVoxel {
 		// step2: insertVoxelを挿入する
 		voxelList.Add(insertVoxel);
 		voxelList.Sort(Voxel.Compare);
-		this.insertedPosIDs.Add(posID);
-		/*
-
-		*/
+		if (op.getOpType () == Operation.INSERT) { this.insertedPosIDs.Add (posID); }
 		return;
 	}
 
@@ -150,7 +147,8 @@ public class ChainVoxel {
 		}
 
 		voxelList.Sort(Voxel.Compare);
-		this.deletedPosIDs.Add(posID);
+		if (op.getOpType () == Operation.DELETE) { this.deletedPosIDs.Add (posID); }
+
 		return;
 	}
 
@@ -158,6 +156,9 @@ public class ChainVoxel {
 		//op.getPosID() op.getDestPosID()をひも付けておいて、selectedObjectの遷移をposID(delete)からDestPosID先(insert)へ変更
 		this.delete (op);
 		this.insert (op);
+		lock (ChainVoxel.movedPosIDs) {
+			ChainVoxel.movedPosIDs [op.getPosID ()] = op.getDestPosID ();
+		}
 	}
 
 	/**

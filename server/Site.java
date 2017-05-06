@@ -32,7 +32,7 @@ public class Site extends Thread {
     /**
      * サーバーのインスタンス
      */
-    private Server server;
+    private EmulatedServer server;
 
     /**
      * 操作の実行回数
@@ -71,7 +71,7 @@ public class Site extends Thread {
         this.numberOfMessages = 0;
     }
 
-    public void setServer(Server aServer) {
+    public void setServer(EmulatedServer aServer) {
         this.server = aServer;
     }
     
@@ -488,12 +488,12 @@ public class Site extends Thread {
                 System.out.println(res);
                 Operation op = gson.fromJson(res, Operation.class);
                 int sid = Integer.parseInt(op.getSID());
-                if (sid < Server.NUMBER_OF_LIMITED_SITE) {
+                if (sid < EmulatedServer.NUMBER_OF_LIMITED_SITE) {
                     this.send(sid, res); //別の宛先へ
                 }
                 else {
                     this.send(this.id, "OPERATION_FAIL: sid number has been out of bounds.");
-                    //throw new IndexOutOfBoundsException(" is " + Server.NUMBER_OF_LIMITED_SITE+".");
+                    //throw new IndexOutOfBoundsException(" is " + EmulatedServer.NUMBER_OF_LIMITED_SITE+".");
                 }
                 //JSONObject json = JSONObject.fromObject(res);
             }

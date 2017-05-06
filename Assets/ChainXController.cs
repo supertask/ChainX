@@ -1,18 +1,19 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class ChainXController : MonoBehaviour
 {
-	private ChainXModel model;
 	private EmulatedSocket socket;
-	private GameObject selectedObject;
+	private static GameObject selectedObject;
+	public static ChainVoxel cv;
+	public static string log;
 
 	void Start() {
-		this.model = new ChainXModel();
-		this.model.SetController(this);
+		ChainXController.cv = new ChainVoxel(this);
 		//StartCoroutine (this.Run());
 		this.socket = new EmulatedSocket (this);
 	}
@@ -27,25 +28,38 @@ public class ChainXController : MonoBehaviour
 		}
 		else if (Input.GetMouseButtonDown(Const.MOUSE_LEFT_CLICK))
 		{
+			/*
+			 * Here バグってるー
+			 */
 			Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
 			RaycastHit hit = new RaycastHit ();
-			if (Physics.Raycast (ray, out hit)) {
-				this.selectedObject = hit.collider.gameObject;
-				//this.selectedObject.renderer.material.shader = Shader.Find( "Self-Illumin/Diffuse" ); 
+
+			if (selectedObject != null) {
+				ChainXController.selectedObject.GetComponent<Renderer> ().material.shader = Shader.Find ("Diffuse");
 			}
+			if (Physics.Raycast (ray, out hit)) {
+				Regex r = new Regex( @"[-]?[\d]+:[-]?[\d]+:[-]?[\d]+");
+				GameObject hitObj = hit.collider.gameObject;
+				if (r.IsMatch (hitObj.name)) {
+					ChainXController.selectedObject = hitObj;
+					ChainXController.selectedObject.GetComponent<Renderer> ().material.shader = Shader.Find ("Toon/Basic Outline");
+				}
+				else { ChainXController.selectedObject = null; }
+			}
+			else { ChainXController.selectedObject = null; }
 		}
 
-		if (this.selectedObject != null) {
+
+		if (ChainXController.selectedObject != null) {
 			if (Input.GetKeyUp(KeyCode.UpArrow)) { o = this.CreateMoveOperation(1,0,0); }
 			else if (Input.GetKeyUp(KeyCode.DownArrow)) { o = this.CreateMoveOperation(-1,0,0); }
-			else if (Input.GetKeyUp(KeyCode.RightArrow)) { o = this.CreateMoveOperation(0,0,1); }
-			else if (Input.GetKeyUp(KeyCode.LeftArrow)) { o = this.CreateMoveOperation(0,0,-1); }
+			else if (Input.GetKeyUp(KeyCode.RightArrow)) { o = this.CreateMoveOperation(0,0,-1); }
+			else if (Input.GetKeyUp(KeyCode.LeftArrow)) { o = this.CreateMoveOperation(0,0,1); }
 			else if (Input.GetKeyUp(KeyCode.U)) { o = this.CreateMoveOperation(0,1,0); }
 			else if (Input.GetKeyUp(KeyCode.D)) { o = this.CreateMoveOperation(0,-1,0); }
 		}
 		if (o != null) {
 			string json = Operation.ToJson (o);
-			//Debug.Log ("送信したJson: " + json);
 			this.socket.Send (json + "\r\n");
 		}
 			
@@ -53,8 +67,9 @@ public class ChainXController : MonoBehaviour
 		this.SetUpGUICompornets();
 	}
 
-	private Operation CreateMoveOperation(int dx, int dy, int dz) {
-		Vector3 xyz = this.selectedObject.transform.position;
+	private Operation CreateMoveOperation(int dx, int dy, int dz)
+	{
+		Vector3 xyz = ChainXController.selectedObject.transform.position;
 		string posID = xyz.x + ":" + xyz.y + ":" + xyz.z;
 		string destPosID = (xyz.x+dx) + ":" + (xyz.y+dy) + ":" + (xyz.z+dz);
 		return new Operation (0, Operation.MOVE,"{\"posID\": \"" + posID
@@ -65,47 +80,82 @@ public class ChainXController : MonoBehaviour
 	 * 
 	 */
 	public void UpdateVoxels() {
-		ChainVoxel cv = this.model.getChainVoxel ();
-		foreach (String posID in cv.insertedPosIDs) {
-			if (GameObject.Find (posID) == null) {
-				string[] xyzs = posID.Split (':');
+		ChainVoxel cv = ChainXController.cv;
+
+		/*
+		 * For MOVE operation.
+		 * 編集の必要あり！！！
+		 */
+		if (ChainXController.selectedObject) {
+			lock(ChainXController.selectedObject) {
+				foreach (KeyValuePair<string,string> aPair in ChainVoxel.movedPosIDs) { //InvalidOperationException: out of sync(lockをする。ループを回している最中に書き込みがある時のエラー)
+					string posID = aPair.Key;
+					string destPosID = aPair.Value;
+					GameObject voxelObj = ChainXController.selectedObject; //GameObject.Find (posID); //見つからない
+
+					voxelObj.name = destPosID; //NullReferenceException: Object reference not set to an instance of an object
+					voxelObj.transform.position = this.ConvertPosID (destPosID);
+				}
+				ChainVoxel.movedPosIDs.Clear();
+			}
+		}
+
+		/*
+		 * For INSERT operation.
+		 */
+		foreach (string posID in cv.insertedPosIDs) {
+			if (GameObject.Find (posID) == null)
+			{
 				GameObject voxelObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+
+				//色とテクスチャを加える
+				Texture2D texture = Resources.Load<Texture2D> ("Textures/A");
 				Material material = new Material(Shader.Find("Diffuse"));
-				material.color = Color.red;
-				//voxelObj.renderer.material = material;
-				//voxelObj.renderer = new Material(Shader.Find("Unlit/Color"));
-				//マテリアルを使って、テクスチャまたは色を付け加える
+				//Material material = new Material(Shader.Find("Toon/Lit Outline"));
+				material.mainTexture = texture;
+				//material.color = Color.red;
+				voxelObj.GetComponent<Renderer> ().material = material;
+
 				voxelObj.name = posID;
-				voxelObj.transform.position = new Vector3(int.Parse(xyzs[0]), int.Parse(xyzs[1]), int.Parse(xyzs[2]) );
+				voxelObj.transform.position = this.ConvertPosID (posID);
 			}
 		}
 		cv.insertedPosIDs.Clear ();
 
-		foreach (String posID in cv.deletedPosIDs) {
+		/*
+		 * For DELETE operation.
+		 */
+		foreach (string posID in cv.deletedPosIDs) {
 			GameObject.Destroy(GameObject.Find (posID));
 		}
 		cv.deletedPosIDs.Clear ();
 	}
 
+	public Vector3 ConvertPosID(string posID) {
+		string[] xyzs = posID.Split (':');
+		return new Vector3(int.Parse(xyzs[0]), int.Parse(xyzs[1]), int.Parse(xyzs[2]) );
+	}
+
 	public void SetUpGUICompornets() {
 		GameObject anObject = GameObject.Find("DebugLog/Viewport/Content");
 		Text log = anObject.GetComponent<Text>();
-		log.text = this.model.GetLog(); //this.showStructureTable();
+		log.text = ChainXController.log; //this.showStructureTable();
 	}
 
 	private void OnApplicationQuit() {
 		this.socket.Close();
 	}
 
+		/*
 	IEnumerator Run()
 	{
-		/*
 		cv.apply(new Operation(Operation.CREATE,
 			new SortedDictionary<string, object>() {{"gid", "a_table"}} ));
 		cv.apply(new Operation(Operation.JOIN,
 			new SortedDictionary<string, object>() {{"gid", "a_table"}, {"posID", "1:1:1"}} ));
 		*/
-		ChainVoxel cv = this.model.getChainVoxel ();
+		/*
+		ChainVoxel cv = ChainXController.cv;
 		yield return new WaitForSeconds(2.0f);
 		cv.apply(new Operation (3, Operation.INSERT, "{\"posID\": \"1:1:1\"}"));
 		yield return new WaitForSeconds(2.0f);
@@ -128,11 +178,6 @@ public class ChainXController : MonoBehaviour
 		yield return new WaitForSeconds(2.0f);
 		cv.apply(new Operation (5, Operation.MOVE, "{\"posID\": \"1:1:1\", \"destPosID\": \"2:2:2\"}"));
 	}
+		*/
 
-	public void OperateVoxelOnLocal(Operation op) {
-		ChainVoxel cv = this.model.getChainVoxel ();
-		cv.apply(op);
-	}
-
-	public ChainXModel getModel() { return this.model; }
 }
