@@ -12,7 +12,6 @@ public class ChainXController : MonoBehaviour
 	public ChainVoxel cv;
 	public string log;
 	public static object thisLock = new object();
-	public static long aaa = 0;
 
 	void Start() {
 		this.cv = new ChainVoxel(this);
@@ -28,10 +27,12 @@ public class ChainXController : MonoBehaviour
 			this.SetUpGUICompornets ();
 
 			Operation o = null;
-			if (Input.GetKeyDown (KeyCode.S)) {
+			if (Input.GetKeyDown (KeyCode.B)) {
 			}
-			else if (Input.GetKeyDown (KeyCode.C)) {
-				o = new Operation (0, Operation.INSERT, "{\"posID\": \"" + Operation.CreateRandomPosID(5) + "\"}" );
+			else if (Input.GetKeyDown (KeyCode.V)) {
+				o = new Operation (0, Operation.INSERT,
+					"{\"posID\": \"" + Operation.CreateRandomPosID(5) +
+					"\", \"textureType\":\"" + UnityEngine.Random.Range(0,8) + "\"}" );
 			}
 			else if (Input.GetMouseButtonDown(Const.MOUSE_LEFT_CLICK))
 			{
@@ -98,13 +99,13 @@ public class ChainXController : MonoBehaviour
 		 */
 		foreach (string posID in this.cv.insertedPosIDs) {
 			if (GameObject.Find (posID) == null) {
-				this.CreateVoxel (0, posID);
+				this.CreateVoxel (this.cv.getVoxel(posID).getTextureType(), posID);
 			}
 		}
 		cv.insertedPosIDs.Clear ();
 
 		/*
-		 * For DELETE operation.
+		 * For DELETE & MOVE operation.
 		 */
 		foreach (string posID in this.cv.deletedPosIDs) {
 			GameObject anObj = GameObject.Find (posID);

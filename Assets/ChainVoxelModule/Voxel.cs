@@ -9,6 +9,11 @@ public class Voxel {
 	private int id;
 
 	/**
+     * Voxelのテクスチャ番号
+     */
+	private int textureType;
+
+	/**
      * Voxelのタイムスタンプ
      */
 	private long timestamp;
@@ -19,6 +24,7 @@ public class Voxel {
      */
 	public Voxel(long timestamp) {
 		this.id = -1; // not exists site id.
+		this.textureType = -1;
 		this.timestamp = timestamp;
 	}
 
@@ -27,8 +33,9 @@ public class Voxel {
      * @param id Siteの識別子
      * @param timestamp タイムスタンプ
      */
-	public Voxel(int id, long timestamp) {
+	public Voxel(int id, int textureType, long timestamp) {
 		this.id = id;
+		this.textureType = textureType;
 		this.timestamp = timestamp;
 	}
 
@@ -43,6 +50,19 @@ public class Voxel {
      * @param id SiteID
      */
 	public void setId(int id) { this.id = id; }
+
+	/**
+     * Voxelのテクスチャ番号子を返す．
+     * @return テクスチャ番号
+     */
+	public int getTextureType() { return this.textureType; }
+
+	/**
+     * Voxelのテクスチャ番号を設定する．
+     * @param textureType テクスチャ番号
+     */
+	public void setTextureType(int textureType) { this.textureType = textureType; }
+
 
 	/**
      * Voxelのタイムスタンプを返す．
@@ -90,20 +110,20 @@ public class Voxel {
 		voxel.setTimestamp(timestamp);
 		Debug.Assert(voxel.getTimestamp() == timestamp);
 
-		voxel = new Voxel(id, timestamp);
+		voxel = new Voxel(id, 3, timestamp);
 		Debug.Assert(voxel.getTimestamp() == timestamp);
 		Debug.Assert(voxel.getId() == id);
 
 		List<Voxel> voxels = new List<Voxel>();
-		voxels.Add(new Voxel(3, 2400));
-		voxels.Add(new Voxel(2, 1000));
-		voxels.Add(new Voxel(1, 3200));
-		voxels.Add(new Voxel(0, 1000));
+		voxels.Add(new Voxel(3, 6, 2400));
+		voxels.Add(new Voxel(2, 5, 1000));
+		voxels.Add(new Voxel(1, 5, 3200));
+		voxels.Add(new Voxel(0, 2, 1000));
 		voxels.Sort(Voxel.Compare);
-		Debug.Assert(Voxel.Compare(voxels[0],new Voxel(0,1000)) == 0); // "== 0" means same value
-		Debug.Assert(Voxel.Compare(voxels[1],new Voxel(2,1000)) == 0);
-		Debug.Assert(Voxel.Compare(voxels[2],new Voxel(3,2400)) == 0);
-		Debug.Assert(Voxel.Compare(voxels[3],new Voxel(1,3200)) == 0);
+		Debug.Assert(Voxel.Compare(voxels[0],new Voxel(0, 1, 1000)) == 0); // "== 0" means same value
+		Debug.Assert(Voxel.Compare(voxels[1],new Voxel(2, 2,1000)) == 0);
+		Debug.Assert(Voxel.Compare(voxels[2],new Voxel(3, 2, 2400)) == 0);
+		Debug.Assert(Voxel.Compare(voxels[3],new Voxel(1, 4, 3200)) == 0);
 
 		//foreach (Voxel v in voxels) { Debug.Log(v.Tostring()); }
 		//Debug.Log("End Voxel TEST");

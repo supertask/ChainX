@@ -60,7 +60,7 @@ public class EmulatedSocket
 
 			//Debug.Log ("始まり at OnReceiveData()");
 			//ChainVoxel cv = this.controller.getChainVoxel ();
-			this.controller.cv.apply(op);
+			this.controller.cv.apply (op);
 
 			//Debug.Log ("終わり at OnReceiveData()");
 			//Debug.Log ("--------------------");

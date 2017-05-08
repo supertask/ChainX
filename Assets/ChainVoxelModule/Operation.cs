@@ -89,7 +89,7 @@ public class Operation {
      */
 	private bool satisfyRequirements() {
 		List<List<string>> requirements = new List<List<string>>() {
-			new List<string>() {"posID"}, // insert
+			new List<string>() {"posID", "textureType"}, // insert
 			new List<string>() {"posID"}, // delete
 			new List<string>() {"gid"}, // create
 			new List<string>() {"posID", "gid"}, // join
@@ -100,6 +100,10 @@ public class Operation {
 	}
 
 	public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+
+	public void setTextureType(int textureType) {
+		this.opParams.AddField ("textureType", textureType.ToString());
+	}
 
 	/* Not exist setter method as much as possible. Because, class field should not be changed since init. */
 
@@ -122,7 +126,7 @@ public class Operation {
 	public long getTimestamp() { return this.timestamp; }
 
 	/**
-     * voxelの識別子を返す．
+     * Voxelの識別子を返す．
      * @return voxelの識別子
      */
 	public string getPosID() {
@@ -135,6 +139,14 @@ public class Operation {
      */
 	public string getDestPosID() {
 		return this.opParams.HasField ("destPosID") ? this.opParams.GetField ("destPosID").str : ""; 
+	}
+
+	/**
+     * Voxelのテクスチャ番号を返す．
+     * @return テクスチャ番号
+     */
+	public string getTextureType() {
+		return this.opParams.HasField ("textureType") ? this.opParams.GetField ("textureType").str : ""; 
 	}
 
 	/**
@@ -237,6 +249,7 @@ public class Operation {
 
 	/**
 	 * Test an Operation class
+	 * TODO(Tasuku): Add texutreType test.
 	 */
 	public static void Test() {
 		Debug.Assert(Operation.INSERT == 0);

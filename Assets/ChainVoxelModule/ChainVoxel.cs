@@ -56,6 +56,7 @@ public class ChainVoxel {
      * 操作オブジェクトに対応する操作を実行するメソッド．<br>
      * ChainVoxelに対する操作はapplyメソッドを用いて実行することを推奨しています．
      * @param op 操作オブジェクト
+     * @param textureType テクスチャ番号
      * @see Operation
      */
 	public void apply(Operation op) {
@@ -99,10 +100,10 @@ public class ChainVoxel {
      */
 	public void insert(Operation op) {
 		int id = op.getSID();
+		int textureType = int.Parse(op.getTextureType ());
 		string posID = (op.getOpType() == Operation.MOVE) ? op.getDestPosID() : op.getPosID();
-		//Debug.Log (posID + " at insert()");
 		long timestamp = op.getTimestamp();
-		Voxel insertVoxel = new Voxel(id, timestamp);
+		Voxel insertVoxel = new Voxel(id, textureType, timestamp);
 		//Debug.Log (GameObject.Find (posID));
 
 		List<Voxel> voxelList = this.getVoxelList(posID);
@@ -128,9 +129,10 @@ public class ChainVoxel {
 	/**
      * ChainVoxel内の指定したvoxelを削除するメソッド
      * @param op 操作オブジェクト
+     * @return textureType 削除するVoxelのテクスチャ番号
      * @see Operation
      */
-	public void delete(Operation op) {
+	public int delete(Operation op) {
 		//int id = op.getSID();
 		string posID = op.getPosID();
 		long timestamp = op.getTimestamp();
@@ -141,6 +143,8 @@ public class ChainVoxel {
 		}
 
 		List<Voxel> voxelList = this.getVoxelList(posID);
+		Voxel tmpVoxel = this.getVoxel (posID);
+		int textureType = tmpVoxel.getTextureType ();
 
 		// step2: 負のvoxelより古いvoxelを削除する
 		for (int i = voxelList.Count - 1; i >= 0; --i) { // 先頭から削除するとイテレータがおかしくなる
@@ -152,11 +156,13 @@ public class ChainVoxel {
 		voxelList.Sort(Voxel.Compare);
 		if (this.getVoxel (posID) == null) { this.deletedPosIDs.Add (posID); }
 
-		return;
+		return textureType;
 	}
 
 	public void move(Operation op) {
-		this.delete (op); //Bug!!
+		if (this.getVoxel(op.getDestPosID()) != null) { return; }
+		int textureType = this.delete (op); //Bug!!
+		op.setTextureType(textureType);
 		this.insert (op);
 		this.movedPosIDs [op.getPosID()] = op.getDestPosID ();
 	}
