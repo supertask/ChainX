@@ -3,14 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using MinimalJson;
+
 /**
  * 操作を表すクラス．<br>
  * Operationクラスを利用して，ChainVoxelクラスの操作を実行する．<br>
  * Operationクラスは内部状態の変更をされてはいけないため，setterを実装しない．
  * @author kengo92i
  */
-//[JsonObject("Operation")]
-//[System.Serializable]
 public class Operation {
     /**
      * insert操作を示す定数
@@ -121,5 +121,40 @@ public class Operation {
      * @return voxelの識別子
      */
     public string getGID() { return this.gid; }
+
+    /*
+     * フィールドの状態を可視化
+     */
+    public void show() {
+        Console.WriteLine(Operation.ToJson(this));
+    }
+
+
+    public static Operation FromJson(string jsonMessage)
+    {
+        JsonObject jsonObject = JsonObject.readFrom(jsonMessage);
+        int sid = jsonObject.get("sid").asInt();
+        int opType = jsonObject.get("opType").asInt();
+        long timestamp = jsonObject.get("timestamp").asLong();
+        string posID = jsonObject.get("posID").asString();
+        string destPosID = jsonObject.get("destPosID").asString();
+        string gid = jsonObject.get("gid").asString();
+        Operation op = new Operation(sid, opType, posID, destPosID, gid);
+        op.setTimestamp(timestamp);
+
+        return op;
+    }
+
+    public static string ToJson(Operation op) {
+        string res = "{";
+        res += "\"sid\":" + op.getSID() + ",";
+        res += "\"opType\":" + op.getOpType() + ",";
+        res += "\"timestamp\":" + op.getTimestamp() + ",";
+        res += "\"posID\":" + op.getPosID() + ",";
+        res += "\"destPosID\":" + op.getDestPosID() + ",";
+        res += "\"gid\":" + op.getGID() + "}";
+
+        return res;
+    }
 }
 

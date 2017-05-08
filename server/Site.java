@@ -488,6 +488,12 @@ public class Site extends Thread {
                 System.out.println(res);
                 Operation op = gson.fromJson(res, Operation.class);
                 int sid = Integer.parseInt(op.getSID());
+                /*
+                try {
+                    Thread.sleep(200);
+                }
+                catch(InterruptedException e){}
+                */
                 if (sid < EmulatedServer.NUMBER_OF_LIMITED_SITE) {
                     this.send(sid, res); //別の宛先へ
                 }

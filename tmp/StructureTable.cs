@@ -259,7 +259,7 @@ public class StructureTable {
         stt.leave(1, 10L, posIDs[0], gids[0]);
         stt.leave(1, 11L, posIDs[0], gids[1]);
         res += stt.getStatusString(); //複数のjoin・leaveの収束結果
-        Console.WriteLine(res);
+        //Console.WriteLine(res);
     }
 
 }

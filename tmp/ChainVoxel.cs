@@ -32,8 +32,6 @@ public class ChainVoxel {
      */
     private StructureTable stt;
 
-    private ChainXController controller;
-
     public List<string> insertedPosIDs;
     public List<string> deletedPosIDs;
     public static Dictionary<string,string> movedPosIDs;
@@ -42,11 +40,10 @@ public class ChainVoxel {
     /**
      * ChainVoxelのコンストラクタ
      */
-    public ChainVoxel(ChainXController controller) {
+    public ChainVoxel() {
         this.atoms = new SortedDictionary<string, List<Voxel>>();
         this.negativeVoxels = new SortedDictionary<string, Voxel>();
         this.stt = new StructureTable();
-        this.controller = controller;
         this.insertedPosIDs = new List<string> ();
         this.deletedPosIDs = new List<string> ();
         ChainVoxel.movedPosIDs = new Dictionary<string,string>();
@@ -86,7 +83,6 @@ public class ChainVoxel {
             Debug.Assert (false);
             break;
         }
-        ChainXController.log = this.show();
         return;
     }
 
@@ -156,9 +152,9 @@ public class ChainVoxel {
         //op.getPosID() op.getDestPosID()をひも付けておいて、selectedObjectの遷移をposID(delete)からDestPosID先(insert)へ変更
         this.delete (op);
         this.insert (op);
-        lock (ChainVoxel.movedPosIDs) {
-            ChainVoxel.movedPosIDs [op.getPosID ()] = op.getDestPosID ();
-        }
+        //lock (ChainVoxel.movedPosIDs) {
+        ChainVoxel.movedPosIDs [op.getPosID ()] = op.getDestPosID ();
+        //}
     }
 
     /**
@@ -265,8 +261,8 @@ public class ChainVoxel {
     /**
      * Test a ChainVoxel class.
      */
-    public static void Main() {
-        ChainVoxel cv = new ChainVoxel();        
+    public static void Test() {
+        //ChainVoxel cv = new ChainVoxel();        
         //SortedDictionary<string, Voxel> s = new SortedDictionary<string, Voxel>();
         //Debug.Log(s);
     }

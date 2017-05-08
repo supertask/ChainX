@@ -36,7 +36,7 @@ public class ChainVoxel {
 
 	public List<string> insertedPosIDs;
 	public List<string> deletedPosIDs;
-	public static Dictionary<string,string> movedPosIDs;
+	public Dictionary<string,string> movedPosIDs;
 
 
 	/**
@@ -49,7 +49,7 @@ public class ChainVoxel {
 		this.controller = controller;
 		this.insertedPosIDs = new List<string> ();
 		this.deletedPosIDs = new List<string> ();
-		ChainVoxel.movedPosIDs = new Dictionary<string,string>();
+		this.movedPosIDs = new Dictionary<string,string>();
 	}
 
 	/**
@@ -86,7 +86,9 @@ public class ChainVoxel {
 			Debug.Assert (false);
 			break;
 		}
-		ChainXController.log = this.show();
+		lock (ChainXController.thisLock) {
+			this.controller.log = this.show ();
+		}
 		return;
 	}
 
@@ -118,7 +120,8 @@ public class ChainVoxel {
 		// step2: insertVoxelを挿入する
 		voxelList.Add(insertVoxel);
 		voxelList.Sort(Voxel.Compare);
-		if (op.getOpType () == Operation.INSERT) { this.insertedPosIDs.Add (posID); }
+		if (this.getVoxel (posID) != null) { this.insertedPosIDs.Add (posID); }
+
 		return;
 	}
 
@@ -147,18 +150,15 @@ public class ChainVoxel {
 		}
 
 		voxelList.Sort(Voxel.Compare);
-		if (op.getOpType () == Operation.DELETE) { this.deletedPosIDs.Add (posID); }
+		if (this.getVoxel (posID) == null) { this.deletedPosIDs.Add (posID); }
 
 		return;
 	}
 
 	public void move(Operation op) {
-		//op.getPosID() op.getDestPosID()をひも付けておいて、selectedObjectの遷移をposID(delete)からDestPosID先(insert)へ変更
-		this.delete (op);
+		this.delete (op); //Bug!!
 		this.insert (op);
-		lock (ChainVoxel.movedPosIDs) {
-			ChainVoxel.movedPosIDs [op.getPosID ()] = op.getDestPosID ();
-		}
+		this.movedPosIDs [op.getPosID()] = op.getDestPosID ();
 	}
 
 	/**
@@ -196,10 +196,9 @@ public class ChainVoxel {
      * @see Voxel
      */
 	public Voxel getVoxel(string posID) {
-		List<Voxel> voxelList = this.atoms[posID];
-		if (voxelList == null) {
-			return null;
-		}
+		List<Voxel> voxelList = this.getVoxelList(posID);
+		if (voxelList.Count == 0) { return null; }
+
 		return voxelList[0]; // 先頭のvoxelがprimaryVoxel
 	}
 

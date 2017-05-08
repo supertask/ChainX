@@ -8,68 +8,81 @@ using UnityEngine.UI;
 public class ChainXController : MonoBehaviour
 {
 	private EmulatedSocket socket;
-	private static GameObject selectedObject;
-	public static ChainVoxel cv;
-	public static string log;
+	private GameObject selectedObject;
+	public ChainVoxel cv;
+	public string log;
+	public static object thisLock = new object();
+	public static long aaa = 0;
 
 	void Start() {
-		ChainXController.cv = new ChainVoxel(this);
+		this.cv = new ChainVoxel(this);
 		//StartCoroutine (this.Run());
 		this.socket = new EmulatedSocket (this);
 	}
 
 	void Update()
 	{
-		Operation o = null;
-		if (Input.GetKeyDown (KeyCode.S)) {
-		}
-		else if (Input.GetKeyDown (KeyCode.C)) {
-			o = new Operation (0, Operation.INSERT, "{\"posID\": \"" + Operation.CreateRandomPosID(5) + "\"}" );
-		}
-		else if (Input.GetMouseButtonDown(Const.MOUSE_LEFT_CLICK))
-		{
-			/*
-			 * Here バグってるー
-			 */
-			Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
-			RaycastHit hit = new RaycastHit ();
+		lock (ChainXController.thisLock) {
 
-			if (selectedObject != null) {
-				ChainXController.selectedObject.GetComponent<Renderer> ().material.shader = Shader.Find ("Diffuse");
+			this.UpdateVoxels ();
+			this.SetUpGUICompornets ();
+
+			Operation o = null;
+			if (Input.GetKeyDown (KeyCode.S)) {
 			}
-			if (Physics.Raycast (ray, out hit)) {
-				Regex r = new Regex( @"[-]?[\d]+:[-]?[\d]+:[-]?[\d]+");
-				GameObject hitObj = hit.collider.gameObject;
-				if (r.IsMatch (hitObj.name)) {
-					ChainXController.selectedObject = hitObj;
-					ChainXController.selectedObject.GetComponent<Renderer> ().material.shader = Shader.Find ("Toon/Basic Outline");
+			else if (Input.GetKeyDown (KeyCode.C)) {
+				o = new Operation (0, Operation.INSERT, "{\"posID\": \"" + Operation.CreateRandomPosID(5) + "\"}" );
+			}
+			else if (Input.GetMouseButtonDown(Const.MOUSE_LEFT_CLICK))
+			{
+				Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
+				RaycastHit hit = new RaycastHit ();
+
+				if (selectedObject != null) {
+					this.selectedObject.GetComponent<Renderer> ().material.shader = Shader.Find ("Diffuse");
 				}
-				else { ChainXController.selectedObject = null; }
+				if (Physics.Raycast (ray, out hit)) {
+					Regex r = new Regex( @"[-]?[\d]+:[-]?[\d]+:[-]?[\d]+");
+					GameObject hitObj = hit.collider.gameObject;
+					if (r.IsMatch (hitObj.name)) {
+						this.selectedObject = hitObj;
+						this.selectedObject.GetComponent<Renderer> ().material.shader = Shader.Find ("Toon/Basic Outline");
+					}
+					else { this.selectedObject = null; }
+				}
+				else { this.selectedObject = null; }
 			}
-			else { ChainXController.selectedObject = null; }
-		}
 
 
-		if (ChainXController.selectedObject != null) {
-			if (Input.GetKeyUp(KeyCode.UpArrow)) { o = this.CreateMoveOperation(1,0,0); }
-			else if (Input.GetKeyUp(KeyCode.DownArrow)) { o = this.CreateMoveOperation(-1,0,0); }
-			else if (Input.GetKeyUp(KeyCode.RightArrow)) { o = this.CreateMoveOperation(0,0,-1); }
-			else if (Input.GetKeyUp(KeyCode.LeftArrow)) { o = this.CreateMoveOperation(0,0,1); }
-			else if (Input.GetKeyUp(KeyCode.U)) { o = this.CreateMoveOperation(0,1,0); }
-			else if (Input.GetKeyUp(KeyCode.D)) { o = this.CreateMoveOperation(0,-1,0); }
+			if (this.selectedObject != null) {
+				if (Input.GetKeyUp (KeyCode.UpArrow)) {
+					o = this.CreateMoveOperation (1, 0, 0);
+				} else if (Input.GetKeyUp (KeyCode.DownArrow)) {
+					o = this.CreateMoveOperation (-1, 0, 0);
+				} else if (Input.GetKeyUp (KeyCode.RightArrow)) {
+					o = this.CreateMoveOperation (0, 0, -1);
+				} else if (Input.GetKeyUp (KeyCode.LeftArrow)) {
+					o = this.CreateMoveOperation (0, 0, 1);
+				} else if (Input.GetKeyUp (KeyCode.U)) {
+					o = this.CreateMoveOperation (0, 1, 0);
+				} else if (Input.GetKeyUp (KeyCode.D)) {
+					o = this.CreateMoveOperation (0, -1, 0);
+				}
+			}
+			if (o != null) {
+				string json = Operation.ToJson (o);
+				this.socket.Send (json + "\r\n");
+			}
+		//}
+
+		//lock (ChainXController.thisLock) {
 		}
-		if (o != null) {
-			string json = Operation.ToJson (o);
-			this.socket.Send (json + "\r\n");
-		}
-			
-		this.UpdateVoxels();
-		this.SetUpGUICompornets();
 	}
 
 	private Operation CreateMoveOperation(int dx, int dy, int dz)
 	{
-		Vector3 xyz = ChainXController.selectedObject.transform.position;
+		Vector3 xyz;
+		xyz = this.selectedObject.transform.position;
 		string posID = xyz.x + ":" + xyz.y + ":" + xyz.z;
 		string destPosID = (xyz.x+dx) + ":" + (xyz.y+dy) + ":" + (xyz.z+dz);
 		return new Operation (0, Operation.MOVE,"{\"posID\": \"" + posID
@@ -80,44 +93,12 @@ public class ChainXController : MonoBehaviour
 	 * 
 	 */
 	public void UpdateVoxels() {
-		ChainVoxel cv = ChainXController.cv;
-
-		/*
-		 * For MOVE operation.
-		 * 編集の必要あり！！！
-		 */
-		if (ChainXController.selectedObject) {
-			lock(ChainXController.selectedObject) {
-				foreach (KeyValuePair<string,string> aPair in ChainVoxel.movedPosIDs) { //InvalidOperationException: out of sync(lockをする。ループを回している最中に書き込みがある時のエラー)
-					string posID = aPair.Key;
-					string destPosID = aPair.Value;
-					GameObject voxelObj = ChainXController.selectedObject; //GameObject.Find (posID); //見つからない
-
-					voxelObj.name = destPosID; //NullReferenceException: Object reference not set to an instance of an object
-					voxelObj.transform.position = this.ConvertPosID (destPosID);
-				}
-				ChainVoxel.movedPosIDs.Clear();
-			}
-		}
-
 		/*
 		 * For INSERT operation.
 		 */
-		foreach (string posID in cv.insertedPosIDs) {
-			if (GameObject.Find (posID) == null)
-			{
-				GameObject voxelObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-
-				//色とテクスチャを加える
-				Texture2D texture = Resources.Load<Texture2D> ("Textures/A");
-				Material material = new Material(Shader.Find("Diffuse"));
-				//Material material = new Material(Shader.Find("Toon/Lit Outline"));
-				material.mainTexture = texture;
-				//material.color = Color.red;
-				voxelObj.GetComponent<Renderer> ().material = material;
-
-				voxelObj.name = posID;
-				voxelObj.transform.position = this.ConvertPosID (posID);
+		foreach (string posID in this.cv.insertedPosIDs) {
+			if (GameObject.Find (posID) == null) {
+				this.CreateVoxel (0, posID);
 			}
 		}
 		cv.insertedPosIDs.Clear ();
@@ -125,10 +106,45 @@ public class ChainXController : MonoBehaviour
 		/*
 		 * For DELETE operation.
 		 */
-		foreach (string posID in cv.deletedPosIDs) {
-			GameObject.Destroy(GameObject.Find (posID));
+		foreach (string posID in this.cv.deletedPosIDs) {
+			GameObject anObj = GameObject.Find (posID);
+			if (anObj != null) {
+				if (anObj == this.selectedObject){
+					/*
+					 * For changing selectedObject.
+					 */
+					if (this.cv.movedPosIDs.ContainsKey(posID)) {
+						string destPosID = this.cv.movedPosIDs[posID];	
+						GameObject destObj = GameObject.Find (destPosID);
+						if (destObj != null) {
+							this.selectedObject = destObj;
+							this.selectedObject.GetComponent<Renderer> ().material.shader = Shader.Find ("Toon/Basic Outline");
+						}
+					}
+				}
+				/*
+				 * Remove following a ChainVoxel.
+				 */
+				GameObject.Destroy(anObj);
+			}
 		}
 		cv.deletedPosIDs.Clear ();
+	}
+
+	/*
+	 * 
+	 * textureTypeまたは、colorTypeの一方は必ず0以上、もう一方は0未満にしなくてはならない。
+	 */
+	private void CreateVoxel(int textureType, string posID)
+	{
+		GameObject voxelObj = GameObject.CreatePrimitive (PrimitiveType.Cube);
+		Material material = new Material (Shader.Find ("Diffuse"));
+		//Material material = new Material(Shader.Find("Toon/Lit Outline")); //影をつける
+		Texture2D texture = Resources.Load<Texture2D> ("Textures/" + textureType.ToString());
+		material.mainTexture = texture;
+		voxelObj.GetComponent<Renderer> ().material = material;
+		voxelObj.name = posID;
+		voxelObj.transform.position = this.ConvertPosID (posID);
 	}
 
 	public Vector3 ConvertPosID(string posID) {
@@ -137,47 +153,14 @@ public class ChainXController : MonoBehaviour
 	}
 
 	public void SetUpGUICompornets() {
-		GameObject anObject = GameObject.Find("DebugLog/Viewport/Content");
-		Text log = anObject.GetComponent<Text>();
-		log.text = ChainXController.log; //this.showStructureTable();
+		lock(ChainXController.thisLock) {
+			GameObject anObject = GameObject.Find("DebugLog/Viewport/Content");
+			Text log = anObject.GetComponent<Text>();
+			log.text = this.log; //this.showStructureTable();
+		}
 	}
 
 	private void OnApplicationQuit() {
 		this.socket.Close();
 	}
-
-		/*
-	IEnumerator Run()
-	{
-		cv.apply(new Operation(Operation.CREATE,
-			new SortedDictionary<string, object>() {{"gid", "a_table"}} ));
-		cv.apply(new Operation(Operation.JOIN,
-			new SortedDictionary<string, object>() {{"gid", "a_table"}, {"posID", "1:1:1"}} ));
-		*/
-		/*
-		ChainVoxel cv = ChainXController.cv;
-		yield return new WaitForSeconds(2.0f);
-		cv.apply(new Operation (3, Operation.INSERT, "{\"posID\": \"1:1:1\"}"));
-		yield return new WaitForSeconds(2.0f);
-		cv.apply(new Operation (3, Operation.INSERT, "{\"posID\": \"1:1:2\"}"));
-		yield return new WaitForSeconds(2.0f);
-		cv.apply(new Operation (5, Operation.INSERT, "{\"posID\": \"1:2:1\"}"));
-		yield return new WaitForSeconds(2.0f);
-		cv.apply(new Operation (2, Operation.INSERT, "{\"posID\": \"1:1:1\"}"));
-		yield return new WaitForSeconds(2.0f);
-		cv.apply(new Operation (4, Operation.INSERT, "{\"posID\": \"1:1:1\"}"));
-		yield return new WaitForSeconds(2.0f);
-		cv.apply(new Operation (3, Operation.DELETE, "{\"posID\": \"1:1:1\"}"));
-		yield return new WaitForSeconds(2.0f);
-		cv.apply(new Operation (4, Operation.INSERT, "{\"posID\": \"0:1:1\"}"));
-		yield return new WaitForSeconds(2.0f);
-		cv.apply(new Operation (4, Operation.INSERT, "{\"posID\": \"0:0:0\"}"));
-		yield return new WaitForSeconds(2.0f);
-		cv.apply(new Operation (4, Operation.INSERT, "{\"posID\": \"1:1:1\"}"));
-
-		yield return new WaitForSeconds(2.0f);
-		cv.apply(new Operation (5, Operation.MOVE, "{\"posID\": \"1:1:1\", \"destPosID\": \"2:2:2\"}"));
-	}
-		*/
-
 }

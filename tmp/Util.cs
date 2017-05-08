@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 public class Util {
@@ -21,13 +22,19 @@ public class Util {
         else { return right; }
     }
 
-    /*
-    public static dynamic ConvertType(dynamic anObject) {
-        if (anObject.GetType() == typeof(int)) { return (int) anObject; }
-        else if (anObject.GetType() == typeof(string)) { return (string) anObject; }
-        else if (anObject.GetType() == typeof(bool)) { return (bool) anObject; }
-        else if (anObject.GetType() == typeof(float)) { return (float) anObject; }
-        return anObject;
+    public static void Assert(bool condition) {
+        if (!condition) {
+            throw (new Exception());
+        }
     }
-    */
+
+    /*
+       public static dynamic ConvertType(dynamic anObject) {
+       if (anObject.GetType() == typeof(int)) { return (int) anObject; }
+       else if (anObject.GetType() == typeof(string)) { return (string) anObject; }
+       else if (anObject.GetType() == typeof(bool)) { return (bool) anObject; }
+       else if (anObject.GetType() == typeof(float)) { return (float) anObject; }
+       return anObject;
+       }
+     */
 }
