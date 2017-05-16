@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+
 using UnityEngine;
 
 /**
@@ -161,6 +162,32 @@ public class StructureTable {
 	}
 
 	/**
+	 * NEW!!
+	 * posIDに紐付いたgidのハッシュセット（リスト）を応答する。
+	 * @param posID voxel識別子
+	 * @return gid グループIDのハッシュセット
+	 */
+	public HashSet<Group> getGroupIDs(string posID) {
+		if (this.groupEntriesTable.ContainsKey (posID)) {
+			return this.groupEntriesTable [posID];
+		}
+		else { return null; }
+	}
+
+	/**
+	 * NEW!!
+	 * gidに紐付いたposIDのハッシュセット（リスト）を応答する。
+	 * @param gid グループID
+	 * @return posIDのハッシュセット
+	 */
+	public HashSet<string> getPosIDs(string gid) {
+		if (this.groupMembersTable.ContainsKey (gid)) {
+			return this.groupMembersTable [gid];
+		}
+		else { return null; }
+	}
+
+	/**
      * StructureTableの状態を確認するための文字列を取得する
      * 各siteのStructureTableの状態が同じであるか確認するために使用する
      * @return StructureTableの状態を示す文字列
@@ -190,7 +217,6 @@ public class StructureTable {
 		return statusString;
 	}
 
-
 	/**
      * Structure Table の状態を出力する
      * @param dumpMsg ダンプメッセージ
@@ -199,6 +225,8 @@ public class StructureTable {
 		Debug.Log(dumpMsg);
 		Debug.Log(this.getStatusString());
 	}
+
+
 
 	/**
 	 * Test a StructureTable class.

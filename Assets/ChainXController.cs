@@ -9,13 +9,14 @@ public class ChainXController : MonoBehaviour
 {
 	private EmulatedSocket socket;
 	private GameObject selectedObject;
+	private ChainXModel model;
 	public ChainVoxel cv;
 	public string log;
 	public static object thisLock = new object();
 
 	void Start() {
 		this.cv = new ChainVoxel(this);
-		//StartCoroutine (this.Run());
+		this.cv.LoadFile();
 		this.socket = new EmulatedSocket (this);
 	}
 
@@ -31,8 +32,8 @@ public class ChainXController : MonoBehaviour
 			}
 			else if (Input.GetKeyDown (KeyCode.V)) {
 				o = new Operation (0, Operation.INSERT,
-					"{\"posID\": \"" + Operation.CreateRandomPosID(5) +
-					"\", \"textureType\":\"" + UnityEngine.Random.Range(0,8) + "\"}" );
+					"{\"posID\": \"" + Operation.CreateRandomPosID (5) +
+					"\", \"textureType\":\"" + UnityEngine.Random.Range (0, 8) + "\"}");
 			}
 			else if (Input.GetMouseButtonDown(Const.MOUSE_LEFT_CLICK))
 			{
@@ -54,7 +55,6 @@ public class ChainXController : MonoBehaviour
 				else { this.selectedObject = null; }
 			}
 
-
 			if (this.selectedObject != null) {
 				if (Input.GetKeyUp (KeyCode.UpArrow)) {
 					o = this.CreateMoveOperation (1, 0, 0);
@@ -69,14 +69,15 @@ public class ChainXController : MonoBehaviour
 				} else if (Input.GetKeyUp (KeyCode.D)) {
 					o = this.CreateMoveOperation (0, -1, 0);
 				}
+				else if ((Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.LeftCommand) ||
+					Input.GetKey (KeyCode.RightControl) || Input.GetKey(KeyCode.RightCommand) )
+					&& Input.GetKeyDown (KeyCode.D)) {
+					o = new Operation (0, Operation.DELETE, "{\"posID\": \"" + this.selectedObject.name + "\"}");
+				}
 			}
 			if (o != null) {
-				string json = Operation.ToJson (o);
-				this.socket.Send (json + "\r\n");
+				this.socket.Send (Operation.ToJson (o) + "\r\n");
 			}
-		//}
-
-		//lock (ChainXController.thisLock) {
 		}
 	}
 
@@ -163,5 +164,7 @@ public class ChainXController : MonoBehaviour
 
 	private void OnApplicationQuit() {
 		this.socket.Close();
+		this.cv.WriteToFile();
+		//TODO(Tasuku): SaveしましたのWindowを表示して終わる!!
 	}
 }

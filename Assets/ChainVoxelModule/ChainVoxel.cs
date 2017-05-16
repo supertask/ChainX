@@ -1,4 +1,7 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.IO;
+using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,7 +17,7 @@ using UnityEngine;
  * “ChainVoxel: A Data Structure for Scalable Distributed Collaborative Editing for 3D Models” 
  * The 14th IEEE International Conference on Dependable, Autonomic and Secure Computing, 8-12 Aug. 2016.
  *
- * @author kengo92i
+ * @author kengo92i, supertask
  */
 public class ChainVoxel {
 	/**
@@ -37,6 +40,7 @@ public class ChainVoxel {
 	public List<string> insertedPosIDs;
 	public List<string> deletedPosIDs;
 	public Dictionary<string,string> movedPosIDs;
+	public string textPath;
 
 
 	/**
@@ -50,6 +54,7 @@ public class ChainVoxel {
 		this.insertedPosIDs = new List<string> ();
 		this.deletedPosIDs = new List<string> ();
 		this.movedPosIDs = new Dictionary<string,string>();
+		this.textPath = Application.dataPath + "/Resources/Text/worked3D.txt";
 	}
 
 	/**
@@ -186,6 +191,19 @@ public class ChainVoxel {
 	}
 
 	/**
+     * 指定したグループにvoxelたちを全て同時刻に参加させるメソッド
+     * @param op 操作オブジェクト
+     * @see Operation
+     */
+	public void joinAll(Operation op) {
+		/*
+		foreach (string posID in op.getPosIDs())  {
+			this.stt.join(op.getTimestamp(), posID, op.getGID());
+		}
+		*/
+	}
+
+	/**
      * 指定したグループからvoxelを脱退させるメソッド
      * @param op 操作オブジェクト
      * @see Operation
@@ -266,6 +284,96 @@ public class ChainVoxel {
 
 		return res;
 	}
+
+	/*
+	 * 
+	 */
+	public void LoadFile()
+	{
+		try {
+			using (StreamReader reader = new StreamReader(this.textPath)) {
+
+				string line =reader.ReadLine();
+				string gid = "";
+				List<string> posIDs = new List<string>();
+				Operation op;
+
+				while(line != null) {
+					if (line[0] == 'o') {
+						string[] entries = line.Split(' ');
+						string group_name = entries[1];
+						if (posIDs.Count > 0 ) {
+							//Here
+							/*
+							op = new Operation(0, Operation.JOIN,
+								"{\"posID\": \"" + posID +
+								"\", \"gid\":\"" + group_name + "\"}"
+							);
+							this.apply(op);
+							*/
+						}
+						posIDs = new List<string>();
+
+						op = new Operation(0, Operation.INSERT,
+							"{\"gid\": \"" + group_name + "\"}"
+						);
+					}
+					else if (line[0] == 'v') {
+						string[] entries = line.Split(' ');
+						int textureType = int.Parse(entries[1]);
+						string posID = entries[2];
+						posIDs.Add(posID);
+						op = new Operation(0, Operation.INSERT,
+							"{\"posID\": \"" + posID +
+							"\", \"textureType\":\"" + textureType.ToString() + "\"}"
+						);
+						this.apply(op);
+					}
+					else if (line[0] == 'e') {
+						if (posIDs.Count > 0 ) { }
+					}
+					line = reader.ReadLine();
+				}
+				reader.Close();
+			}
+		} catch (Exception e) {
+			// Let the user know what went wrong.
+			Debug.LogError("The file could not be read:");
+			Debug.LogError(e.Message);
+		}
+	}
+
+	/*
+	 * 
+	 */
+	public void WriteToFile()
+	{
+		Debug.Log(this.show());
+
+		try {
+			using (StreamWriter writer = new StreamWriter(this.textPath)) {
+				foreach (KeyValuePair<string, List<Voxel>> p in this.atoms) {
+					string posID = p.Key;
+					Voxel aVoxel = this.getVoxel(posID);
+					if (aVoxel == null) { continue; }
+
+					int textureType = this.getVoxel(posID).getTextureType();
+					string line = String.Format("v {0} {1}", textureType, posID);
+					//Debug.Log(line);
+					writer.WriteLine(line);
+					writer.Flush();
+				}
+				writer.WriteLine("e");
+				writer.Flush();
+				writer.Close();
+			}
+		} catch (Exception e) {
+			// Let the user know what went wrong.
+			Debug.LogError(e.Message);
+		}
+	}
+
+
 
 	/**
 	 * Test a ChainVoxel class.
