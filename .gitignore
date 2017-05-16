@@ -2,6 +2,7 @@
 *.class
 *.pyc
 *.exe
+*.app
 
 /[Ll]ibrary/
 /[Tt]emp/
