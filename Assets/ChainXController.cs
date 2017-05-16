@@ -8,16 +8,19 @@ using UnityEngine.UI;
 public class ChainXController : MonoBehaviour
 {
 	private EmulatedSocket socket;
-	private GameObject selectedObject;
 	private ChainXModel model;
 	public ChainVoxel cv;
 	public string log;
 	public static object thisLock = new object();
 
+	private GameObject selectedObject;
+	private List<GameObject> selectedObjects;
+
 	void Start() {
 		this.cv = new ChainVoxel(this);
 		this.cv.LoadFile();
 		this.socket = new EmulatedSocket (this);
+		this.selectedObjects = new List<GameObject> ();
 	}
 
 	void Update()
@@ -37,38 +40,43 @@ public class ChainXController : MonoBehaviour
 			}
 			else if (Input.GetMouseButtonDown(Const.MOUSE_LEFT_CLICK))
 			{
-				Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
-				RaycastHit hit = new RaycastHit ();
+				GameObject hitObj = this.isHitVoxel ();
 
-				if (selectedObject != null) {
-					this.selectedObject.GetComponent<Renderer> ().material.shader = Shader.Find ("Diffuse");
-				}
-				if (Physics.Raycast (ray, out hit)) {
-					Regex r = new Regex( @"[-]?[\d]+:[-]?[\d]+:[-]?[\d]+");
-					GameObject hitObj = hit.collider.gameObject;
-					if (r.IsMatch (hitObj.name)) {
-						this.selectedObject = hitObj;
-						this.selectedObject.GetComponent<Renderer> ().material.shader = Shader.Find ("Toon/Basic Outline");
+				if (hitObj) {
+					if (this.selectedObjects.Contains(hitObj)) {
+						if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) {
+							hitObj.GetComponent<Renderer> ().material.shader = Const.DIFFUSE_SHADER;
+							this.selectedObjects.Remove(hitObj);
+						} else {
+							this.cleanSelectedObjects();
+							this.AddToSelectedObjects(hitObj);
+						}
 					}
-					else { this.selectedObject = null; }
+					else {
+						if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+							this.AddToSelectedObjects(hitObj);
+						else {
+							if (this.selectedObjects.Count > 0)
+								this.cleanSelectedObjects();
+							this.AddToSelectedObjects(hitObj);
+						}
+					}
 				}
-				else { this.selectedObject = null; }
+				else {
+					if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) { }
+					else
+						this.cleanSelectedObjects();
+				}
+				//Debug.Log(this.selectedObjects.Count);
 			}
 
 			if (this.selectedObject != null) {
-				if (Input.GetKeyUp (KeyCode.UpArrow)) {
-					o = this.CreateMoveOperation (1, 0, 0);
-				} else if (Input.GetKeyUp (KeyCode.DownArrow)) {
-					o = this.CreateMoveOperation (-1, 0, 0);
-				} else if (Input.GetKeyUp (KeyCode.RightArrow)) {
-					o = this.CreateMoveOperation (0, 0, -1);
-				} else if (Input.GetKeyUp (KeyCode.LeftArrow)) {
-					o = this.CreateMoveOperation (0, 0, 1);
-				} else if (Input.GetKeyUp (KeyCode.U)) {
-					o = this.CreateMoveOperation (0, 1, 0);
-				} else if (Input.GetKeyUp (KeyCode.D)) {
-					o = this.CreateMoveOperation (0, -1, 0);
-				}
+				if (Input.GetKeyUp (KeyCode.UpArrow)) o = this.CreateMoveOperation (1, 0, 0);
+				else if (Input.GetKeyUp (KeyCode.DownArrow)) o = this.CreateMoveOperation (-1, 0, 0);
+				else if (Input.GetKeyUp (KeyCode.RightArrow)) o = this.CreateMoveOperation (0, 0, -1);
+				else if (Input.GetKeyUp (KeyCode.LeftArrow)) o = this.CreateMoveOperation (0, 0, 1);
+				else if (Input.GetKeyUp (KeyCode.U)) o = this.CreateMoveOperation (0, 1, 0);
+				else if (Input.GetKeyUp (KeyCode.D)) o = this.CreateMoveOperation (0, -1, 0);
 				else if ((Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.LeftCommand) ||
 					Input.GetKey (KeyCode.RightControl) || Input.GetKey(KeyCode.RightCommand) )
 					&& Input.GetKeyDown (KeyCode.D)) {
@@ -79,6 +87,29 @@ public class ChainXController : MonoBehaviour
 				this.socket.Send (Operation.ToJson (o) + "\r\n");
 			}
 		}
+	}
+
+	private void cleanSelectedObjects() {
+		foreach(GameObject anObj in this.selectedObjects) {
+			anObj.GetComponent<Renderer> ().material.shader = Const.DIFFUSE_SHADER;
+		}
+		this.selectedObjects.Clear();
+	}
+
+	private void AddToSelectedObjects(GameObject hitObj) {
+		hitObj.GetComponent<Renderer> ().material.shader = Const.TOON_SHADER;
+		this.selectedObjects.Add(hitObj);
+	}
+
+	private GameObject isHitVoxel() {
+		Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
+		RaycastHit hit = new RaycastHit ();
+		Regex r = new Regex( @"[-]?[\d]+:[-]?[\d]+:[-]?[\d]+");
+		if (Physics.Raycast (ray, out hit)) {
+			GameObject hitObj = hit.collider.gameObject;
+			if (r.IsMatch (hitObj.name)) return hitObj;
+		}
+		return null;
 	}
 
 	private Operation CreateMoveOperation(int dx, int dy, int dz)
