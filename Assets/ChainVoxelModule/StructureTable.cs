@@ -42,6 +42,29 @@ public class StructureTable {
 		groupMembersTable.Add(gid, new HashSet<string>());
 	}
 
+
+	/**
+	 * Structure Table にグループ(gid)を作成する．
+	 * 既に作成されたグループのgidの場合は実行されない．
+	 * @param gid グループ識別子
+	 * @see Operation
+	 */
+	private void destroy(string gid) {
+		if (groupMembersTable.ContainsKey(gid)) { return; } // 既にグループ(gid)が存在する
+		groupMembersTable.Add(gid, new HashSet<string>());
+
+		/*
+		List<Voxel> voxelList = this.getVoxelList(posID);
+
+		// step2: 負のvoxelより古いvoxelを削除する
+		for (int i = voxelList.Count - 1; i >= 0; --i) { // 先頭から削除するとイテレータがおかしくなる
+			if (this.negativeVoxels[posID].getTimestamp() >= voxelList[i].getTimestamp()) {
+				voxelList.RemoveAt(i); 
+			}
+		}
+		*/
+	}
+
 	/**
      * グループ(gid)にvoxel(posID)を参加させる
      * @param ts タイムスタンプ
@@ -56,7 +79,7 @@ public class StructureTable {
 
 		// groupEntriesTable に Group(gid, ts) を追加
 		if (!this.groupEntriesTable.ContainsKey(posID)) {
-			this.groupEntriesTable.Add(posID, new HashSet<Group>());
+			this.groupEntriesTable.Add(posID, new HashSet<Group>(new GroupComparer())); //バグってた
 		}
 		this.groupEntriesTable[posID].Add(aGroup); 
 
@@ -66,6 +89,17 @@ public class StructureTable {
 		// タイムスタンプの値を最新の値に更新する
 		long maxTs = Util.Max(ts, this.getTimestamp(posID, gid));
 		this.setTimestamp(maxTs, posID, gid);
+	}
+
+	/**
+     * 指定したグループにvoxelたちを全て同時刻に参加させる
+     * @param ts タイムスタンプ
+     * @param posIDs voxel識別子たち
+     * @param gid グループ識別子
+     * @see Operation
+     */
+	public void joinAll(long ts, string[] posIDs, string gid) {
+		foreach (string posID in posIDs) this.join(ts, posID, gid);
 	}
 
 	/**
@@ -84,14 +118,23 @@ public class StructureTable {
 		if (!groupEntriesSet.Contains(aGroup) || Mathf.Abs(this.getTimestamp(posID, gid)) >= ts) {
 			return;
 		} 
-
-		//TODO(Tasuku): バグの元
-		// groupMembersTable から posID を削除 (グループからの脱退)
 		this.groupMembersTable[gid].Remove(posID);
 
 		// タイムスタンプの更新 + tombstone化
 		long minTs = Util.Min(-1L * ts, this.getTimestamp(posID, gid));
 		this.setTimestamp(minTs, posID, gid);
+	}
+
+	/**
+     * グループ(gid)からvoxel(posID)たちをすべて同時刻に脱退させる
+     * @param sid site識別子
+     * @param ts タイムスタンプ
+     * @param posIDs voxel識別子たち
+     * @param gid グループ識別子
+     * @see Operation
+     */
+	public void leaveAll(int sid, long ts, string[] posIDs, string gid) {
+		foreach (string posID in posIDs) this.leave(sid, ts, posID, gid);
 	}
 
 	/**
@@ -163,11 +206,11 @@ public class StructureTable {
 
 	/**
 	 * NEW!!
-	 * posIDに紐付いたgidのハッシュセット（リスト）を応答する。
+	 * posIDに紐付いたGroupのハッシュセット（リスト）を応答する。
 	 * @param posID voxel識別子
 	 * @return gid グループIDのハッシュセット
 	 */
-	public HashSet<Group> getGroupIDs(string posID) {
+	public HashSet<Group> getGroups(string posID) {
 		if (this.groupEntriesTable.ContainsKey (posID)) {
 			return this.groupEntriesTable [posID];
 		}
@@ -226,7 +269,9 @@ public class StructureTable {
 		Debug.Log(this.getStatusString());
 	}
 
-
+	public void show() {
+		Debug.Log(this.getStatusString());
+	}
 
 	/**
 	 * Test a StructureTable class.
@@ -240,10 +285,6 @@ public class StructureTable {
 		for (int i = 0; i < 5; ++i) {
 			gids.Add(i.ToString()); //UUID.randomUUID().tostring()
 		}
-
-		for (int i = 0; i < 5; ++i) {
-			//System.out.println(posIDs.get(i) + " isGrouped() = " + stt.isGrouped(posIDs.get(i)));
-		}
 		*/
 
 		string res="";
@@ -255,6 +296,7 @@ public class StructureTable {
 			gids.Add(i.ToString()); //UUID.randomUUID().tostring()
 		}
 
+		/*
 		stt.create(gids[0]);	
 		stt.create(gids[0]); // 既にあるグループを作成
 
@@ -262,22 +304,20 @@ public class StructureTable {
 		stt.join(2L, posIDs[1], gids[0]);
 		stt.join(3L, posIDs[2], gids[0]);
 		stt.leave(1, 4L, posIDs[1], gids[0]);
-		//res += stt.getStatusString();
+		stt.show("正常な参加・脱退");
 
 		res = "";
 		stt.join(5L, posIDs[0], gids[1]); // 存在しないグループへの参加
 		stt.leave(1, 5L, posIDs[1], gids[1]); // 参加していないグループからの脱退
-		//res += stt.getStatusString(); //不正な参加、脱退
+		stt.show("不正な参加・脱退");
 
-
-		/* Bug */
 		stt.create(gids[1]);
 		stt.create(gids[2]);
 		stt.create(gids[3]);
 		stt.join(6L, posIDs[0], gids[1]);
 		stt.join(7L, posIDs[3], gids[3]);
 		stt.leave(1, 8L, posIDs[3], gids[3]);
-		//res += stt.getStatusString(); //グループの追加
+		stt.show("グループの追加");
 
 		stt.join(8L, posIDs[1], gids[2]);
 		stt.join(9L, posIDs[1], gids[2]);
@@ -285,8 +325,21 @@ public class StructureTable {
 		stt.leave(1, 8L, posIDs[0], gids[0]);
 		stt.leave(1, 10L, posIDs[0], gids[0]);
 		stt.leave(1, 11L, posIDs[0], gids[1]);
-		res += stt.getStatusString(); //複数のjoin・leaveの収束結果
-		Debug.Log(res);
+		stt.show("複数のjoin・leaveの収束結果");
+		*/
+
+
+		foreach (string gid in gids) {
+			stt.create(gid);
+			stt.joinAll(1L, posIDs.ToArray(), gid);
+		}
+		stt.show("同時にjoin");
+
+
+		foreach (string gid in gids) {
+			stt.leaveAll(1, 12L, posIDs.ToArray(), gid);
+		}
+		stt.show("同時にleave");
 	}
 
 }

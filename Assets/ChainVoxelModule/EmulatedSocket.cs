@@ -48,22 +48,13 @@ public class EmulatedSocket
 				return;
 			}
 
-
 			string receivedMessage = System.Text.Encoding.Default.GetString (this.socketBuffer, 0, len);
 			receivedMessage = receivedMessage.Trim();
 			if (receivedMessage.IndexOf("OPERATION_FAIL") == 0) {
 				Debug.LogError(receivedMessage); //TODO(Tasuku): Think about this errors
 			}
-
 			Operation op = Operation.FromJson(receivedMessage);
-			//Debug.Log ("受信したJson: " + Operation.ToJson(op));
-
-			//Debug.Log ("始まり at OnReceiveData()");
-			//ChainVoxel cv = this.controller.getChainVoxel ();
 			this.controller.cv.apply (op);
-
-			//Debug.Log ("終わり at OnReceiveData()");
-			//Debug.Log ("--------------------");
 
 			this.socket.BeginReceive (socketBuffer, 0, this.socketBuffer.Length,
 				SocketFlags.None, this.OnReceiveData, socket);

@@ -53,19 +53,23 @@ public class Group {
 	 */
 	public static void Test() {
 		long timestamp = Util.currentTimeNanos();
-		string groupId = "1:1:1";
+		string groupId = "g1";
 
 		Group g = new Group(groupId, timestamp);
 		Debug.Assert(g.getTimestamp() == timestamp);
 		Debug.Assert(g.getGroupId() == groupId);
 
 		HashSet<Group> set = new HashSet<Group>(new GroupComparer());
-		set.Add(new Group("1:1:1", 100));
-		set.Add(new Group("1:2:1", 200));
-		set.Add(new Group("1:1:1", 200));
+		set.Add(new Group("g1", 100));
+		set.Add(new Group("g2", 200));
+		set.Add(new Group("g1", 200));
 		int cnt=0;
 		foreach(Group aGroup in set) { cnt++; }
 		Debug.Assert(cnt == 2);
+
+
+		Debug.Assert(set.Contains(new Group("g1", 200)));
+		Debug.Assert(set.Contains(new Group("g2", 2)));
 	}
 }
 

@@ -16,5 +16,6 @@ public class Tester : MonoBehaviour
 		//Group.Test();
 		//ChainVoxel.Test();	
 		//StructureTable.Test();	
+		EmulatedWebSocket.Test();
 	}
 }

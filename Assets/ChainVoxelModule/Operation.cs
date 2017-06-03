@@ -42,6 +42,36 @@ public class Operation {
 	public const int MOVE = 5;
 
 	/**
+     * insertAll操作を示す定数
+     */
+	public const int INSERT_ALL = 6;
+
+	/**
+     * delete操作を示す定数
+     */
+	public const int DELETE_ALL = 7;
+
+	/**
+     * create操作を示す定数
+     */
+	public const int CREATE_ALL = 8;
+
+	/**
+     * join操作を示す定数
+     */
+	public const int JOIN_ALL = 9;
+
+	/**
+     * leave操作を示す定数 
+     */
+	public const int LEAVE_ALL = 10;
+
+	/**
+     * move操作を示す定数
+     */
+	public const int MOVE_ALL = 11;
+
+	/**
      * 操作を行なったSiteの識別子
      */
 	private int sid;
@@ -94,7 +124,14 @@ public class Operation {
 			new List<string>() {"gid"}, // create
 			new List<string>() {"posID", "gid"}, // join
 			new List<string>() {"posID", "gid"}, // leave
-			new List<string>() {"posID","destPosID"} // move
+			new List<string>() {"posID","destPosID"}, // move
+
+			new List<string>() {"posIDs", "textureTypes"}, // insertAll
+			new List<string>() {"posIDs"}, // deleteAll
+			new List<string>() {"gids"}, // createAll
+			new List<string>() {"posIDs", "gid"}, // joinAll
+			new List<string>() {"posIDs", "gid"}, // leaveAll
+			new List<string>() {"posIDs","destPosID"} // moveAll
 		};
 		return this.opParams.HasFields(requirements[this.opType].ToArray() );
 	}
@@ -103,6 +140,10 @@ public class Operation {
 
 	public void setTextureType(int textureType) {
 		this.opParams.AddField ("textureType", textureType.ToString());
+	}
+	public void setTextureTypes(List<int> textureTypes) {
+		Debug.LogError("工事中");
+		//this.opParams.AddField ("textureType", textureType.ToString());
 	}
 
 	/* Not exist setter method as much as possible. Because, class field should not be changed since init. */
@@ -134,6 +175,17 @@ public class Operation {
 	}
 
 	/**
+     * Voxelの識別子のリストを返す．
+     * @return voxelの識別子
+     */
+	public string[] getPosIDs() {
+		if (this.opParams.HasField("posIDs")) {
+			return this.opParams.GetField("posIDs").str.Split(Const.SPLIT_CHAR);
+		}
+		else return null;
+	}
+
+	/**
      * 移動先voxelの識別子を返す．
      * @return voxelの識別子
      */
@@ -150,11 +202,27 @@ public class Operation {
 	}
 
 	/**
+     * Voxelのテクスチャ番号のリストを返す．
+     * @return テクスチャ番号
+     */
+	public string getTextureTypes() {
+		return this.opParams.HasField ("textureTypes") ? this.opParams.GetField ("textureTypes").str : ""; 
+	}
+
+	/**
      * Group IDを返す．
      * @return voxelの識別子
      */
 	public string getGID() {
 		return this.opParams.HasField("gid") ? this.opParams.GetField("gid").str : "";
+	}
+
+	/**
+     * Group IDのリストを返す．
+     * @return voxelの識別子
+     */
+	public string getGIDs() {
+		return this.opParams.HasField("gids") ? this.opParams.GetField("gids").str : "";
 	}
 
 	/**

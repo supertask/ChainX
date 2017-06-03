@@ -54,7 +54,7 @@ public class ChainVoxel {
 		this.insertedPosIDs = new List<string> ();
 		this.deletedPosIDs = new List<string> ();
 		this.movedPosIDs = new Dictionary<string,string>();
-		this.textPath = Application.dataPath + "/Resources/Text/worked3D.txt";
+		if (!Directory.Exists (Const.SAVED_DIR)) Directory.CreateDirectory(Const.SAVED_DIR);
 	}
 
 	/**
@@ -65,34 +65,37 @@ public class ChainVoxel {
      * @see Operation
      */
 	public void apply(Operation op) {
-		string posID = op.getPosID();
-
-		switch (op.getOpType()) {
-		case Operation.INSERT:
-			if (this.stt.isGrouped(posID)) break;
-			this.insert(op);
-			break;
-		case Operation.DELETE:
-			if (this.stt.isGrouped(posID)) break;
-			this.delete(op);
-			break;
-		case Operation.CREATE:
-			this.create(op);
-			break;
-		case Operation.JOIN:
-			this.join(op);
-			break;
-		case Operation.LEAVE:
-			this.leave(op);
-			break;
-		case Operation.MOVE:
-			this.move(op);
-			break;
-		default:
-			Debug.Assert (false);
-			break;
-		}
 		lock (ChainXController.thisLock) {
+			string posID = op.getPosID();
+
+			switch (op.getOpType()) {
+			case Operation.INSERT:
+				if (this.stt.isGrouped(posID)) break;
+				this.insert(op);
+				break;
+			case Operation.DELETE:
+				if (this.stt.isGrouped(posID)) break;
+				this.delete(op);
+				break;
+			case Operation.CREATE:
+				this.create(op);
+				break;
+			case Operation.JOIN:
+				this.join(op);
+				break;
+			case Operation.LEAVE:
+				this.leave(op);
+				break;
+			case Operation.MOVE:
+				this.move(op);
+				break;
+			case Operation.JOIN_ALL:
+				this.joinAll(op);
+				break;
+			default:
+				Debug.Assert (false);
+				break;
+			}
 			this.controller.log = this.show ();
 		}
 		return;
@@ -109,7 +112,8 @@ public class ChainVoxel {
 		string posID = (op.getOpType() == Operation.MOVE) ? op.getDestPosID() : op.getPosID();
 		long timestamp = op.getTimestamp();
 		Voxel insertVoxel = new Voxel(id, textureType, timestamp);
-		//Debug.Log (GameObject.Find (posID));
+
+		//Debug.Log(op.getOpType());
 
 		List<Voxel> voxelList = this.getVoxelList(posID);
 
@@ -148,7 +152,7 @@ public class ChainVoxel {
 		}
 
 		List<Voxel> voxelList = this.getVoxelList(posID);
-		Voxel tmpVoxel = this.getVoxel (posID);
+		Voxel tmpVoxel = this.getVoxel (posID); //NULL(06/03/2017)
 		int textureType = tmpVoxel.getTextureType ();
 
 		// step2: 負のvoxelより古いvoxelを削除する
@@ -196,11 +200,7 @@ public class ChainVoxel {
      * @see Operation
      */
 	public void joinAll(Operation op) {
-		/*
-		foreach (string posID in op.getPosIDs())  {
-			this.stt.join(op.getTimestamp(), posID, op.getGID());
-		}
-		*/
+		this.stt.joinAll(op.getTimestamp(), op.getPosIDs(), op.getGID());
 	}
 
 	/**
@@ -288,10 +288,10 @@ public class ChainVoxel {
 	/*
 	 * 
 	 */
-	public void LoadFile()
+	public void LoadSavedData(string saved_data)
 	{
 		try {
-			using (StreamReader reader = new StreamReader(this.textPath)) {
+			using (StringReader reader = new StringReader(saved_data)) {
 
 				string line =reader.ReadLine();
 				string gid = "";
@@ -346,12 +346,12 @@ public class ChainVoxel {
 	/*
 	 * 
 	 */
-	public void WriteToFile()
+	public string GetSavedData()
 	{
-		Debug.Log(this.show());
-
+		//Debug.Log(this.show());
+		string saved_data = "";
 		try {
-			using (StreamWriter writer = new StreamWriter(this.textPath)) {
+			using (StringWriter writer = new StringWriter()) {
 				foreach (KeyValuePair<string, List<Voxel>> p in this.atoms) {
 					string posID = p.Key;
 					Voxel aVoxel = this.getVoxel(posID);
@@ -366,14 +366,14 @@ public class ChainVoxel {
 				writer.WriteLine("e");
 				writer.Flush();
 				writer.Close();
+				return writer.ToString();
 			}
 		} catch (Exception e) {
 			// Let the user know what went wrong.
 			Debug.LogError(e.Message);
+			return "";
 		}
 	}
-
-
 
 	/**
 	 * Test a ChainVoxel class.
