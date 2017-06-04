@@ -167,16 +167,18 @@ public class ChainXController : MonoBehaviour
 		foreach (string posID in this.cv.deletedPosIDs) {
 			GameObject anObj = GameObject.Find (posID);
 			if (anObj != null) {
-				if (anObj == this.selectedObjects[0]){
-					/*
-					 * For changing selectedObject.
-					 */
-					if (this.cv.movedPosIDs.ContainsKey(posID)) {
-						string destPosID = this.cv.movedPosIDs[posID];	
-						GameObject destObj = GameObject.Find (destPosID);
-						if (destObj != null) {
-							this.selectedObjects[0] = destObj;
-							this.selectedObjects[0].GetComponent<Renderer> ().material.shader = Shader.Find ("Toon/Basic Outline");
+				if (this.selectedObjects.Count > 0) {
+					if (anObj == this.selectedObjects [0]) { //ここでout of range
+						/*
+						 * For changing selectedObject.
+				 		 */
+						if (this.cv.movedPosIDs.ContainsKey (posID)) {
+							string destPosID = this.cv.movedPosIDs [posID];	
+							GameObject destObj = GameObject.Find (destPosID);
+							if (destObj != null) {
+								this.selectedObjects [0] = destObj;
+								this.selectedObjects [0].GetComponent<Renderer> ().material.shader = Shader.Find ("Toon/Basic Outline");
+							}
 						}
 					}
 				}

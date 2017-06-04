@@ -12,7 +12,7 @@ public class EmulatedWebSocket
 
 	public EmulatedWebSocket(ChainXController aController) {
 		this.controller = aController;
-		this.ws = new WebSocket(new Uri("ws://127.0.0.1:18080"));
+		this.ws = new WebSocket(new Uri("ws://localhost:18080"));
 	}
 
 	public IEnumerator Connect() {
@@ -43,15 +43,16 @@ public class EmulatedWebSocket
 	private void operate(string receivedMessage)
 	{
 		receivedMessage = receivedMessage.Trim();
-		if (receivedMessage.IndexOf(MessageType.OPERATION) == 0) {
-			receivedMessage = receivedMessage.Remove(0, MessageHeader.OPERATION.Length);
+		if (receivedMessage.IndexOf(MessageHeader.OPERATION) == 0) {
+			receivedMessage = receivedMessage.Remove(0, MessageHeader.OPERATION.Length).Trim();
+			Debug.Log (receivedMessage);
 			Operation op = Operation.FromJson(receivedMessage);
 			this.controller.cv.apply (op);
 		}
-		if (receivedMessage.IndexOf(MessageType.ERROR) == 0) {
+		if (receivedMessage.IndexOf(MessageHeader.ERROR) == 0) {
 			Debug.LogError(receivedMessage); //TODO(Tasuku): Think about this errors
 		}
-		else if (receivedMessage.IndexOf(MessageType.TEXT_FILE) == 0) {
+		else if (receivedMessage.IndexOf(MessageHeader.TEXT_FILE) == 0) {
 			receivedMessage = receivedMessage.Remove(0, MessageHeader.TEXT_FILE.Length).Trim();
 			this.controller.cv.LoadSavedData(receivedMessage);
 		}
