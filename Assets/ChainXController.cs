@@ -99,6 +99,7 @@ public class ChainXController : MonoBehaviour
 			}
 			if (o != null) {
 				this.socket.Send (MessageHeader.OPERATION + Operation.ToJson (o) + "\n");
+				Debug.Log(this.cv.show());
 			}
 		}
 	}

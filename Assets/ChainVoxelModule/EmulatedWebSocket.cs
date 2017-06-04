@@ -52,7 +52,7 @@ public class EmulatedWebSocket
 			Debug.LogError(receivedMessage); //TODO(Tasuku): Think about this errors
 		}
 		else if (receivedMessage.IndexOf(MessageType.TEXT_FILE) == 0) {
-			receivedMessage = receivedMessage.Remove(0, MessageHeader.TEXT_FILE.Length);
+			receivedMessage = receivedMessage.Remove(0, MessageHeader.TEXT_FILE.Length).Trim();
 			this.controller.cv.LoadSavedData(receivedMessage);
 		}
 	}

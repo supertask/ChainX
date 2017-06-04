@@ -22,8 +22,8 @@ public class MessageType {
 }
 
 public class MessageHeader {
-	public static string OPERATION = MessageType.OPERATION + ":\n";
-	public static string TEXT_FILE = MessageType.TEXT_FILE + ":\n"; //no used
-	public static string ERROR = MessageType.ERROR + ":\n"; //no used
+	public static string OPERATION = MessageType.OPERATION + ":";
+	public static string TEXT_FILE = MessageType.TEXT_FILE + ":"; //no used
+	public static string ERROR = MessageType.ERROR + ":"; //no used
 	public static string EXIT = MessageType.EXIT; //no used
 }

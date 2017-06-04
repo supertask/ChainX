@@ -91,6 +91,12 @@ public class Voxel {
 		return 0;
 	}
 
+	/*
+	 * 
+	 */
+	public override string ToString() {
+		return "id=" + this.getId() + ", textureType=" + this.getTextureType() + ", timestamp=" + this.getTimestamp();
+	}
 
 	/**
 	 * Test a Voxel class.

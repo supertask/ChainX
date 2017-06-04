@@ -151,12 +151,18 @@ public class ChainVoxel {
 			this.negativeVoxels[posID] = new Voxel(timestamp);
 		}
 
+		//DEBUG!!!!!!
+		foreach (KeyValuePair<string,Voxel> aVoxel in this.negativeVoxels) {
+			Debug.Log(aVoxel.ToString());
+		}
+
 		List<Voxel> voxelList = this.getVoxelList(posID);
 		Voxel tmpVoxel = this.getVoxel (posID); //NULL(06/03/2017)
 		int textureType = tmpVoxel.getTextureType ();
 
 		// step2: 負のvoxelより古いvoxelを削除する
 		for (int i = voxelList.Count - 1; i >= 0; --i) { // 先頭から削除するとイテレータがおかしくなる
+			Debug.Log(voxelList[i]);
 			if (this.negativeVoxels[posID].getTimestamp() >= voxelList[i].getTimestamp()) {
 				voxelList.RemoveAt(i); 
 			}
