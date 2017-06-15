@@ -92,6 +92,9 @@ public class ChainVoxel {
 			case Operation.JOIN_ALL:
 				this.joinAll(op);
 				break;
+			case Operation.LEAVE_ALL:
+				this.leaveAll(op);
+				break;
 			default:
 				Debug.Assert (false);
 				break;
@@ -220,6 +223,15 @@ public class ChainVoxel {
 	}
 
 	/**
+     * 指定したグループにvoxelたちを全て同時刻に離脱させるメソッド
+     * @param op 操作オブジェクト
+     * @see Operation
+     */
+	public void leaveAll(Operation op) {
+		this.stt.leaveAll(op.getSID(), op.getTimestamp(), op.getPosIDs(), op.getGID());
+	}
+
+	/**
      * 指定したposIDに対応するprimaryVoxelを返すメソッド
      * @param posID voxelの識別子
      * @return posIDに対応するvoxel，posIDに対応するものがない場合はnullを返す．
@@ -289,6 +301,13 @@ public class ChainVoxel {
 		//Debug.Log(res);
 
 		return res;
+	}
+
+	/**
+     * StructureTableの状態を表示する
+     */
+	public void showStructureTable() {
+		this.stt.show();	
 	}
 
 	/*

@@ -11,6 +11,7 @@ public class Const {
 	public static char SPLIT_CHAR = ',';
 	public static string SAVED_DIR = Application.persistentDataPath;
 	public static string SAVED_FILE = Application.persistentDataPath + "/worked3D.txt";
+	public static int UI_LAYER = 8;
 
 }
 

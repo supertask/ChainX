@@ -72,9 +72,12 @@ public class StructureTable {
      * @param gid グループ識別子
      * @see Operation
      */
-	public void join(long ts, string posID, string gid) {
+	public void join(long ts, string posID, string gid)
+	{
+		this.create(gid);
 		Group aGroup = new Group(gid, ts);
 		if (!this.groupMembersTable.ContainsKey(gid)) { return; }
+
 		if (Mathf.Abs(this.getTimestamp(posID, gid)) >= ts) { return; }
 
 		// groupEntriesTable に Group(gid, ts) を追加

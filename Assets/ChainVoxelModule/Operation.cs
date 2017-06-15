@@ -133,6 +133,11 @@ public class Operation {
 			new List<string>() {"posIDs", "gid"}, // leaveAll
 			new List<string>() {"posIDs","destPosID"} // moveAll
 		};
+		/*
+		Debug.Log(requirements[this.opType].Count);
+		Debug.Log(requirements[this.opType][0]);
+		Debug.Log(requirements[this.opType][1]);
+		*/
 		return this.opParams.HasFields(requirements[this.opType].ToArray() );
 	}
 

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,6 +21,10 @@ public class Util {
 	public static long Min(long left, long right) {
 		if (left < right) { return left; }
 		else { return right; }
+	}
+
+	public static string GetGUID() {
+		return Guid.NewGuid ().ToString ().Replace("-", "");
 	}
 
 	/*

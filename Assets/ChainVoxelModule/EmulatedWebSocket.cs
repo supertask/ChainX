@@ -45,9 +45,12 @@ public class EmulatedWebSocket
 		receivedMessage = receivedMessage.Trim();
 		if (receivedMessage.IndexOf(MessageHeader.OPERATION) == 0) {
 			receivedMessage = receivedMessage.Remove(0, MessageHeader.OPERATION.Length).Trim();
-			Debug.Log (receivedMessage);
+			//Debug.Log (receivedMessage);
 			Operation op = Operation.FromJson(receivedMessage);
+			Debug.Log(Operation.ToJson(op));
+			//Debug.Log(receivedMessage);
 			this.controller.cv.apply (op);
+			this.controller.cv.showStructureTable();
 		}
 		if (receivedMessage.IndexOf(MessageHeader.ERROR) == 0) {
 			Debug.LogError(receivedMessage); //TODO(Tasuku): Think about this errors

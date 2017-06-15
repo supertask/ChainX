@@ -17,8 +17,25 @@ public class ChainXController : MonoBehaviour
 	private List<GameObject> selectedObjects;
 
 	IEnumerator Start() {
+		//GameObject anObj = GameObject.Find("PaintTool");
+		//anObj.layer = Const.UI_LAYER;
+		/*
+		foreach(Transform aChildTransform in anObj.transform) {
+			aChildTransform.gameObject.layer = Const.UI_LAYER;
+		}
+		*/
+		//Camera.main.orthographicSize = fullSize/2f;
+		GameObject anObj = this.CreateVoxel(2, "SelectingVoxel", new Vector3(0,0,0));
+		anObj.layer = Const.UI_LAYER;
+
+		/*
+		*/
+		//Vector3 tmp = Camera.main.ScreenToWorldPoint (new Vector3(70,40,8));
+		//GameObject voxelObj = GameObject.Find("UI3D/VoxelPlate");
+		//voxelObj.transform.position = tmp; 
+		//Debug.Log ("ワールド座標" + tmp);
+
 		this.cv = new ChainVoxel(this);
-		//this.cv.LoadFile();
 		this.selectedObjects = new List<GameObject> ();
 		this.socket = new EmulatedWebSocket (this);
 		StartCoroutine(this.socket.Connect());
@@ -31,6 +48,19 @@ public class ChainXController : MonoBehaviour
 
 			this.UpdateVoxels ();
 			this.SetUpGUICompornets ();
+
+				
+			Vector3 pos = Camera.main.ScreenToWorldPoint (new Vector3(0,-30,5));
+			GameObject ggg = GameObject.Find("PaintTool");
+			ggg.transform.position = pos;
+			foreach(Transform aChildTransform in ggg.transform) {
+				aChildTransform.position = pos;
+			}
+
+			ggg = GameObject.Find("SelectingVoxel");
+			ggg.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
+			ggg.transform.position = Camera.main.ScreenToWorldPoint (new Vector3(0,-30+30,5));
+
 
 			Operation o = null;
 			if (Input.GetKeyDown (KeyCode.B)) {
@@ -47,8 +77,7 @@ public class ChainXController : MonoBehaviour
 				if (hitObj) {
 					if (this.selectedObjects.Contains(hitObj)) {
 						if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) {
-							hitObj.GetComponent<Renderer> ().material.shader = Const.DIFFUSE_SHADER;
-							this.selectedObjects.Remove(hitObj);
+							this.RemoveToSelectedObjects(hitObj);
 						} else {
 							this.cleanSelectedObjects();
 							this.AddToSelectedObjects(hitObj);
@@ -69,7 +98,6 @@ public class ChainXController : MonoBehaviour
 					else
 						this.cleanSelectedObjects();
 				}
-				//Debug.Log(this.selectedObjects.Count);
 			}
 
 			if (this.selectedObjects.Count > 0) {
@@ -89,11 +117,26 @@ public class ChainXController : MonoBehaviour
 							o = new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}");
 						this.selectedObjects.Clear();
 					}
-					else if (Input.GetKeyDown (KeyCode.G)) {
-						/*
-						o = new Operation (0, Operation.JOIN_ALL, "{\"posIDs\": \"" + 
-							this.getPosIDsFromSelectedObjects() + "\"}");
-						*/
+					else if (Input.GetKeyDown (KeyCode.G))
+					{
+						string gid = "G" + Util.GetGUID();
+
+						if (this.selectedObjects.Count == 1) {
+							if (this.selectedObjects[0].transform.childCount > 0) {
+								//選択したオブジェクトが一つで、それがグループである場合、グループを解除
+								o = new Operation (0, Operation.LEAVE_ALL, "{\"posIDs\": \"" + 
+									this.getPosIDsFromSelectedObjects() + "\", \"gid\": \"" + gid +
+								"\"}");
+							}
+							else { o = null; }
+						}
+						else {
+							//グループをそもそも作成し忘れてる
+							o = new Operation (0, Operation.JOIN_ALL, "{\"posIDs\": \"" + 
+								this.getPosIDsFromSelectedObjects() + "\", \"gid\": \"" + gid +
+							"\"}");
+						}
+
 					}
 				}
 			}
@@ -112,17 +155,35 @@ public class ChainXController : MonoBehaviour
 		return res.TrimEnd(',');
 	}
 
+	private void applyShader(GameObject anObj, Shader aShader) {
+		if (anObj.transform.childCount == 0) {
+			anObj.GetComponent<Renderer>().material.shader = aShader;
+		}
+		else {
+			foreach(Transform aChildTransform in anObj.transform) {
+				aChildTransform.gameObject.GetComponent<Renderer>().material.shader = aShader;
+			}
+		}
+	}
+
 	private void cleanSelectedObjects()
 	{
-		foreach(GameObject anObj in this.selectedObjects)
-			anObj.GetComponent<Renderer> ().material.shader = Const.DIFFUSE_SHADER;
+		foreach(GameObject anObj in this.selectedObjects) {
+			this.applyShader(anObj, Const.DIFFUSE_SHADER);	
+		}
 		this.selectedObjects.Clear();
 	}
 
 	private void AddToSelectedObjects(GameObject hitObj)
 	{
-		hitObj.GetComponent<Renderer> ().material.shader = Const.TOON_SHADER;
+		this.applyShader(hitObj, Const.TOON_SHADER);	
 		this.selectedObjects.Add(hitObj);
+	}
+
+	private void RemoveToSelectedObjects(GameObject hitObj)
+	{
+		this.applyShader(hitObj, Const.DIFFUSE_SHADER);	
+		this.selectedObjects.Remove(hitObj);
 	}
 
 	private GameObject isHitVoxel()
@@ -132,7 +193,12 @@ public class ChainXController : MonoBehaviour
 		Regex r = new Regex( @"[-]?[\d]+:[-]?[\d]+:[-]?[\d]+");
 		if (Physics.Raycast (ray, out hit)) {
 			GameObject hitObj = hit.collider.gameObject;
-			if (r.IsMatch (hitObj.name)) return hitObj;
+			if (r.IsMatch (hitObj.name)) {
+				if (hitObj.transform.parent == null)
+					return hitObj;
+				else
+					return hitObj.transform.parent.gameObject;
+			}
 		}
 		return null;
 	}
@@ -147,6 +213,7 @@ public class ChainXController : MonoBehaviour
 				+ "\", \"destPosID\": \"" + destPosID + "\"}"); 
 	}
 
+
 	/*
 	 * 
 	 */
@@ -156,7 +223,7 @@ public class ChainXController : MonoBehaviour
 		 */
 		foreach (string posID in this.cv.insertedPosIDs) {
 			if (GameObject.Find (posID) == null) {
-				this.CreateVoxel (this.cv.getVoxel(posID).getTextureType(), posID);
+				this.CreateVoxelFromPosID(this.cv.getVoxel(posID).getTextureType(), posID);
 			}
 		}
 		cv.insertedPosIDs.Clear ();
@@ -177,7 +244,7 @@ public class ChainXController : MonoBehaviour
 							GameObject destObj = GameObject.Find (destPosID);
 							if (destObj != null) {
 								this.selectedObjects [0] = destObj;
-								this.selectedObjects [0].GetComponent<Renderer> ().material.shader = Shader.Find ("Toon/Basic Outline");
+								this.selectedObjects [0].GetComponent<Renderer> ().material.shader = Const.TOON_SHADER;
 							}
 						}
 					}
@@ -189,22 +256,48 @@ public class ChainXController : MonoBehaviour
 			}
 		}
 		cv.deletedPosIDs.Clear ();
+
+		/*
+		 * Structure Table
+		 */
+		//this.selectedObjects[0].transform.DetachChildren(); //グループ一括解除
+
+		/*
+		List<GameObject> groupObjs = new List<GameObject>();
+		foreach(GameObject anObj in this.selectedObjects) {
+			if (anObj.transform.childCount > 0)
+				groupObjs.Add(anObj);	
+		}
+		//groupObjs.Count == 0
+
+		GameObject groupObj = new GameObject("G" + Util.GetGUID());
+		foreach(GameObject anObj in this.selectedObjects)
+			anObj.transform.parent = groupObj.transform;
+		*/
 	}
 
 	/*
 	 * 
 	 * textureTypeまたは、colorTypeの一方は必ず0以上、もう一方は0未満にしなくてはならない。
 	 */
-	private void CreateVoxel(int textureType, string posID)
+	private GameObject CreateVoxel(int textureType, string name, Vector3 pos)
 	{
 		GameObject voxelObj = GameObject.CreatePrimitive (PrimitiveType.Cube);
-		Material material = new Material (Shader.Find ("Diffuse"));
+		Material material = new Material (Const.DIFFUSE_SHADER);
 		//Material material = new Material(Shader.Find("Toon/Lit Outline")); //影をつける
 		Texture2D texture = Resources.Load<Texture2D> ("Textures/" + textureType.ToString());
 		material.mainTexture = texture;
 		voxelObj.GetComponent<Renderer> ().material = material;
-		voxelObj.name = posID;
-		voxelObj.transform.position = this.ConvertPosID (posID);
+		voxelObj.name = name;
+		voxelObj.transform.position = pos;
+
+		return voxelObj;
+	}
+
+	private void CreateVoxelFromPosID(int textureType, string posID)
+	{
+		Vector3 pos = this.ConvertPosID (posID);
+		this.CreateVoxel(textureType, posID, pos);
 	}
 
 	public Vector3 ConvertPosID(string posID) {
