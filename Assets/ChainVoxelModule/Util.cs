@@ -27,6 +27,17 @@ public class Util {
 		return Guid.NewGuid ().ToString ().Replace("-", "");
 	}
 
+	public static int mod(int m, int n) {
+		if (n < 0) {
+			Debug.LogError("you cannot use minus for modulo.");
+		}
+		if (m < 0) {
+			m = -1 * m;
+			return n - (m % n);
+		}
+		return m % n;
+	}
+
 	/*
 	public static dynamic ConvertType(dynamic anObject) {
 		if (anObject.GetType() == typeof(int)) { return (int) anObject; }

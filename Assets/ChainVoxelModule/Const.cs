@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 public class Const {
@@ -12,6 +13,12 @@ public class Const {
 	public static string SAVED_DIR = Application.persistentDataPath;
 	public static string SAVED_FILE = Application.persistentDataPath + "/worked3D.txt";
 	public static int UI_LAYER = 8;
+	public static Regex REGEX_POSID = new Regex( @"[-]?[\d]+:[-]?[\d]+:[-]?[\d]+");
+	public static int NUMBER_OF_TEXTURE = 9;
+	public static Vector3 PAINT_TOOL_PLATE_POSITION = Camera.main.ScreenToWorldPoint (new Vector3(0,-30,5));
+	public static Vector3 PAINT_TOOL_POINTER_POSITION = Camera.main.ScreenToWorldPoint (new Vector3(0,-30,5));
+	public static Vector3 PAINT_TOOL_VOXEL_POSITION = Camera.main.ScreenToWorldPoint (new Vector3(0,0,5));
+
 
 }
 

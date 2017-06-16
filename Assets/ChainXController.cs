@@ -10,13 +10,16 @@ public class ChainXController : MonoBehaviour
 	private EmulatedWebSocket socket;
 	private ChainXModel model;
 	public ChainVoxel cv;
+	private GameObject paintTool;
 	public string log;
 	public static object thisLock = new object();
 
-	private GameObject selectedObject;
 	private List<GameObject> selectedObjects;
 
 	IEnumerator Start() {
+		this.model = new ChainXModel();
+		this.paintTool = this.getPaintToolObj(this.model.getCurrentPaintTool());
+
 		//GameObject anObj = GameObject.Find("PaintTool");
 		//anObj.layer = Const.UI_LAYER;
 		/*
@@ -24,9 +27,8 @@ public class ChainXController : MonoBehaviour
 			aChildTransform.gameObject.layer = Const.UI_LAYER;
 		}
 		*/
-		//Camera.main.orthographicSize = fullSize/2f;
-		GameObject anObj = this.CreateVoxel(2, "SelectingVoxel", new Vector3(0,0,0));
-		anObj.layer = Const.UI_LAYER;
+		//GameObject anObj = this.CreateVoxel(2, "SelectingVoxel", new Vector3(0,0,0));
+		//anObj.layer = Const.UI_LAYER;
 
 		/*
 		*/
@@ -49,32 +51,34 @@ public class ChainXController : MonoBehaviour
 			this.UpdateVoxels ();
 			this.SetUpGUICompornets ();
 
-				
-			Vector3 pos = Camera.main.ScreenToWorldPoint (new Vector3(0,-30,5));
 			GameObject ggg = GameObject.Find("PaintTool");
-			ggg.transform.position = pos;
+			ggg.transform.position = Const.PAINT_TOOL_PLATE_POSITION;
 			foreach(Transform aChildTransform in ggg.transform) {
-				aChildTransform.position = pos;
+				aChildTransform.position = Const.PAINT_TOOL_PLATE_POSITION;
 			}
 
+			/*
 			ggg = GameObject.Find("SelectingVoxel");
 			ggg.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
 			ggg.transform.position = Camera.main.ScreenToWorldPoint (new Vector3(0,-30+30,5));
+			*/
 
 
 			Operation o = null;
-			if (Input.GetKeyDown (KeyCode.B)) {
-			}
-			else if (Input.GetKeyDown (KeyCode.V)) {
+			if (Input.GetKeyDown (KeyCode.V)) {
 				o = new Operation (0, Operation.INSERT,
 					"{\"posID\": \"" + Operation.CreateRandomPosID (5) +
 					"\", \"textureType\":\"" + UnityEngine.Random.Range (0, 8) + "\"}");
 			}
 			else if (Input.GetMouseButtonDown(Const.MOUSE_LEFT_CLICK))
 			{
-				GameObject hitObj = this.isHitVoxel ();
+				GameObject hitObj = this.getHitObject();
 
-				if (hitObj) {
+				if (hitObj != null && Const.REGEX_POSID.IsMatch (hitObj.name)) {
+					if (hitObj.transform.parent != null) {
+						hitObj = hitObj.transform.parent.gameObject;
+					}
+
 					if (this.selectedObjects.Contains(hitObj)) {
 						if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) {
 							this.RemoveToSelectedObjects(hitObj);
@@ -95,8 +99,23 @@ public class ChainXController : MonoBehaviour
 				}
 				else {
 					if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) { }
-					else
-						this.cleanSelectedObjects();
+					else { this.cleanSelectedObjects(); }
+
+					Ray ray = GameObject.Find("SubCamera").GetComponent<Camera>().ScreenPointToRay (Input.mousePosition);
+					RaycastHit hit = new RaycastHit ();
+					if (Physics.Raycast (ray, out hit)) {
+						hitObj = hit.collider.gameObject;
+						if (hitObj.name == "ArrowLeft") {
+							this.paintTool = this.getPaintToolObj(this.model.getPaintTool(-1,0));
+						}
+						else if (hitObj.name == "ArrowRight") {
+							this.paintTool = this.getPaintToolObj(this.model.getPaintTool(1,0));
+						}
+						else if (hitObj.name == "ArrowTop") {
+							this.paintTool = this.getPaintToolObj(this.model.getPaintTool(0,1));
+						}
+						paintTool.layer = Const.UI_LAYER;
+					}
 				}
 			}
 
@@ -112,7 +131,7 @@ public class ChainXController : MonoBehaviour
 				{
 					if (Input.GetKeyDown (KeyCode.D)) {
 						//Here
-						//TODO(Tasuku): selectedObjectを編集する
+						//TODO(Tasuku): selectedObjectsを編集する
 						foreach (GameObject anObj in this.selectedObjects)
 							o = new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}");
 						this.selectedObjects.Clear();
@@ -147,6 +166,32 @@ public class ChainXController : MonoBehaviour
 		}
 	}
 
+
+	private GameObject getPaintToolObj(string paintToolStr) {
+		if (paintToolStr == ChainXModel.PAINT_TOOL_POINTER_ID) {
+			GameObject anObj = GameObject.Find("MouseCursor");
+			anObj.transform.position = Const.PAINT_TOOL_POINTER_POSITION;
+			return anObj;
+		}
+		else if (paintToolStr.IndexOf(ChainXModel.PAINT_TOOL_VOXEL_ID) > -1) {
+			int textureType = int.Parse(paintToolStr.Remove(0, ChainXModel.PAINT_TOOL_VOXEL_ID.Length));
+			GameObject selectingVoxel = GameObject.Find("SelectingVoxel");
+			if (selectingVoxel == null) {
+				return this.CreateVoxel(textureType, "SelectingVoxel", Const.PAINT_TOOL_VOXEL_POSITION);
+			}
+			else {
+				Texture2D texture = Resources.Load<Texture2D> ("Textures/" + textureType.ToString());
+				selectingVoxel.GetComponent<Renderer>().material.mainTexture = texture;
+				return selectingVoxel;
+			}
+		}
+		else if (paintToolStr == ChainXModel.PAINT_TOOL_GROUP_ID) {
+			return null;
+		}
+		return null;
+	}
+
+
 	private string getPosIDsFromSelectedObjects() {
 		string res = "";
 		foreach (GameObject anObj in this.selectedObjects) {
@@ -155,6 +200,9 @@ public class ChainXController : MonoBehaviour
 		return res.TrimEnd(',');
 	}
 
+	/*
+	 * 
+	 */
 	private void applyShader(GameObject anObj, Shader aShader) {
 		if (anObj.transform.childCount == 0) {
 			anObj.GetComponent<Renderer>().material.shader = aShader;
@@ -186,21 +234,15 @@ public class ChainXController : MonoBehaviour
 		this.selectedObjects.Remove(hitObj);
 	}
 
-	private GameObject isHitVoxel()
-	{
+	private GameObject getHitObject() {
+
 		Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
 		RaycastHit hit = new RaycastHit ();
-		Regex r = new Regex( @"[-]?[\d]+:[-]?[\d]+:[-]?[\d]+");
 		if (Physics.Raycast (ray, out hit)) {
-			GameObject hitObj = hit.collider.gameObject;
-			if (r.IsMatch (hitObj.name)) {
-				if (hitObj.transform.parent == null)
-					return hitObj;
-				else
-					return hitObj.transform.parent.gameObject;
-			}
+			return hit.collider.gameObject;
+		} else {
+			return null;
 		}
-		return null;
 	}
 
 	private Operation CreateMoveOperation(int dx, int dy, int dz)
