@@ -28,7 +28,7 @@ var Server = function()
         socket.on('message', function (message) {
             console.log(message.toString());
             //var json_obj = JSON.parse(message);
-            socket.send(message); //送信者に返す
+            //socket.send(message); //送信者に返す
             server.broadcast(socket, message); //送信者以外にBroadcast
         });
         socket.on('close', function _onClose(message) {

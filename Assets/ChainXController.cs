@@ -18,10 +18,10 @@ public class ChainXController : MonoBehaviour
 
 	IEnumerator Start() {
 		this.model = new ChainXModel();
-		this.paintTool = GameObject.Find("MouseCursor");
+		this.paintTool = GameObject.Find(Const.UI_SELECTING_POINTER_NAME);
 		this.paintTool.GetComponent<Renderer>().enabled = false;
 		this.paintTool.layer = Const.UI_LAYER;
-		this.paintTool = this.CreateVoxel(0, "SelectingVoxel", Const.PAINT_TOOL_VOXEL_POSITION);
+		this.paintTool = this.CreateVoxel(0, Const.UI_SELECTING_VOXEL_NAME, Const.PAINT_TOOL_VOXEL_POSITION);
 		this.paintTool.layer = Const.UI_LAYER;
 
 		/*
@@ -63,7 +63,7 @@ public class ChainXController : MonoBehaviour
 				if (this.clickUI()) {
 					this.cleanSelectedObjects(); //Voxelの選択解除
 				}
-				else if (this.paintTool.name == "MouseCursor") {
+				else if (this.paintTool.name == Const.UI_SELECTING_POINTER_NAME) {
 					this.clickVoxel(); //マウスクリックしてオブジェクトを選択する
 				}
 				else {
@@ -113,6 +113,7 @@ public class ChainXController : MonoBehaviour
 				}
 			}
 			if (o != null) {
+				this.cv.apply(o);
 				this.socket.Send (MessageHeader.OPERATION + Operation.ToJson (o) + "\n");
 				Debug.Log(this.cv.show());
 			}
@@ -125,18 +126,19 @@ public class ChainXController : MonoBehaviour
 	 * 「後ろ側から手前に」辿っていき、Voxelを挿入する。
 	 */
 	private void paintVoxels() {
-		//UIを操作した際に、UIボタンと同時に、paintVoxelsも起動してしまう
 		Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
 		RaycastHit hit = new RaycastHit ();
 		if (Physics.Raycast (ray, out hit)) {
 			float distance = hit.distance - 0.5f;
 			Vector3 hitPointShort = ray.GetPoint(distance); //ヒットしたRayより少し手前のPointをたどる
-			Vector3 fixedhitPointShort = ChainXModel.GetRoundIntPoint(hitPointShort);
-			Debug.Log(hitPointShort.ToString());
-			Debug.Log(ChainXModel.GetRoundIntPoint(hitPointShort));
-			this.CreateVoxel(0, "xxx", fixedhitPointShort);
-
-			Debug.DrawLine(ray.origin, hitPointShort, Color.red, 60.0f, true);
+			Vector3 fixedHitPointShort = ChainXModel.GetRoundIntPoint(hitPointShort);
+			int textureType = int.Parse(this.paintTool.GetComponent<Text>().text);
+			Operation o = new Operation(0, Operation.INSERT,
+				"{\"posID\": \"" + this.CreatePosID(fixedHitPointShort) +
+				"\", \"textureType\":\"" + textureType + "\"}"
+			);
+			this.cv.apply(o);
+			//Debug.DrawLine(ray.origin, hitPointShort, Color.red, 60.0f, true); //レーザービーム
 		}
 	}
 
@@ -213,16 +215,18 @@ public class ChainXController : MonoBehaviour
 	private GameObject getPaintToolObj(string paintToolStr) {
 		GameObject anObj = null;
 		if (paintToolStr == ChainXModel.PAINT_TOOL_POINTER_ID) {
-			anObj = GameObject.Find("MouseCursor");
+			anObj = GameObject.Find(Const.UI_SELECTING_POINTER_NAME);
 			anObj.GetComponent<Renderer>().enabled = true;
 			anObj.transform.position = Const.PAINT_TOOL_POINTER_POSITION;
 		}
 		else if (paintToolStr.IndexOf(ChainXModel.PAINT_TOOL_VOXEL_ID) > -1) {
+			//TODO(Tasuku): Texture作成の部分をメソッド化する!!!!
 			int textureType = int.Parse(paintToolStr.Remove(0, ChainXModel.PAINT_TOOL_VOXEL_ID.Length));
-			anObj = GameObject.Find("SelectingVoxel");
+			anObj = GameObject.Find(Const.UI_SELECTING_VOXEL_NAME);
 			anObj.GetComponent<Renderer>().enabled = true;
 			anObj.transform.position = Const.PAINT_TOOL_VOXEL_POSITION;
 			Texture2D texture = Resources.Load<Texture2D> ("Textures/" + textureType.ToString());
+			anObj.GetComponent<Text>().text = textureType.ToString();
 			anObj.GetComponent<Renderer>().material.mainTexture = texture;
 		}
 		else if (paintToolStr == ChainXModel.PAINT_TOOL_GROUP_ID) {
@@ -287,13 +291,16 @@ public class ChainXController : MonoBehaviour
 
 	private Operation CreateMoveOperation(int dx, int dy, int dz)
 	{
-		Vector3 xyz;
-		xyz = this.selectedObjects[0].transform.position;
-		string posID = xyz.x + ":" + xyz.y + ":" + xyz.z;
-		string destPosID = (xyz.x+dx) + ":" + (xyz.y+dy) + ":" + (xyz.z+dz);
+		Vector3 pos;
+		pos = this.selectedObjects[0].transform.position;
+		string posID = this.CreatePosID(pos);
+		pos.Set(pos.x+dx, pos.y+dy, pos.z+dz);
+		string destPosID = this.CreatePosID(pos);
 		return new Operation (0, Operation.MOVE,"{\"posID\": \"" + posID
 				+ "\", \"destPosID\": \"" + destPosID + "\"}"); 
 	}
+
+	private string CreatePosID(Vector3 pos) { return pos.x + ":" + pos.y + ":" + pos.z; }
 
 
 	/*
@@ -371,6 +378,7 @@ public class ChainXController : MonoBehaviour
 		material.mainTexture = texture;
 		voxelObj.GetComponent<Renderer> ().material = material;
 		voxelObj.name = name;
+		voxelObj.AddComponent<Text>().text = textureType.ToString();
 		voxelObj.transform.position = pos;
 
 		return voxelObj;
