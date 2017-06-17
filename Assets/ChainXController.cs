@@ -18,17 +18,11 @@ public class ChainXController : MonoBehaviour
 
 	IEnumerator Start() {
 		this.model = new ChainXModel();
-		this.paintTool = this.getPaintToolObj(this.model.getCurrentPaintTool());
-
-		//GameObject anObj = GameObject.Find("PaintTool");
-		//anObj.layer = Const.UI_LAYER;
-		/*
-		foreach(Transform aChildTransform in anObj.transform) {
-			aChildTransform.gameObject.layer = Const.UI_LAYER;
-		}
-		*/
-		//GameObject anObj = this.CreateVoxel(2, "SelectingVoxel", new Vector3(0,0,0));
-		//anObj.layer = Const.UI_LAYER;
+		this.paintTool = GameObject.Find("MouseCursor");
+		this.paintTool.GetComponent<Renderer>().enabled = false;
+		this.paintTool.layer = Const.UI_LAYER;
+		this.paintTool = this.CreateVoxel(0, "SelectingVoxel", Const.PAINT_TOOL_VOXEL_POSITION);
+		this.paintTool.layer = Const.UI_LAYER;
 
 		/*
 		*/
@@ -57,12 +51,6 @@ public class ChainXController : MonoBehaviour
 				aChildTransform.position = Const.PAINT_TOOL_PLATE_POSITION;
 			}
 
-			/*
-			ggg = GameObject.Find("SelectingVoxel");
-			ggg.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
-			ggg.transform.position = Camera.main.ScreenToWorldPoint (new Vector3(0,-30+30,5));
-			*/
-
 
 			Operation o = null;
 			if (Input.GetKeyDown (KeyCode.V)) {
@@ -72,50 +60,15 @@ public class ChainXController : MonoBehaviour
 			}
 			else if (Input.GetMouseButtonDown(Const.MOUSE_LEFT_CLICK))
 			{
-				GameObject hitObj = this.getHitObject();
-
-				if (hitObj != null && Const.REGEX_POSID.IsMatch (hitObj.name)) {
-					if (hitObj.transform.parent != null) {
-						hitObj = hitObj.transform.parent.gameObject;
-					}
-
-					if (this.selectedObjects.Contains(hitObj)) {
-						if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) {
-							this.RemoveToSelectedObjects(hitObj);
-						} else {
-							this.cleanSelectedObjects();
-							this.AddToSelectedObjects(hitObj);
-						}
-					}
-					else {
-						if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
-							this.AddToSelectedObjects(hitObj);
-						else {
-							if (this.selectedObjects.Count > 0)
-								this.cleanSelectedObjects();
-							this.AddToSelectedObjects(hitObj);
-						}
-					}
+				if (this.clickUI()) {
+					this.cleanSelectedObjects(); //Voxelの選択解除
+				}
+				else if (this.paintTool.name == "MouseCursor") {
+					this.clickVoxel(); //マウスクリックしてオブジェクトを選択する
 				}
 				else {
-					if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) { }
-					else { this.cleanSelectedObjects(); }
-
-					Ray ray = GameObject.Find("SubCamera").GetComponent<Camera>().ScreenPointToRay (Input.mousePosition);
-					RaycastHit hit = new RaycastHit ();
-					if (Physics.Raycast (ray, out hit)) {
-						hitObj = hit.collider.gameObject;
-						if (hitObj.name == "ArrowLeft") {
-							this.paintTool = this.getPaintToolObj(this.model.getPaintTool(-1,0));
-						}
-						else if (hitObj.name == "ArrowRight") {
-							this.paintTool = this.getPaintToolObj(this.model.getPaintTool(1,0));
-						}
-						else if (hitObj.name == "ArrowTop") {
-							this.paintTool = this.getPaintToolObj(this.model.getPaintTool(0,1));
-						}
-						paintTool.layer = Const.UI_LAYER;
-					}
+					//VoxelまたはVoxelsが選択中のとき
+					this.paintVoxels(); //VoxelまたはVoxelsをペイントする
 				}
 			}
 
@@ -166,29 +119,116 @@ public class ChainXController : MonoBehaviour
 		}
 	}
 
+	/*
+	 * PaintToolのVoxelまたはグループVoxelが選択されていて、マウスクリックされたときに呼ばれる。
+	 * ペイントさせ方は、ぶつかったオブジェクト（Plane）よりも手前のオブジェクトを
+	 * 「後ろ側から手前に」辿っていき、Voxelを挿入する。
+	 */
+	private void paintVoxels() {
+		//UIを操作した際に、UIボタンと同時に、paintVoxelsも起動してしまう
+		Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
+		RaycastHit hit = new RaycastHit ();
+		if (Physics.Raycast (ray, out hit)) {
+			float distance = hit.distance - 0.5f;
+			Vector3 hitPointShort = ray.GetPoint(distance); //ヒットしたRayより少し手前のPointをたどる
+			Vector3 fixedhitPointShort = ChainXModel.GetRoundIntPoint(hitPointShort);
+			Debug.Log(hitPointShort.ToString());
+			Debug.Log(ChainXModel.GetRoundIntPoint(hitPointShort));
+			this.CreateVoxel(0, "xxx", fixedhitPointShort);
+
+			Debug.DrawLine(ray.origin, hitPointShort, Color.red, 60.0f, true);
+		}
+	}
+
+
+	/*
+	 * PaintToolのマウスカーソルが選択されていて、マウスクリックされたときに呼ばれる。
+	 */
+	private void clickVoxel() {
+		GameObject hitObj = this.getHitObject();
+
+		if (hitObj != null && Const.REGEX_POSID.IsMatch (hitObj.name)) {
+			if (hitObj.transform.parent != null) {
+				hitObj = hitObj.transform.parent.gameObject;
+			}
+
+			if (this.selectedObjects.Contains(hitObj)) {
+				if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) {
+					this.RemoveToSelectedObjects(hitObj);
+				} else {
+					this.cleanSelectedObjects();
+					this.AddToSelectedObjects(hitObj);
+				}
+			}
+			else {
+				if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+					this.AddToSelectedObjects(hitObj);
+				else {
+					if (this.selectedObjects.Count > 0)
+						this.cleanSelectedObjects();
+					this.AddToSelectedObjects(hitObj);
+				}
+			}
+		}
+		else {
+			//ゲームオブジェクトないのものでない時（Voxel）
+			if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) { }
+			else { this.cleanSelectedObjects(); }
+		}
+	}
+
+	/*
+	 * PaintToolの左キー、右キー、下キーがマウスクリックされたときに呼ばれる。
+	 */
+	private bool clickUI() {
+		GameObject hitObj = null;
+		Ray ray = GameObject.Find("SubCamera").GetComponent<Camera>().ScreenPointToRay (Input.mousePosition);
+		RaycastHit hit = new RaycastHit ();
+		bool isHitOnUI = true;
+		if (Physics.Raycast (ray, out hit)) {
+			hitObj = hit.collider.gameObject;
+
+			this.paintTool.GetComponent<Renderer>().enabled = false;
+			if (hitObj.name == "ArrowLeft") {
+				this.paintTool = this.getPaintToolObj(this.model.getPaintTool(-1,0));
+			}
+			else if (hitObj.name == "ArrowRight") {
+				this.paintTool = this.getPaintToolObj(this.model.getPaintTool(1,0));
+			}
+			else if (hitObj.name == "ArrowTop") {
+				this.paintTool = this.getPaintToolObj(this.model.getPaintTool(0,1));
+			}
+			else {
+				//ヒットしなかった場合
+				this.paintTool.GetComponent<Renderer>().enabled = true;
+				isHitOnUI = false;
+			}
+			paintTool.layer = Const.UI_LAYER;
+
+		}
+		return isHitOnUI;
+	}
+
 
 	private GameObject getPaintToolObj(string paintToolStr) {
+		GameObject anObj = null;
 		if (paintToolStr == ChainXModel.PAINT_TOOL_POINTER_ID) {
-			GameObject anObj = GameObject.Find("MouseCursor");
+			anObj = GameObject.Find("MouseCursor");
+			anObj.GetComponent<Renderer>().enabled = true;
 			anObj.transform.position = Const.PAINT_TOOL_POINTER_POSITION;
-			return anObj;
 		}
 		else if (paintToolStr.IndexOf(ChainXModel.PAINT_TOOL_VOXEL_ID) > -1) {
 			int textureType = int.Parse(paintToolStr.Remove(0, ChainXModel.PAINT_TOOL_VOXEL_ID.Length));
-			GameObject selectingVoxel = GameObject.Find("SelectingVoxel");
-			if (selectingVoxel == null) {
-				return this.CreateVoxel(textureType, "SelectingVoxel", Const.PAINT_TOOL_VOXEL_POSITION);
-			}
-			else {
-				Texture2D texture = Resources.Load<Texture2D> ("Textures/" + textureType.ToString());
-				selectingVoxel.GetComponent<Renderer>().material.mainTexture = texture;
-				return selectingVoxel;
-			}
+			anObj = GameObject.Find("SelectingVoxel");
+			anObj.GetComponent<Renderer>().enabled = true;
+			anObj.transform.position = Const.PAINT_TOOL_VOXEL_POSITION;
+			Texture2D texture = Resources.Load<Texture2D> ("Textures/" + textureType.ToString());
+			anObj.GetComponent<Renderer>().material.mainTexture = texture;
 		}
 		else if (paintToolStr == ChainXModel.PAINT_TOOL_GROUP_ID) {
-			return null;
 		}
-		return null;
+
+		return anObj;
 	}
 
 

@@ -1,7 +1,7 @@
 ・グループ選択機能を追加
 ・選択したオブジェクトを一斉に動かせる機能追加
-・SocketをWebSocketに修正
 ・StructureTableの墓石をdestroy操作によって捨てる
+・クリック時にVoxelを挿入できるようにする
 
 完了
 ・[バグ] insertとdelete操作のバグ（競合が起こった時に操作順番がおかしい）

@@ -33,7 +33,8 @@ public class Util {
 		}
 		if (m < 0) {
 			m = -1 * m;
-			return n - (m % n);
+			if (m % n == 0) { return 0; }
+			else { return n - (m % n); }
 		}
 		return m % n;
 	}
