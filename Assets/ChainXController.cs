@@ -24,13 +24,6 @@ public class ChainXController : MonoBehaviour
 		this.paintTool = this.CreateVoxel(0, Const.UI_SELECTING_VOXEL_NAME, Const.PAINT_TOOL_VOXEL_POSITION);
 		this.paintTool.layer = Const.UI_LAYER;
 
-		/*
-		*/
-		//Vector3 tmp = Camera.main.ScreenToWorldPoint (new Vector3(70,40,8));
-		//GameObject voxelObj = GameObject.Find("UI3D/VoxelPlate");
-		//voxelObj.transform.position = tmp; 
-		//Debug.Log ("ワールド座標" + tmp);
-
 		this.cv = new ChainVoxel(this);
 		this.selectedObjects = new List<GameObject> ();
 		this.socket = new EmulatedWebSocket (this);
@@ -60,7 +53,10 @@ public class ChainXController : MonoBehaviour
 			}
 			else if (Input.GetMouseButtonDown(Const.MOUSE_LEFT_CLICK))
 			{
-				if (this.clickUI()) {
+				if (Input.GetKey(KeyCode.LeftAlt)) {
+					//Orbit, Zoom, etc..
+				}
+				else if (this.clickUI()) {
 					this.cleanSelectedObjects(); //Voxelの選択解除
 				}
 				else if (this.paintTool.name == Const.UI_SELECTING_POINTER_NAME) {
@@ -113,11 +109,15 @@ public class ChainXController : MonoBehaviour
 				}
 			}
 			if (o != null) {
-				this.cv.apply(o);
-				this.socket.Send (MessageHeader.OPERATION + Operation.ToJson (o) + "\n");
+				this.ApplyChainVoxel(o);
 				Debug.Log(this.cv.show());
 			}
 		}
+	}
+
+	private void ApplyChainVoxel(Operation o) {
+		this.cv.apply(o);
+		this.socket.Send (MessageHeader.OPERATION + Operation.ToJson (o) + "\n");
 	}
 
 	/*
@@ -137,7 +137,7 @@ public class ChainXController : MonoBehaviour
 				"{\"posID\": \"" + this.CreatePosID(fixedHitPointShort) +
 				"\", \"textureType\":\"" + textureType + "\"}"
 			);
-			this.cv.apply(o);
+			this.ApplyChainVoxel(o);
 			//Debug.DrawLine(ray.origin, hitPointShort, Color.red, 60.0f, true); //レーザービーム
 		}
 	}

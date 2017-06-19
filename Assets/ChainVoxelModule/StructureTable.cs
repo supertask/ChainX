@@ -21,12 +21,15 @@ public class StructureTable {
      */
 	SortedDictionary<string, HashSet<Group>> groupEntriesTable;
 
+	public List<string> joinedGIDs;
+
 	/**
      * Structure Table のコンストラクタ
      */
 	public StructureTable() {
 		this.groupMembersTable = new SortedDictionary<string, HashSet<string>>(); 
 		this.groupEntriesTable = new SortedDictionary<string, HashSet<Group>>();
+		this.joinedGIDs = new List<string> ();
 	}
 
 	/**
@@ -84,7 +87,7 @@ public class StructureTable {
 		if (!this.groupEntriesTable.ContainsKey(posID)) {
 			this.groupEntriesTable.Add(posID, new HashSet<Group>(new GroupComparer())); //バグってた
 		}
-		this.groupEntriesTable[posID].Add(aGroup); 
+		this.groupEntriesTable[posID].Add(aGroup);
 
 		// groupMembersTable に posID を追加
 		this.groupMembersTable[gid].Add(posID);
@@ -103,6 +106,7 @@ public class StructureTable {
      */
 	public void joinAll(long ts, string[] posIDs, string gid) {
 		foreach (string posID in posIDs) this.join(ts, posID, gid);
+		this.joinedGIDs.Add(gid);//最新のタイムスタンプのグループをとる
 	}
 
 	/**
