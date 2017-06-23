@@ -22,8 +22,6 @@ public class Const {
 	public static Regex REGEX_POSID = new Regex( @"[-]?[\d]+:[-]?[\d]+:[-]?[\d]+");
 	public static int NUMBER_OF_TEXTURE = 8;
 	public static Vector3 PAINT_TOOL_PLATE_POSITION = Camera.main.ScreenToWorldPoint (new Vector3(-5,-30,5));
-	public static Vector3 PAINT_TOOL_POINTER_POSITION = Camera.main.ScreenToWorldPoint (new Vector3(-5,-30,5));
-	public static Vector3 PAINT_TOOL_VOXEL_POSITION = Camera.main.ScreenToWorldPoint (new Vector3(-5,-10,5));
 
 	public static float VOXEL_PLATE_DIAMETER = GameObject.Find(Const.PAINT_TOOL_PATH + "VoxelPlate").GetComponent<Renderer>().bounds.size.x - 2.2f;
 

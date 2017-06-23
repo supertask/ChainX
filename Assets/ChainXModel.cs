@@ -46,10 +46,10 @@ public class ChainXModel
 	 * 引数で渡されたグループゲームオブジェクトのY座標一番下でかつ、X座標とZ座標のセンター座標を割り出す。
 	 * PaintToolのセンター座標を調節するために使われる。
 	 */
-	public Vector3 GetBottomCenterPosition(GameObject aParent) {
+	public Vector3 GetBottomCenterPosition(GameObject aParent, float y_margin) {
 		Vector3 maxVector, minVector;
 		this.GetMaxMinPositions(aParent, out maxVector, out minVector);
-		Vector3 res = new Vector3(0, minVector.y, 0);
+		Vector3 res = new Vector3(0, minVector.y - y_margin, 0);
 		res.x = this.GetCenterPoint(maxVector.x + 0.5f, minVector.x - 0.5f);
 		res.z = this.GetCenterPoint(maxVector.z + 0.5f, minVector.z - 0.5f);
 		return res;
@@ -148,7 +148,7 @@ public class ChainXModel
 		model.GetMaxMinPositions(aParent, out a, out b);
 		Debug.Assert(a == new Vector3(1,2,1));
 		Debug.Assert(b == new Vector3(0,0,0));
-		Vector3 res = model.GetBottomCenterPosition(aParent);
+		Vector3 res = model.GetBottomCenterPosition(aParent, 0.0f);
 		Debug.Assert(res == new Vector3(0.5f,0,0.5f));
 
 		//パターン2
@@ -160,7 +160,7 @@ public class ChainXModel
 		model.GetMaxMinPositions(aParent, out a, out b);
 		Debug.Assert(a == new Vector3(6,5,8));
 		Debug.Assert(b == new Vector3(5,0,5));
-		res = model.GetBottomCenterPosition(aParent);
+		res = model.GetBottomCenterPosition(aParent, 0.0f);
 		Debug.Assert(res == new Vector3(5.5f, 0, 6.5f));
 
 		//パターン3
@@ -172,7 +172,7 @@ public class ChainXModel
 		model.GetMaxMinPositions(aParent, out a, out b);
 		Debug.Assert(a == new Vector3(-1,4,0));
 		Debug.Assert(b == new Vector3(-2,0,0));
-		res = model.GetBottomCenterPosition(aParent);
+		res = model.GetBottomCenterPosition(aParent, 0.0f);
 		Debug.Assert(res == new Vector3(-1.5f,0,0));
 		//GameObject.Destroy(aParent); //ここで作成した可視化をしないようにしている
 

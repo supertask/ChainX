@@ -18,11 +18,12 @@ public class ChainXController : MonoBehaviour
 
 	IEnumerator Start() {
 		this.model = new ChainXModel();
-		GameObject anObj = this.CreateVoxel(0, Const.UI_SELECTING_VOXEL_NAME, Const.PAINT_TOOL_VOXEL_POSITION);
+		GameObject anObj = this.CreateVoxel(0, Const.UI_SELECTING_VOXEL_NAME, Vector3.zero);
+		anObj.transform.SetParent(GameObject.Find(Const.PAINT_TOOL_PATH).transform);
 		anObj.GetComponent<Renderer>().enabled = false;
 		anObj.layer = Const.UI_LAYER;
 
-		this.paintTool = GameObject.Find(Const.UI_SELECTING_POINTER_NAME);
+		this.paintTool = GameObject.Find(Const.PAINT_TOOL_PATH + Const.UI_SELECTING_POINTER_NAME);
 		this.paintTool.layer = Const.UI_LAYER;
 
 		this.cv = new ChainVoxel(this);
@@ -39,8 +40,10 @@ public class ChainXController : MonoBehaviour
 			this.UpdateVoxels ();
 			this.SetUpGUICompornets ();
 
-			GameObject ggg = GameObject.Find("PaintTool");
+			GameObject ggg = GameObject.Find(Const.PAINT_TOOL_PATH);
+			//ggg.transform.position = Const.PAINT_TOOL_PLATE_POSITION;
 			this.SetPositionUntilChildren(ggg, Const.PAINT_TOOL_PLATE_POSITION);
+
 
 			Operation o = null;
 			if (Input.GetKeyDown (KeyCode.V)) {
@@ -117,6 +120,10 @@ public class ChainXController : MonoBehaviour
 		anObj.transform.position = pos;
 		foreach(Transform aChildTransform in anObj.transform)
 		{
+			if (aChildTransform.gameObject.name == Const.UI_SELECTING_VOXEL_NAME) {
+				aChildTransform.position = pos + new Vector3(0,0.5f,0);
+				continue;
+			}
 			aChildTransform.position = pos;
 			aChildTransform.gameObject.layer = Const.UI_LAYER;
 		}
@@ -199,7 +206,7 @@ public class ChainXController : MonoBehaviour
 		if (Physics.Raycast (ray, out hit)) {
 			hitObj = hit.collider.gameObject;
 
-			this.hidePaintTool(); //まずこれが動いてない
+			this.hidePaintTool();
 			if (hitObj.name == "ArrowLeft") {
 				this.paintTool = this.getPaintToolObj(this.model.getPaintTool(-1,0));
 			}
@@ -210,7 +217,7 @@ public class ChainXController : MonoBehaviour
 				this.paintTool = this.getPaintToolObj(this.model.getPaintTool(0,1));
 			}
 			else {
-				//ヒットしなかった場合
+				//どれにもヒットしなかった場合
 				this.showPaintTool();
 				isHitOnUI = false;
 			}
@@ -224,8 +231,6 @@ public class ChainXController : MonoBehaviour
 	private void showPaintTool() { this.visualizePaintTool(true); }
 	private void visualizePaintTool(bool enabled)
 	{
-		//Debug.Log(this.paintTool.name);
-
 		if (this.paintTool.transform.childCount > 0) {
 			foreach(Transform transform in this.paintTool.transform) {
 				transform.gameObject.GetComponent<Renderer>().enabled = enabled;
@@ -238,16 +243,16 @@ public class ChainXController : MonoBehaviour
 	private GameObject getPaintToolObj(string paintToolStr) {
 		GameObject anObj = null;
 		if (paintToolStr == ChainXModel.PAINT_TOOL_POINTER_ID) {
-			anObj = GameObject.Find(Const.UI_SELECTING_POINTER_NAME);
+			anObj = GameObject.Find(Const.PAINT_TOOL_PATH + Const.UI_SELECTING_POINTER_NAME);
 			anObj.GetComponent<Renderer>().enabled = true;
-			anObj.transform.position = Const.PAINT_TOOL_POINTER_POSITION;
 		}
 		else if (paintToolStr.IndexOf(ChainXModel.PAINT_TOOL_VOXEL_ID) > -1) {
 			//TODO(Tasuku): Texture作成の部分をメソッド化する!!!!
 			int textureType = int.Parse(paintToolStr.Remove(0, ChainXModel.PAINT_TOOL_VOXEL_ID.Length));
-			anObj = GameObject.Find(Const.UI_SELECTING_VOXEL_NAME);
+			anObj = GameObject.Find(Const.PAINT_TOOL_PATH + Const.UI_SELECTING_VOXEL_NAME);
 			anObj.GetComponent<Renderer>().enabled = true;
-			anObj.transform.position = Const.PAINT_TOOL_VOXEL_POSITION;
+			///anObj.transform.localPosition = new Vector3(0, 0, 0);
+
 			Texture2D texture = Resources.Load<Texture2D> ("Textures/" + textureType.ToString());
 			anObj.GetComponent<Text>().text = textureType.ToString();
 			anObj.GetComponent<Renderer>().material.mainTexture = texture;
@@ -259,6 +264,7 @@ public class ChainXController : MonoBehaviour
 			if (anObj == null) {
 				GameObject aParent = GameObject.Find(Const.PAINT_TOOL_PATH);
 				GameObject aGroupObj = GameObject.Find(gid);
+
 				if (aGroupObj != null) {
 					//グロープをまとめたオブジェクト
 					anObj = Instantiate(aGroupObj) as GameObject;
@@ -266,15 +272,16 @@ public class ChainXController : MonoBehaviour
 					anObj.name = gid;
 
 					float scale = this.model.GetScale(anObj, Const.VOXEL_PLATE_DIAMETER);
-					Debug.Log(anObj.transform.localScale + " " + scale);
+					float y_margin = 0.5f;	
 					if (scale < 1.0) {
+						y_margin *= scale;
 						anObj.transform.localScale = anObj.transform.localScale * scale;
 					}
 
-					Vector3 bottomCenterPosition = this.model.GetBottomCenterPosition(anObj);
+					Vector3 bottomCenterPosition = this.model.GetBottomCenterPosition(anObj, y_margin);
 					Vector3 maxVector, minVector;
 					this.model.GetMaxMinPositions(anObj, out maxVector, out minVector);
-					Vector3 moveVector = new Vector3(0,0,0) - bottomCenterPosition;
+					Vector3 moveVector = Vector3.zero - bottomCenterPosition;
 
 					anObj.layer = Const.UI_LAYER;
 					foreach(Transform aChildTransform in anObj.transform) {
@@ -422,15 +429,7 @@ public class ChainXController : MonoBehaviour
 		 * For LEAVE ALL operations.
 		 */
 		//leave all
-
 		//this.selectedObjects[0].transform.DetachChildren(); //グループ一括解除
-		/*
-		List<GameObject> groupObjs = new List<GameObject>();
-		foreach(GameObject anObj in this.selectedObjects) {
-			if (anObj.transform.childCount > 0)
-				groupObjs.Add(anObj);	
-		}
-		*/
 	}
 
 	/*
