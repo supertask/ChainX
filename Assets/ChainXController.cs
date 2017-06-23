@@ -264,16 +264,17 @@ public class ChainXController : MonoBehaviour
 					anObj = Instantiate(aGroupObj) as GameObject;
 					anObj.transform.SetParent(aParent.transform);
 					anObj.name = gid;
-					Vector3 bottomCenterPosition = this.model.GetBottomCenterPosition(anObj);
-					Vector3 maxVector, minVector;
-					this.model.GetMaxMinPositions(anObj, out maxVector, out minVector);
-					Vector3 moveVector = new Vector3(0,0,0) - bottomCenterPosition;
 
 					float scale = this.model.GetScale(anObj, Const.VOXEL_PLATE_DIAMETER);
 					Debug.Log(anObj.transform.localScale + " " + scale);
 					if (scale < 1.0) {
 						anObj.transform.localScale = anObj.transform.localScale * scale;
 					}
+
+					Vector3 bottomCenterPosition = this.model.GetBottomCenterPosition(anObj);
+					Vector3 maxVector, minVector;
+					this.model.GetMaxMinPositions(anObj, out maxVector, out minVector);
+					Vector3 moveVector = new Vector3(0,0,0) - bottomCenterPosition;
 
 					anObj.layer = Const.UI_LAYER;
 					foreach(Transform aChildTransform in anObj.transform) {
