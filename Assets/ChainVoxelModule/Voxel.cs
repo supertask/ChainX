@@ -131,7 +131,8 @@ public class Voxel {
 		Debug.Assert(Voxel.Compare(voxels[2],new Voxel(3, 2, 2400)) == 0);
 		Debug.Assert(Voxel.Compare(voxels[3],new Voxel(1, 4, 3200)) == 0);
 
+
 		//foreach (Voxel v in voxels) { Debug.Log(v.Tostring()); }
-		//Debug.Log("End Voxel TEST");
+		Debug.Log("End a Voxel class test");
 	}
 }

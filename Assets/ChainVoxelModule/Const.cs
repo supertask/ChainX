@@ -11,6 +11,8 @@ public class Const {
 	public static string UI_SELECTING_POINTER_NAME = "MouseCursor";
 	public static string UI_SELECTING_VOXEL_NAME = "SelectingVoxel";
 
+	public static string PAINT_TOOL_PATH = "PaintTool/";
+
 	public static Shader TOON_SHADER = Shader.Find ("Toon/Basic Outline");
 	public static Shader DIFFUSE_SHADER = Shader.Find ("Diffuse");
 	public static char SPLIT_CHAR = ',';
@@ -23,6 +25,7 @@ public class Const {
 	public static Vector3 PAINT_TOOL_POINTER_POSITION = Camera.main.ScreenToWorldPoint (new Vector3(-5,-30,5));
 	public static Vector3 PAINT_TOOL_VOXEL_POSITION = Camera.main.ScreenToWorldPoint (new Vector3(-5,-10,5));
 
+	public static float VOXEL_PLATE_DIAMETER = GameObject.Find(Const.PAINT_TOOL_PATH + "VoxelPlate").GetComponent<Renderer>().bounds.size.x - 2.2f;
 
 }
 

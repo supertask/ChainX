@@ -33,13 +33,14 @@ public class ChainVoxel {
 	/**
      * 構造管理のためのStrutureTable
      */
-	private StructureTable stt;
+	public StructureTable stt;
 
 	private ChainXController controller;
 
 	public List<string> insertedPosIDs;
 	public List<string> deletedPosIDs;
 	public Dictionary<string,string> movedPosIDs;
+	public List<string> joinedGIDs;
 	public string textPath;
 
 
@@ -51,9 +52,10 @@ public class ChainVoxel {
 		this.negativeVoxels = new SortedDictionary<string, Voxel>();
 		this.stt = new StructureTable();
 		this.controller = controller;
-		this.insertedPosIDs = new List<string> ();
-		this.deletedPosIDs = new List<string> ();
+		this.insertedPosIDs = new List<string>();
+		this.deletedPosIDs = new List<string>();
 		this.movedPosIDs = new Dictionary<string,string>();
+		this.joinedGIDs = new List<string>();
 		if (!Directory.Exists (Const.SAVED_DIR)) Directory.CreateDirectory(Const.SAVED_DIR);
 	}
 
@@ -210,6 +212,7 @@ public class ChainVoxel {
      */
 	public void joinAll(Operation op) {
 		this.stt.joinAll(op.getTimestamp(), op.getPosIDs(), op.getGID());
+		this.joinedGIDs.Add(op.getGID());//最新のタイムスタンプのグループをとる
 	}
 
 	/**

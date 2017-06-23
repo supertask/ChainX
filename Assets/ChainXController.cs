@@ -18,10 +18,11 @@ public class ChainXController : MonoBehaviour
 
 	IEnumerator Start() {
 		this.model = new ChainXModel();
+		GameObject anObj = this.CreateVoxel(0, Const.UI_SELECTING_VOXEL_NAME, Const.PAINT_TOOL_VOXEL_POSITION);
+		anObj.GetComponent<Renderer>().enabled = false;
+		anObj.layer = Const.UI_LAYER;
+
 		this.paintTool = GameObject.Find(Const.UI_SELECTING_POINTER_NAME);
-		this.paintTool.GetComponent<Renderer>().enabled = false;
-		this.paintTool.layer = Const.UI_LAYER;
-		this.paintTool = this.CreateVoxel(0, Const.UI_SELECTING_VOXEL_NAME, Const.PAINT_TOOL_VOXEL_POSITION);
 		this.paintTool.layer = Const.UI_LAYER;
 
 		this.cv = new ChainVoxel(this);
@@ -39,11 +40,7 @@ public class ChainXController : MonoBehaviour
 			this.SetUpGUICompornets ();
 
 			GameObject ggg = GameObject.Find("PaintTool");
-			ggg.transform.position = Const.PAINT_TOOL_PLATE_POSITION;
-			foreach(Transform aChildTransform in ggg.transform) {
-				aChildTransform.position = Const.PAINT_TOOL_PLATE_POSITION;
-			}
-
+			this.SetPositionUntilChildren(ggg, Const.PAINT_TOOL_PLATE_POSITION);
 
 			Operation o = null;
 			if (Input.GetKeyDown (KeyCode.V)) {
@@ -87,7 +84,7 @@ public class ChainXController : MonoBehaviour
 					}
 					else if (Input.GetKeyDown (KeyCode.G))
 					{
-						string gid = "G" + Util.GetGUID();
+						string gid = ChainXModel.PAINT_TOOL_GROUP_ID + Util.GetGUID();
 
 						if (this.selectedObjects.Count == 1) {
 							if (this.selectedObjects[0].transform.childCount > 0) {
@@ -114,6 +111,18 @@ public class ChainXController : MonoBehaviour
 			}
 		}
 	}
+
+
+	private void SetPositionUntilChildren(GameObject anObj, Vector3 pos) {
+		anObj.transform.position = pos;
+		foreach(Transform aChildTransform in anObj.transform)
+		{
+			aChildTransform.position = pos;
+			aChildTransform.gameObject.layer = Const.UI_LAYER;
+		}
+		return;
+	}
+
 
 	private void ApplyChainVoxel(Operation o) {
 		this.cv.apply(o);
@@ -190,7 +199,7 @@ public class ChainXController : MonoBehaviour
 		if (Physics.Raycast (ray, out hit)) {
 			hitObj = hit.collider.gameObject;
 
-			this.paintTool.GetComponent<Renderer>().enabled = false;
+			this.hidePaintTool(); //まずこれが動いてない
 			if (hitObj.name == "ArrowLeft") {
 				this.paintTool = this.getPaintToolObj(this.model.getPaintTool(-1,0));
 			}
@@ -202,13 +211,27 @@ public class ChainXController : MonoBehaviour
 			}
 			else {
 				//ヒットしなかった場合
-				this.paintTool.GetComponent<Renderer>().enabled = true;
+				this.showPaintTool();
 				isHitOnUI = false;
 			}
-			paintTool.layer = Const.UI_LAYER;
+			this.paintTool.layer = Const.UI_LAYER;
 
 		}
 		return isHitOnUI;
+	}
+
+	private void hidePaintTool() { this.visualizePaintTool(false); }
+	private void showPaintTool() { this.visualizePaintTool(true); }
+	private void visualizePaintTool(bool enabled)
+	{
+		//Debug.Log(this.paintTool.name);
+
+		if (this.paintTool.transform.childCount > 0) {
+			foreach(Transform transform in this.paintTool.transform) {
+				transform.gameObject.GetComponent<Renderer>().enabled = enabled;
+			}
+		}
+		else { this.paintTool.GetComponent<Renderer>().enabled = enabled; }
 	}
 
 
@@ -229,7 +252,40 @@ public class ChainXController : MonoBehaviour
 			anObj.GetComponent<Text>().text = textureType.ToString();
 			anObj.GetComponent<Renderer>().material.mainTexture = texture;
 		}
-		else if (paintToolStr == ChainXModel.PAINT_TOOL_GROUP_ID) {
+		else if (paintToolStr.IndexOf(ChainXModel.PAINT_TOOL_GROUP_ID) > -1) {
+			string gid = paintToolStr;
+			anObj = GameObject.Find(Const.PAINT_TOOL_PATH + gid);
+
+			if (anObj == null) {
+				GameObject aParent = GameObject.Find(Const.PAINT_TOOL_PATH);
+				GameObject aGroupObj = GameObject.Find(gid);
+				if (aGroupObj != null) {
+					//グロープをまとめたオブジェクト
+					anObj = Instantiate(aGroupObj) as GameObject;
+					anObj.transform.SetParent(aParent.transform);
+					anObj.name = gid;
+					Vector3 bottomCenterPosition = this.model.GetBottomCenterPosition(anObj);
+					Vector3 maxVector, minVector;
+					this.model.GetMaxMinPositions(anObj, out maxVector, out minVector);
+					Vector3 moveVector = new Vector3(0,0,0) - bottomCenterPosition;
+
+					float scale = this.model.GetScale(anObj, Const.VOXEL_PLATE_DIAMETER);
+					Debug.Log(anObj.transform.localScale + " " + scale);
+					if (scale < 1.0) {
+						anObj.transform.localScale = anObj.transform.localScale * scale;
+					}
+
+					anObj.layer = Const.UI_LAYER;
+					foreach(Transform aChildTransform in anObj.transform) {
+						aChildTransform.position = aChildTransform.position + moveVector;
+						aChildTransform.gameObject.layer = Const.UI_LAYER;
+					}
+				}
+			}
+			else {
+				this.paintTool = anObj;
+				this.showPaintTool();
+			}
 		}
 
 		return anObj;
@@ -308,7 +364,7 @@ public class ChainXController : MonoBehaviour
 	 */
 	public void UpdateVoxels() {
 		/*
-		 * For INSERT operation.
+		 * For INSERT operations.
 		 */
 		foreach (string posID in this.cv.insertedPosIDs) {
 			if (GameObject.Find (posID) == null) {
@@ -318,7 +374,7 @@ public class ChainXController : MonoBehaviour
 		cv.insertedPosIDs.Clear ();
 
 		/*
-		 * For DELETE & MOVE operation.
+		 * For DELETE & MOVE operations.
 		 */
 		foreach (string posID in this.cv.deletedPosIDs) {
 			GameObject anObj = GameObject.Find (posID);
@@ -347,21 +403,32 @@ public class ChainXController : MonoBehaviour
 		cv.deletedPosIDs.Clear ();
 
 		/*
-		 * Structure Table
+		 * For JOIN ALL operations.
 		 */
-		//this.selectedObjects[0].transform.DetachChildren(); //グループ一括解除
+		foreach (string gid in this.cv.joinedGIDs) {
+			GameObject aParent = new GameObject(gid);
+			this.model.AddGroup(gid);
 
+			foreach(string posID in this.cv.stt.getPosIDs(gid)) {
+				GameObject aChild = GameObject.Find(posID);
+				aChild.transform.SetParent(aParent.transform);
+
+			}
+		}
+		cv.joinedGIDs.Clear ();
+
+		/*
+		 * For LEAVE ALL operations.
+		 */
+		//leave all
+
+		//this.selectedObjects[0].transform.DetachChildren(); //グループ一括解除
 		/*
 		List<GameObject> groupObjs = new List<GameObject>();
 		foreach(GameObject anObj in this.selectedObjects) {
 			if (anObj.transform.childCount > 0)
 				groupObjs.Add(anObj);	
 		}
-		//groupObjs.Count == 0
-
-		GameObject groupObj = new GameObject("G" + Util.GetGUID());
-		foreach(GameObject anObj in this.selectedObjects)
-			anObj.transform.parent = groupObj.transform;
 		*/
 	}
 

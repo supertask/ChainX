@@ -2,3 +2,4 @@
 ・高速に動かすと、textureTypeがNULLになりバグる!!!!!!!!!!
 ・操作を一つしかしてないのに、ChainVoxelの中の複数のposIDが動いてる???
 ・StructureTableに、テストを付け加えよう
+・UIの下矢印キーを何度か押すとバグる

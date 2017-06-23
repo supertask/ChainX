@@ -23,6 +23,7 @@ public class Util {
 		else { return right; }
 	}
 
+
 	public static string GetGUID() {
 		return Guid.NewGuid ().ToString ().Replace("-", "");
 	}
