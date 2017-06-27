@@ -52,24 +52,19 @@ public class Operation {
 	public const int DELETE_ALL = 7;
 
 	/**
-     * create操作を示す定数
-     */
-	public const int CREATE_ALL = 8;
-
-	/**
      * join操作を示す定数
      */
-	public const int JOIN_ALL = 9;
+	public const int JOIN_ALL = 8;
 
 	/**
      * leave操作を示す定数 
      */
-	public const int LEAVE_ALL = 10;
+	public const int LEAVE_ALL = 9;
 
 	/**
      * move操作を示す定数
      */
-	public const int MOVE_ALL = 11;
+	public const int MOVE_ALL = 10;
 
 	/**
      * 操作を行なったSiteの識別子
@@ -107,6 +102,7 @@ public class Operation {
 		this.timestamp = Util.currentTimeNanos();
 		this.opParams = new JSONObject(opParamsJson);
 		if (!this.satisfyRequirements()) {
+			Debug.LogError("Operation type = " + opType);
 			throw new System.InvalidOperationException("Insufficient parameters for operation.");
 		}
 	}
@@ -124,14 +120,13 @@ public class Operation {
 			new List<string>() {"gid"}, // create
 			new List<string>() {"posID", "gid"}, // join
 			new List<string>() {"posID", "gid"}, // leave
-			new List<string>() {"posID","destPosID"}, // move
+			new List<string>() {"posID","transMatrix"}, // move
 
 			new List<string>() {"posIDs", "textureTypes"}, // insertAll
 			new List<string>() {"posIDs"}, // deleteAll
-			new List<string>() {"gids"}, // createAll
 			new List<string>() {"posIDs", "gid"}, // joinAll
 			new List<string>() {"posIDs", "gid"}, // leaveAll
-			new List<string>() {"posIDs","destPosID"} // moveAll
+			new List<string>() {"posIDs","transMatrix"} // moveAll
 		};
 		/*
 		Debug.Log(requirements[this.opType].Count);
@@ -191,11 +186,57 @@ public class Operation {
 	}
 
 	/**
+     * Voxelの識別子のリストを返す．
+     * @return voxelの識別子
+     */
+	public string getTransMatrix() {
+		return this.opParams.HasField("transMatrix") ? this.opParams.GetField("transMatrix").str : "";
+	}
+
+	/*
+	 * 
+	 */
+	public static string CombinePosition(string posID, string transMatrix) {
+		string[] posIDStrs = posID.Split(':');
+		string[] transMatrixStrs = transMatrix.Split(':');
+		int x = int.Parse(posIDStrs[0]) + int.Parse(transMatrixStrs[0]);
+		int y = int.Parse(posIDStrs[1]) + int.Parse(transMatrixStrs[1]);
+		int z = int.Parse(posIDStrs[2]) + int.Parse(transMatrixStrs[2]);
+		string destPosID = x.ToString() + ':' + y.ToString() + ':' + z.ToString();
+		return destPosID;
+	}
+
+	/**
      * 移動先voxelの識別子を返す．
      * @return voxelの識別子
      */
 	public string getDestPosID() {
-		return this.opParams.HasField ("destPosID") ? this.opParams.GetField ("destPosID").str : ""; 
+		string transMatrix = this.getTransMatrix();
+		if (transMatrix == string.Empty) return string.Empty;
+		string posID = this.getPosID();
+		if (posID == string.Empty) return string.Empty;
+
+		return Operation.CombinePosition(this.getPosID(), this.getTransMatrix());
+	}
+
+
+	/**
+     * 移動先voxelの識別子のリストを返す．
+     * @return voxelの識別子
+     */
+	public string[] getDestPosIDs() {
+		string transMatrix = this.getTransMatrix();
+		if (transMatrix == string.Empty) return null;
+
+		string[] posIDs = this.getPosIDs();
+		if (posIDs == null) return null;
+
+		List<string> destPosIDs = new List<string>();
+		foreach(string posID in posIDs)
+		{
+			destPosIDs.Add(Operation.CombinePosition(posID, transMatrix));
+		}
+		return destPosIDs.ToArray();
 	}
 
 	/**
@@ -263,82 +304,138 @@ public class Operation {
 
 	private static List<int> operation_types = new List<int>() {
 		Operation.INSERT, Operation.DELETE, Operation.CREATE, Operation.JOIN,
-		Operation.LEAVE, Operation.MOVE
+		Operation.LEAVE, Operation.MOVE , Operation.MOVE_ALL, Operation.JOIN_ALL
 	};
 
 
-	public static string CreateRandomPosID(int maxValue) {
-		int x = UnityEngine.Random.Range (0, maxValue);
-		int y = UnityEngine.Random.Range (0, maxValue);
-		int z = UnityEngine.Random.Range (0, maxValue);
+	public static string CreateRandomPosID(int minValue, int maxValue) {
+		int x = UnityEngine.Random.Range (minValue, maxValue);
+		int y = UnityEngine.Random.Range (minValue, maxValue);
+		int z = UnityEngine.Random.Range (minValue, maxValue);
 		return  String.Format("{0}:{1}:{2}", x, y, z);	
 	}
 
 	public static string CreateRandomPosID() {
-		return Operation.CreateRandomPosID (int.MaxValue);
+		return Operation.CreateRandomPosID (int.MinValue, int.MaxValue);
 	}
 
-	public static Operation CreateRandomOperation() {
+	public static string GetPosIDsFrom(string[] posIDs) {
+		string res = "";
+		foreach (string posID in posIDs) {
+			res += posID + Const.SPLIT_CHAR;
+		}
+		return res.TrimEnd(Const.SPLIT_CHAR);	
+	}
+
+	public static Operation CreateRandomOperation()
+	{
+		int intMin = int.MinValue/2+1;
+		int intMax = int.MaxValue/2-1;
+
 		int sid = UnityEngine.Random.Range (0, int.MaxValue);
-		int opIndex = UnityEngine.Random.Range (0, Operation.operation_types.Count);
-		string posID = Operation.CreateRandomPosID();
-		string destPosID = Operation.CreateRandomPosID();
+		int opIndex = UnityEngine.Random.Range (0, Operation.operation_types.Count); //どのOperationか
 		string gid = Guid.NewGuid().ToString ("N");
+		int numberOfPosIDs = UnityEngine.Random.Range (1, 10);
+
+		string[] posIDs = new string[numberOfPosIDs];
+		string[] destPosIDs = new string[numberOfPosIDs];
+		string transMatrix = Operation.CreateRandomPosID(intMin, intMax);
+		int[] textureTypes = new int[numberOfPosIDs];
+		for(int i=0; i<numberOfPosIDs; ++i)
+		{
+			posIDs[i] = Operation.CreateRandomPosID(intMin, intMax);
+			destPosIDs[i] = Operation.CombinePosition(posIDs[i], transMatrix);
+			textureTypes[i] = UnityEngine.Random.Range (0, Const.NUMBER_OF_TEXTURE-1);
+		}
 
 		JSONObject j = new JSONObject();
 		switch (Operation.operation_types [opIndex]) {
-			case Operation.INSERT:
-			case Operation.DELETE:
-				j.AddField ("posID", posID);
-				break;
-			case Operation.MOVE:
-				j.AddField ("posID", posID);
-				j.AddField ("destPosID", destPosID);
-				break;
-			case Operation.CREATE:
-				j.AddField ("gid", gid);
-				break;
-			case Operation.JOIN:
-			case Operation.LEAVE:
-				j.AddField ("posID", posID);
-				j.AddField ("gid", gid);
-				break;
-			default:
-				throw new System.InvalidOperationException (
-					String.Format("Operation{0} at CreateRandomOperation()",
-					Operation.operation_types[opIndex])
-				);
+		case Operation.INSERT:
+			j.AddField ("posID", posIDs[0]);
+			j.AddField ("textureType", textureTypes[0]);
+			break;
+		case Operation.DELETE:
+			j.AddField ("posID", posIDs[0]);
+			break;
+		case Operation.CREATE:
+			j.AddField ("gid", gid);
+			break;
+		case Operation.JOIN:
+		case Operation.LEAVE:
+			j.AddField ("posID", posIDs[0]);
+			j.AddField ("gid", gid);
+			break;
+		case Operation.MOVE:
+			j.AddField ("posID", posIDs[0]);
+			j.AddField ("transMatrix", transMatrix);
+			break;
+		case Operation.JOIN_ALL:
+		case Operation.LEAVE_ALL:
+			j.AddField ("posIDs", Operation.GetPosIDsFrom(posIDs));
+			j.AddField ("gid", gid);
+			break;
+		case Operation.MOVE_ALL:
+			j.AddField ("posIDs", Operation.GetPosIDsFrom(posIDs));
+			j.AddField ("transMatrix", transMatrix);
+			break;
+		default:
+			throw new System.InvalidOperationException (
+				String.Format("Operation{0} at CreateRandomOperation()",
+				Operation.operation_types[opIndex])
+			);
 		}
 		Operation op = new Operation (sid, Operation.operation_types [opIndex], j.Print () );
 		Debug.Assert(op.getSID() == sid);
 		Debug.Assert(op.getOpType() == Operation.operation_types[opIndex]);
 		Debug.Assert(op.getTimestamp() > 0);
-		if (op.getGID() != "") { Debug.Assert(op.getGID() == gid); }
-		if (op.getPosID() != "") { Debug.Assert(op.getPosID() == posID); }
-		if (op.getDestPosID() != "") { Debug.Assert(op.getDestPosID() == destPosID); }
+		if (op.getGID() != string.Empty) { Debug.Assert(op.getGID() == gid); }
+		if (op.getPosID() != string.Empty) { Debug.Assert(op.getPosID() == posIDs[0]); }
+		if (op.getDestPosID() != string.Empty) { Debug.Assert(op.getDestPosID() == destPosIDs[0]); }
+		if (op.getTransMatrix() != string.Empty) {
+			Debug.Assert(op.getTransMatrix() == transMatrix);
+		}
+		if (op.getDestPosIDs() != null) { Debug.Assert(Operation.GetPosIDsFrom(op.getDestPosIDs()) == Operation.GetPosIDsFrom(destPosIDs)); }
 
 		return op;
 	}
 
 	/**
 	 * Test an Operation class
-	 * TODO(Tasuku): Add texutreType test.
 	 */
-	public static void Test() {
-		Debug.Assert(Operation.INSERT == 0);
-		Debug.Assert(Operation.DELETE == 1);
-		Debug.Assert(Operation.CREATE == 2);
-		Debug.Assert(Operation.JOIN == 3);
-		Debug.Assert(Operation.LEAVE == 4);
-		Debug.Assert(Operation.MOVE == 5);
+	public static void Test()
+	{
+		int numberOfTest = 100;
 
-		/*
-		 * Jsonへの変換とその逆ができているかをチェック
-		 * Operationへの初期値の値の変化がないかをチェック at CreateRandomOperation()
-		 */
+		//
+		// A test for Operation.CombinePosition().
+		//
+		for (int i = 0; i < numberOfTest; ++i) {
+			int minInt = -10000, maxInt = 10000;
+			Vector3 posIDVector = new Vector3(
+				UnityEngine.Random.Range (minInt, maxInt), 
+				UnityEngine.Random.Range (minInt, maxInt), 
+				UnityEngine.Random.Range (minInt, maxInt)
+			);
+			Vector3 transMatrixVector = new Vector3(
+				UnityEngine.Random.Range (minInt, maxInt), 
+				UnityEngine.Random.Range (minInt, maxInt), 
+				UnityEngine.Random.Range (minInt, maxInt)
+			);
+			string combinedPosID = ChainXModel.CreatePosID(posIDVector + transMatrixVector);
+			Debug.Assert (
+				combinedPosID == Operation.CombinePosition(
+					ChainXModel.CreatePosID(posIDVector), ChainXModel.CreatePosID(transMatrixVector)
+				)
+			);
+		}
+
+		//
+		// Jsonへの変換とその逆ができているかをチェック
+		// Operationへの初期値の値の変化がないかをチェック at CreateRandomOperation()
+		//
 		string json = "";
 		Operation o1, o2;
-		for (int i = 0; i < 1000; ++i) {
+		for (int i = 0; i < numberOfTest; ++i) {
 			o1 = Operation.CreateRandomOperation ();
 			json = Operation.ToJson (o1);
 			o2 = Operation.FromJson (json);
@@ -347,29 +444,43 @@ public class Operation {
 			Debug.Assert (o1.getTimestamp () == o2.getTimestamp ());
 
 			switch (o1.getOpType ()) {
-				case Operation.INSERT:
-				case Operation.DELETE:
-					Debug.Assert (o1.getPosID () == o2.getPosID ());
-					break;
-				case Operation.MOVE:
-					Debug.Assert (o1.getPosID () == o2.getPosID ());
-					Debug.Assert (o1.getDestPosID () == o2.getDestPosID ());
-					break;
-				case Operation.CREATE:
-					Debug.Assert (o1.getGID () == o2.getGID ());
-					break;
-				case Operation.JOIN:
-				case Operation.LEAVE:
-					Debug.Assert (o1.getGID () == o2.getGID ());
-					Debug.Assert (o1.getPosID () == o2.getPosID ());
-					break;
-				default:
-					throw new System.InvalidOperationException (
-						String.Format("Operation{0} at CreateRandomOperation()",
-						o1.getOpType())
-					);
+			case Operation.INSERT:
+				Debug.Assert (o1.getPosID () == o2.getPosID ());
+				Debug.Assert (o1.getTextureType() == o2.getTextureType());
+				break;
+			case Operation.DELETE:
+				Debug.Assert (o1.getPosID () == o2.getPosID ());
+				break;
+			case Operation.MOVE:
+				Debug.Assert (o1.getPosID () == o2.getPosID ());
+				Debug.Assert (o1.getTransMatrix() == o2.getTransMatrix());
+				Debug.Assert (o1.getDestPosID () == o2.getDestPosID ());
+				break;
+			case Operation.CREATE:
+				Debug.Assert (o1.getGID () == o2.getGID ());
+				break;
+			case Operation.JOIN:
+			case Operation.LEAVE:
+				Debug.Assert (o1.getGID () == o2.getGID ());
+				Debug.Assert (o1.getPosID () == o2.getPosID ());
+				break;
+			case Operation.JOIN_ALL:
+			case Operation.LEAVE_ALL:
+				Debug.Assert (o1.getGID () == o2.getGID ());
+				Debug.Assert (Operation.GetPosIDsFrom(o1.getPosIDs()) == Operation.GetPosIDsFrom(o2.getPosIDs()) );
+				break;
+			case Operation.MOVE_ALL:
+				Debug.Assert (Operation.GetPosIDsFrom(o1.getPosIDs()) == Operation.GetPosIDsFrom(o2.getPosIDs()) );
+				Debug.Assert (o1.getTransMatrix() == o2.getTransMatrix());
+				Debug.Assert (Operation.GetPosIDsFrom(o1.getDestPosIDs()) == Operation.GetPosIDsFrom(o2.getDestPosIDs()) );
+				break;
+			default:
+				throw new System.InvalidOperationException (
+					String.Format("Operation{0} at CreateRandomOperation()",
+					o1.getOpType())
+				);
 			}
 		}
+		Debug.Log("End an Operation class test");
 	}
 }
-

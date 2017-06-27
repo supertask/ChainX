@@ -20,7 +20,6 @@ public class EmulatedWebSocket
 	}
 
 	public IEnumerator Listen() {
-		int i=0;
 		while (true) {
 			string receivedMessage = this.ws.RecvString();
 			if (receivedMessage != null)
@@ -28,7 +27,6 @@ public class EmulatedWebSocket
 				//Debug.Log ("Received: "+receivedMessage);
 				this.operate(receivedMessage);
 
-				//w.SendString("Hi there"+i++);
 			}
 			if (this.ws.error != null)
 			{

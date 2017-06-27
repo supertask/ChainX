@@ -11,10 +11,10 @@ public class ChainVoxelTester : MonoBehaviour
 	void Update () { }
 
 	private void Test() {
-		Voxel.Test();	
-		//Operation.Test();
+		//Voxel.Test();	
+		Operation.Test();
+		ChainVoxel.Test();	
 		//Group.Test();
-		//ChainVoxel.Test();	
 		//StructureTable.Test();	
 		//EmulatedWebSocket.Test();
 

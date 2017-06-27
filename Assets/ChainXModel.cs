@@ -20,8 +20,10 @@ public class ChainXModel
 	public static string PAINT_TOOL_POINTER_ID = "pointer";
 	public static string PAINT_TOOL_VOXEL_ID = "voxel";
 	public static string PAINT_TOOL_GROUP_ID = "group";
+	public float VOXEL_PLATE_DIAMETER = 0.0f;
 
 	public ChainXModel() {
+		this.VOXEL_PLATE_DIAMETER = GameObject.Find(Const.PAINT_TOOL_PATH + "VoxelPlate").GetComponent<Renderer>().bounds.size.x - 2.2f;
 		this.initPaintTool();
 	}
 
@@ -122,6 +124,29 @@ public class ChainXModel
 		point.z = Mathf.RoundToInt(point.z);
 		return point;
 	}
+
+	/*
+	 * 
+	 */
+	public Operation CreateMoveOperation(List<GameObject> selectedObjects, Vector3 transMatrix)
+    {
+		//string posIDs = this.getPosIDsFrom(selectedObjects);
+	    //return new Operation (0, Operation.MOVE_ALL, "{\"posIDs\": \"" + posIDs + "\", \"transMatrix\": \"" + transMatrix + "\"}");
+		string posID = ChainXModel.CreatePosID(selectedObjects[0].transform.position);
+		return new Operation (0, Operation.MOVE, "{\"posID\": \"" + posID +
+			"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}");
+    }
+
+    public static string CreatePosID(Vector3 pos) { return pos.x + ":" + pos.y + ":" + pos.z; }
+
+	public string getPosIDsFrom(List<GameObject> selectedObjects) {
+        string res = "";
+        foreach (GameObject anObj in selectedObjects) {
+			res += anObj.name + Const.SPLIT_CHAR;
+        }
+		return res.TrimEnd(Const.SPLIT_CHAR);
+    }
+
 
 	public static void Test() {
 		ChainXModel model = new ChainXModel();

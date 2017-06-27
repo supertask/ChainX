@@ -22,8 +22,10 @@
 ## 実行方法
 `./ChainVoxel-SimulatorX/Assets/Sceen/`ディレクトリの`Main.unity`を実行して、アプリケーションをスタートさせると起動します。
 
-    $ cd ./ChainVoxel-SimulatorX/Assets/Sceen/
-    $ open Main.unity
+    $ cd ./ChainVoxel-SimulatorX/
+    $ open Assets/Sceen/Main.unity
+    $ cd server/websocket/
+    $ node server.js //Start server for multiple clients
 
 
 

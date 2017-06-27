@@ -68,16 +68,19 @@ public class ChainVoxel {
      */
 	public void apply(Operation op) {
 		lock (ChainXController.thisLock) {
-			string posID = op.getPosID();
+			string posID;
+			string[] posIDs;
 
 			switch (op.getOpType()) {
 			case Operation.INSERT:
+				posID = op.getPosID();
 				if (this.stt.isGrouped(posID)) break;
-				this.insert(op);
+				this.insert(op, posID);
 				break;
 			case Operation.DELETE:
+				posID = op.getPosID();
 				if (this.stt.isGrouped(posID)) break;
-				this.delete(op);
+				this.delete(op, posID);
 				break;
 			case Operation.CREATE:
 				this.create(op);
@@ -89,7 +92,20 @@ public class ChainVoxel {
 				this.leave(op);
 				break;
 			case Operation.MOVE:
-				this.move(op);
+				posID = op.getPosID();
+				if (this.stt.isGrouped(posID)) break;
+				this.move(op, op.getPosID(), op.getDestPosID());
+				break;
+
+			case Operation.INSERT_ALL:
+				posIDs = op.getPosIDs();
+				for(int i = 0; i < posIDs.Length; ++i)  { if (this.stt.isGrouped(posIDs[i])) break; }
+				this.insertAll(op, op.getPosIDs());
+				break;
+			case Operation.DELETE_ALL:
+				posIDs = op.getPosIDs();
+				for(int i = 0; i < posIDs.Length; ++i)  { if (this.stt.isGrouped(posIDs[i])) break; }
+				this.deleteAll(op, op.getPosIDs());
 				break;
 			case Operation.JOIN_ALL:
 				this.joinAll(op);
@@ -97,11 +113,16 @@ public class ChainVoxel {
 			case Operation.LEAVE_ALL:
 				this.leaveAll(op);
 				break;
+			case Operation.MOVE_ALL:
+				posIDs = op.getPosIDs();
+				for(int i = 0; i < posIDs.Length; ++i)  { if (this.stt.isGrouped(posIDs[i])) break; }
+				this.moveAll(op);
+				break;
 			default:
 				Debug.Assert (false);
 				break;
 			}
-			this.controller.log = this.show ();
+			this.controller.log = this.getStatusString ();
 		}
 		return;
 	}
@@ -111,14 +132,11 @@ public class ChainVoxel {
      * @param op 操作オブジェクト
      * @see Operation
      */
-	public void insert(Operation op) {
+	public void insert(Operation op, string posID) {
 		int id = op.getSID();
 		int textureType = int.Parse(op.getTextureType ());
-		string posID = (op.getOpType() == Operation.MOVE) ? op.getDestPosID() : op.getPosID();
 		long timestamp = op.getTimestamp();
 		Voxel insertVoxel = new Voxel(id, textureType, timestamp);
-
-		//Debug.Log(op.getOpType());
 
 		List<Voxel> voxelList = this.getVoxelList(posID);
 
@@ -146,9 +164,8 @@ public class ChainVoxel {
      * @return textureType 削除するVoxelのテクスチャ番号
      * @see Operation
      */
-	public int delete(Operation op) {
+	public int delete(Operation op, string posID) {
 		//int id = op.getSID();
-		string posID = op.getPosID();
 		long timestamp = op.getTimestamp();
 
 		// step1: 負のvoxelをnegativeVoxelsに追加・更新
@@ -156,10 +173,12 @@ public class ChainVoxel {
 			this.negativeVoxels[posID] = new Voxel(timestamp);
 		}
 
+		/*
 		//DEBUG!!!!!!
 		foreach (KeyValuePair<string,Voxel> aVoxel in this.negativeVoxels) {
 			Debug.Log(aVoxel.ToString());
 		}
+		*/
 
 		List<Voxel> voxelList = this.getVoxelList(posID);
 		Voxel tmpVoxel = this.getVoxel (posID); //NULL(06/03/2017)
@@ -167,7 +186,7 @@ public class ChainVoxel {
 
 		// step2: 負のvoxelより古いvoxelを削除する
 		for (int i = voxelList.Count - 1; i >= 0; --i) { // 先頭から削除するとイテレータがおかしくなる
-			Debug.Log(voxelList[i]);
+			//Debug.Log(voxelList[i]);
 			if (this.negativeVoxels[posID].getTimestamp() >= voxelList[i].getTimestamp()) {
 				voxelList.RemoveAt(i); 
 			}
@@ -179,12 +198,32 @@ public class ChainVoxel {
 		return textureType;
 	}
 
-	public void move(Operation op) {
-		if (this.getVoxel(op.getDestPosID()) != null) { return; }
-		int textureType = this.delete (op); //Bug!!
+	public void move(Operation op, string posID, string destPosID) {
+		if (this.getVoxel(posID) == null) return; //For protecting to an operate empty voxel.
+		if (this.getVoxel(destPosID) != null) return; //If a voxel already exists
+
+		int textureType = this.delete (op, posID);
 		op.setTextureType(textureType);
-		this.insert (op);
-		this.movedPosIDs [op.getPosID()] = op.getDestPosID ();
+		this.insert (op, destPosID);
+		this.movedPosIDs [posID] = destPosID;
+	}
+
+
+	//編集の必要がある
+	public void insertAll(Operation op, string[] posIDs) {
+		foreach(string posID in posIDs) { this.insert(op, posID); }
+	}
+
+	public void deleteAll(Operation op, string[] posIDs) {
+		foreach(string posID in posIDs) { this.delete(op, posID); }
+	}
+
+	public void moveAll(Operation op) {
+		string[] posIDs = op.getPosIDs();
+		string[] destPosIDs = op.getDestPosIDs();
+		for (int i = 0; i < posIDs.Length; ++i) {
+			this.move(op, posIDs[i], destPosIDs[i]);
+		}
 	}
 
 	/**
@@ -222,7 +261,7 @@ public class ChainVoxel {
      */
 	public void leave(Operation op) {
 		this.stt.leave(op.getSID(), op.getTimestamp(), op.getPosID(), op.getGID());
-		this.insert(op);
+		this.insert(op, op.getPosID());
 	}
 
 	/**
@@ -282,9 +321,9 @@ public class ChainVoxel {
 
 
 	/**
-     * ChainVoxelの状態を表示する
+     * ChainVoxelの状態を返す。
      */
-	public string show() {
+	public string getStatusString() {
 		string res="ChainVoxel table\n";
 		foreach (KeyValuePair<string, List<Voxel>> p in this.atoms)
 		{
@@ -301,10 +340,16 @@ public class ChainVoxel {
 			res += "\n";
 		}
 		res += "\n";
-		//Debug.Log(res);
 
 		return res;
 	}
+
+	/**
+     * ChainVoxelの状態を表示する
+     */
+	public void show() {
+		Debug.Log(this.getStatusString());
+	}	
 
 	/**
      * StructureTableの状態を表示する
@@ -377,7 +422,6 @@ public class ChainVoxel {
 	public string GetSavedData()
 	{
 		//Debug.Log(this.show());
-		string saved_data = "";
 		try {
 			using (StringWriter writer = new StringWriter()) {
 				foreach (KeyValuePair<string, List<Voxel>> p in this.atoms) {
@@ -407,8 +451,23 @@ public class ChainVoxel {
 	 * Test a ChainVoxel class.
 	 */
 	public static void Test() {
-		//ChainVoxel cv = new ChainVoxel();		
-		//SortedDictionary<string, Voxel> s = new SortedDictionary<string, Voxel>();
-		//Debug.Log(s);
+		ChainVoxel cv = new ChainVoxel(new ChainXController());
+		string posID = "1:1:1";
+		string transMatrix = "0:0:1";
+		int textureType = 2;
+		Operation o;
+		o = new Operation (0, Operation.INSERT, "{\"posID\": \"" + posID + "\", \"textureType\": \"" + textureType + "\"}");
+		cv.apply(o);
+		cv.show();
+		o = new Operation (0, Operation.MOVE, "{\"posID\": \"" + posID + "\", \"transMatrix\": \"" + transMatrix + "\"}");
+		cv.apply(o);
+		cv.show();
+
+		transMatrix = "1:0:0";
+		o = new Operation (0, Operation.MOVE, "{\"posID\": \"" + posID + "\", \"transMatrix\": \"" + transMatrix + "\"}");
+		cv.apply(o);
+		cv.show();
+
+		Debug.Log("End a ChainXVoxel class test");
 	}
 }
