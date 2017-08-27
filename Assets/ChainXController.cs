@@ -89,8 +89,13 @@ public class ChainXController : MonoBehaviour
                     if (Input.GetKeyDown (KeyCode.D)) {
                         //Here
                         //TODO(Tasuku): selectedObjectsを編集する
-                        foreach (GameObject anObj in this.selectedObjects)
-                            o = new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}");
+						foreach (GameObject anObj in this.selectedObjects) {
+							//if (anObj.)
+							//	o = new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}");
+							//else
+							//	o = new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}");
+							o = new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}");
+						}
                         this.selectedObjects.Clear();
                     }
                     else if (Input.GetKeyDown (KeyCode.G))

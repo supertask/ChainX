@@ -182,6 +182,7 @@ public class StructureTable {
 	/**
      * posIDに関連したグループ(gid)が墓石か判定する
 	 * Not used
+	 * @authoer Kengo
      * @param posID voxel識別子
      * @param gid グループ識別子
      * @return 墓石ならtrueを返す．それ以外はfalseを返す．
@@ -192,10 +193,11 @@ public class StructureTable {
 
 	/**
      * 指定したvoxelがグループ化中であるか判定する．
+	 * @authoer Kengo
      * @param posID voxel識別子
      * @return グループ化中ならばtrue，そうでないならfalseを返す．
      */
-	public bool isGrouped(string posID) {
+	public bool isGrouping(string posID) {
 		if (!this.groupEntriesTable.ContainsKey(posID)) { return false; }
 		HashSet<Group> groupEntries = this.groupEntriesTable[posID];
 
@@ -203,6 +205,13 @@ public class StructureTable {
 			if (aGroup.getTimestamp() > 0) {
 				return true;
 			}
+		}
+		return false;
+	}
+
+	public bool isGroupingAll(string[] posIDs) {
+		foreach(string posID in posIDs){
+			if (this.isGrouping (posID)) return true;
 		}
 		return false;
 	}

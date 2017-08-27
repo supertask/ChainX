@@ -4,6 +4,43 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Util {
+
+
+	public static Vector3 CreateRandomVector3(int minValue, int maxValue) {
+		int x = UnityEngine.Random.Range (minValue, maxValue);
+		int y = UnityEngine.Random.Range (minValue, maxValue);
+		int z = UnityEngine.Random.Range (minValue, maxValue);
+		return new Vector3(x,y,z);	
+	}
+
+	public static string CreatePosID(Vector3 v) {
+		return String.Format ("{0}:{1}:{2}", v.x, v.y, v.z);
+	}
+
+	public static string CreateRandomPosID(int minValue, int maxValue) {
+		Vector3 v = Util.CreateRandomVector3 (minValue, maxValue);
+		return Util.CreatePosID(v);
+	}
+
+	public static string CreateRandomPosID() {
+		return Util.CreateRandomPosID (int.MinValue, int.MaxValue);
+	}
+
+	/*
+	 * 
+	 */
+	public static string GetCommaLineFrom(string[] aList) {
+		string res = "";
+		foreach (string s in aList) {
+			res += s + Const.SPLIT_CHAR;
+		}
+		return res.TrimEnd(Const.SPLIT_CHAR);
+	}
+
+		
+
+
+
 	public static long currentTimeNanos() {
 		return System.DateTime.Now.Ticks; //Nano second
 	}

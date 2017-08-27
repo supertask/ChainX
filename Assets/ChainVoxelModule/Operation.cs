@@ -122,11 +122,11 @@ public class Operation {
 			new List<string>() {"posID", "gid"}, // leave
 			new List<string>() {"posID","transMatrix"}, // move
 
-			new List<string>() {"posIDs", "textureTypes"}, // insertAll
-			new List<string>() {"posIDs"}, // deleteAll
+			new List<string>() {"posIDs", "textureTypes", "gid"}, // insertAll
+			new List<string>() {"posIDs", "gid"}, // deleteAll
 			new List<string>() {"posIDs", "gid"}, // joinAll
 			new List<string>() {"posIDs", "gid"}, // leaveAll
-			new List<string>() {"posIDs","transMatrix"} // moveAll
+			new List<string>() {"posIDs","transMatrix", "gid"} // moveAll
 		};
 		/*
 		Debug.Log(requirements[this.opType].Count);
@@ -243,16 +243,27 @@ public class Operation {
      * Voxelのテクスチャ番号を返す．
      * @return テクスチャ番号
      */
-	public string getTextureType() {
-		return this.opParams.HasField ("textureType") ? this.opParams.GetField ("textureType").str : ""; 
+	public int getTextureType() {
+		return this.opParams.HasField ("textureType") ? int.Parse(this.opParams.GetField ("textureType").str) : -1; 
 	}
 
 	/**
      * Voxelのテクスチャ番号のリストを返す．
      * @return テクスチャ番号
      */
-	public string getTextureTypes() {
-		return this.opParams.HasField ("textureTypes") ? this.opParams.GetField ("textureTypes").str : ""; 
+	public int[] getTextureTypes() {
+		if (this.opParams.HasField("textureTypes")) {
+			string[] textureTypes = this.opParams.GetField("textureTypes").str.Split(Const.SPLIT_CHAR);
+			int[] intTextureTypes = new int[textureTypes.Length];
+			//Debug.Log (this.opParams.GetField("textureTypes"));
+
+			for (int i = 0; i < textureTypes.Length; ++i) {
+				intTextureTypes [i] = int.Parse (textureTypes [i]);
+			}
+			return intTextureTypes;
+		}
+		else return null;
+
 	}
 
 	/**
@@ -301,51 +312,32 @@ public class Operation {
 		return j.Print();
 	}
 
-
 	private static List<int> operation_types = new List<int>() {
 		Operation.INSERT, Operation.DELETE, Operation.CREATE, Operation.JOIN,
 		Operation.LEAVE, Operation.MOVE , Operation.MOVE_ALL, Operation.JOIN_ALL
 	};
 
 
-	public static string CreateRandomPosID(int minValue, int maxValue) {
-		int x = UnityEngine.Random.Range (minValue, maxValue);
-		int y = UnityEngine.Random.Range (minValue, maxValue);
-		int z = UnityEngine.Random.Range (minValue, maxValue);
-		return  String.Format("{0}:{1}:{2}", x, y, z);	
-	}
-
-	public static string CreateRandomPosID() {
-		return Operation.CreateRandomPosID (int.MinValue, int.MaxValue);
-	}
-
-	public static string GetPosIDsFrom(string[] posIDs) {
-		string res = "";
-		foreach (string posID in posIDs) {
-			res += posID + Const.SPLIT_CHAR;
-		}
-		return res.TrimEnd(Const.SPLIT_CHAR);	
-	}
 
 	public static Operation CreateRandomOperation()
 	{
-		int intMin = int.MinValue/2+1;
-		int intMax = int.MaxValue/2-1;
+		int intMin = -10000;
+		int intMax = 10000;
 
-		int sid = UnityEngine.Random.Range (0, int.MaxValue);
+		int sid = UnityEngine.Random.Range (0, int.MaxValue/2);
 		int opIndex = UnityEngine.Random.Range (0, Operation.operation_types.Count); //どのOperationか
 		string gid = Guid.NewGuid().ToString ("N");
 		int numberOfPosIDs = UnityEngine.Random.Range (1, 10);
 
 		string[] posIDs = new string[numberOfPosIDs];
 		string[] destPosIDs = new string[numberOfPosIDs];
-		string transMatrix = Operation.CreateRandomPosID(intMin, intMax);
-		int[] textureTypes = new int[numberOfPosIDs];
+		string transMatrix = Util.CreateRandomPosID(-1, 2);
+		string[] textureTypes = new string[numberOfPosIDs];
 		for(int i=0; i<numberOfPosIDs; ++i)
 		{
-			posIDs[i] = Operation.CreateRandomPosID(intMin, intMax);
+			posIDs[i] = Util.CreateRandomPosID(intMin, intMax);
 			destPosIDs[i] = Operation.CombinePosition(posIDs[i], transMatrix);
-			textureTypes[i] = UnityEngine.Random.Range (0, Const.NUMBER_OF_TEXTURE-1);
+			textureTypes[i] = UnityEngine.Random.Range (0, Const.NUMBER_OF_TEXTURE-1).ToString();
 		}
 
 		JSONObject j = new JSONObject();
@@ -357,6 +349,24 @@ public class Operation {
 		case Operation.DELETE:
 			j.AddField ("posID", posIDs[0]);
 			break;
+		case Operation.MOVE:
+			j.AddField ("posID", posIDs[0]);
+			j.AddField ("transMatrix", transMatrix);
+			break;
+		case Operation.INSERT_ALL:
+			j.AddField ("posIDs", Util.GetCommaLineFrom(posIDs));
+			j.AddField ("textureTypes", Util.GetCommaLineFrom(textureTypes));
+			j.AddField ("gid", gid);
+			break;
+		case Operation.DELETE_ALL:
+			j.AddField ("posIDs", Util.GetCommaLineFrom(posIDs));
+			j.AddField ("gid", gid);
+			break;
+		case Operation.MOVE_ALL:
+			j.AddField ("posIDs", Util.GetCommaLineFrom(posIDs));
+			j.AddField ("transMatrix", transMatrix);
+			j.AddField ("gid", gid);
+			break;
 		case Operation.CREATE:
 			j.AddField ("gid", gid);
 			break;
@@ -365,18 +375,10 @@ public class Operation {
 			j.AddField ("posID", posIDs[0]);
 			j.AddField ("gid", gid);
 			break;
-		case Operation.MOVE:
-			j.AddField ("posID", posIDs[0]);
-			j.AddField ("transMatrix", transMatrix);
-			break;
 		case Operation.JOIN_ALL:
 		case Operation.LEAVE_ALL:
-			j.AddField ("posIDs", Operation.GetPosIDsFrom(posIDs));
+			j.AddField ("posIDs", Util.GetCommaLineFrom(posIDs));
 			j.AddField ("gid", gid);
-			break;
-		case Operation.MOVE_ALL:
-			j.AddField ("posIDs", Operation.GetPosIDsFrom(posIDs));
-			j.AddField ("transMatrix", transMatrix);
 			break;
 		default:
 			throw new System.InvalidOperationException (
@@ -394,7 +396,9 @@ public class Operation {
 		if (op.getTransMatrix() != string.Empty) {
 			Debug.Assert(op.getTransMatrix() == transMatrix);
 		}
-		if (op.getDestPosIDs() != null) { Debug.Assert(Operation.GetPosIDsFrom(op.getDestPosIDs()) == Operation.GetPosIDsFrom(destPosIDs)); }
+		if (op.getDestPosIDs() != null) {
+			Debug.Assert(Util.GetCommaLineFrom(op.getDestPosIDs()) == Util.GetCommaLineFrom(destPosIDs));
+		}
 
 		return op;
 	}
@@ -404,26 +408,17 @@ public class Operation {
 	 */
 	public static void Test()
 	{
-		int numberOfTest = 100;
+		int numberOfTest = Const.TEST_QUALITY;
 
 		//
 		// A test for Operation.CombinePosition().
 		//
-		for (int i = 0; i < numberOfTest; ++i) {
-			int minInt = -10000, maxInt = 10000;
-			Vector3 posIDVector = new Vector3(
-				UnityEngine.Random.Range (minInt, maxInt), 
-				UnityEngine.Random.Range (minInt, maxInt), 
-				UnityEngine.Random.Range (minInt, maxInt)
-			);
-			Vector3 transMatrixVector = new Vector3(
-				UnityEngine.Random.Range (minInt, maxInt), 
-				UnityEngine.Random.Range (minInt, maxInt), 
-				UnityEngine.Random.Range (minInt, maxInt)
-			);
-			string combinedPosID = ChainXModel.CreatePosID(posIDVector + transMatrixVector);
+		for (int t = 0; t < numberOfTest; ++t) {
+			Vector3 posIDVector = Util.CreateRandomVector3 (-10000, 10000); 
+			Vector3 transMatrixVector = Util.CreateRandomVector3 (-1, 2);
 			Debug.Assert (
-				combinedPosID == Operation.CombinePosition(
+				ChainXModel.CreatePosID(posIDVector + transMatrixVector)
+				== Operation.CombinePosition(
 					ChainXModel.CreatePosID(posIDVector), ChainXModel.CreatePosID(transMatrixVector)
 				)
 			);
@@ -435,7 +430,7 @@ public class Operation {
 		//
 		string json = "";
 		Operation o1, o2;
-		for (int i = 0; i < numberOfTest; ++i) {
+		for (int t = 0; t < numberOfTest; ++t) {
 			o1 = Operation.CreateRandomOperation ();
 			json = Operation.ToJson (o1);
 			o2 = Operation.FromJson (json);
@@ -467,13 +462,23 @@ public class Operation {
 			case Operation.JOIN_ALL:
 			case Operation.LEAVE_ALL:
 				Debug.Assert (o1.getGID () == o2.getGID ());
-				Debug.Assert (Operation.GetPosIDsFrom(o1.getPosIDs()) == Operation.GetPosIDsFrom(o2.getPosIDs()) );
+				Debug.Assert (Util.GetCommaLineFrom(o1.getPosIDs()) == Util.GetCommaLineFrom(o2.getPosIDs()) );
 				break;
 			case Operation.MOVE_ALL:
-				Debug.Assert (Operation.GetPosIDsFrom(o1.getPosIDs()) == Operation.GetPosIDsFrom(o2.getPosIDs()) );
+				Debug.Assert (Util.GetCommaLineFrom(o1.getPosIDs()) == Util.GetCommaLineFrom(o2.getPosIDs()) );
 				Debug.Assert (o1.getTransMatrix() == o2.getTransMatrix());
-				Debug.Assert (Operation.GetPosIDsFrom(o1.getDestPosIDs()) == Operation.GetPosIDsFrom(o2.getDestPosIDs()) );
+				Debug.Assert (Util.GetCommaLineFrom(o1.getDestPosIDs()) == Util.GetCommaLineFrom(o2.getDestPosIDs()) );
+				Debug.Assert (o1.getGID () == o2.getGID ());
 				break;
+			case Operation.INSERT_ALL:
+				Debug.Assert (Util.GetCommaLineFrom(o1.getPosIDs()) == Util.GetCommaLineFrom(o2.getPosIDs()) );
+				Debug.Assert (o1.getTextureType() == o2.getTextureType());
+				Debug.Assert (o1.getGID () == o2.getGID ());
+                break;
+			case Operation.DELETE_ALL:
+				Debug.Assert (Util.GetCommaLineFrom(o1.getPosIDs()) == Util.GetCommaLineFrom(o2.getPosIDs()) );
+				Debug.Assert (o1.getGID () == o2.getGID ());
+                break;
 			default:
 				throw new System.InvalidOperationException (
 					String.Format("Operation{0} at CreateRandomOperation()",

@@ -23,7 +23,7 @@ public class Const {
 	public static int NUMBER_OF_TEXTURE = 8;
 	public static Vector3 PAINT_TOOL_PLATE_POSITION = Camera.main.ScreenToWorldPoint (new Vector3(-5,-30,5));
 
-
+	public static int TEST_QUALITY = 50; //テスト回数
 }
 
 public class MessageType {
