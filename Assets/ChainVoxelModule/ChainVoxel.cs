@@ -66,38 +66,43 @@ public class ChainVoxel {
      * @param textureType テクスチャ番号
      * @see Operation
      */
-	public void apply(Operation op) {
+	public void apply (Operation op)
+	{
 		lock (ChainXController.thisLock) {
 
 			string posID, destPosID;
 			string[] posIDs;
 			bool isGrouping;
-			switch (op.getOpType()) {
+			switch (op.getOpType ()) {
 			case Operation.INSERT:
-				posID = op.getPosID();
-				if (this.stt.isGrouping(posID)) break;
-				this.insert(op, posID, op.getTextureType());
+				posID = op.getPosID ();
+				if (this.stt.isGrouping (posID))
+					break;
+				this.insert (op, posID, op.getTextureType ());
 				break;
 			case Operation.DELETE:
-				posID = op.getPosID();
-				if (this.stt.isGrouping(posID)) break;
-				this.delete(op, posID);
+				posID = op.getPosID ();
+				if (this.stt.isGrouping (posID))
+					break;
+				this.delete (op, posID);
 				break;
 			case Operation.CREATE:
-				this.create(op);
+				this.create (op);
 				break;
 			case Operation.JOIN:
-				this.join(op);
+				this.join (op);
 				break;
 			case Operation.LEAVE:
-				this.leave(op);
+				this.leave (op);
 				break;
 			case Operation.MOVE:
-				posID = op.getPosID();
-                destPosID = op.getDestPosID();
-				if (this.stt.isGrouping(posID)) break;
-				if (this.stt.isGrouping(destPosID)) break;
-				this.move(op, posID, destPosID);
+				posID = op.getPosID ();
+				destPosID = op.getDestPosID ();
+				if (this.stt.isGrouping (posID))
+					break;
+				if (this.stt.isGrouping (destPosID))
+					break;
+				this.move (op, posID, destPosID);
 				break;
 
 			case Operation.INSERT_ALL:
@@ -108,25 +113,30 @@ public class ChainVoxel {
 						isGrouping = true;
 					}
 				}
-				if (isGrouping) { break; }
-				this.insertAll(op, posIDs, op.getTextureTypes());
+				if (isGrouping) {
+					break;
+				}
+				this.insertAll (op, op.getGID(), posIDs, op.getTextureTypes ());
 				break;
 			case Operation.DELETE_ALL:
-				posIDs = op.getPosIDs();
-                isGrouping = false;
-				for(int i = 0; i < posIDs.Length; ++i)  {
+				posIDs = op.getPosIDs ();
+				isGrouping = false;
+				for (int i = 0; i < posIDs.Length; ++i) {
 					if (this.stt.isGrouping (posIDs [i])) {
 						isGrouping = true;
+						break;
 					}
-                }
-				if (isGrouping) { break; }
-				this.deleteAll(op, posIDs);
+				}
+				if (isGrouping) {
+					break;
+				}
+				this.deleteAll (op, op.getGID(), posIDs);
 				break;
 			case Operation.JOIN_ALL:
-				this.joinAll(op);
+				this.joinAll (op, op.getGID(), op.getPosIDs());
 				break;
 			case Operation.LEAVE_ALL:
-				this.leaveAll(op);
+				this.leaveAll (op, op.getGID(), op.getPosIDs());
 				break;
 			case Operation.MOVE_ALL:
 				posIDs = op.getPosIDs ();
@@ -134,10 +144,12 @@ public class ChainVoxel {
 				for (int i = 0; i < posIDs.Length; ++i) {
 					if (this.stt.isGrouping (posIDs [i])) {
 						isGrouping = true;
+						break;
 					}
 				}
-				if (isGrouping) { break; }
-				this.moveAll (op);
+				if (isGrouping) {
+					this.moveAll (op);
+				}
 				break;
 			default:
 				Debug.Assert (false);
@@ -231,23 +243,24 @@ public class ChainVoxel {
 
 
 	//編集の必要がある
-	public void insertAll(Operation op, string[] posIDs, int[] textureTypes) {
+	public void insertAll(Operation op, string gid, string[] posIDs, int[] textureTypes) {
 		//insertAll時にtextureoTypesをInputする必要がある
 		for (int i = 0; i < posIDs.Length; ++i) {
 			this.insert (op, posIDs [i], textureTypes[i]);
 		}
-        this.joinAll(op);
+        this.joinAll(op, gid, posIDs);
 	}
 
-	public void deleteAll(Operation op, string[] posIDs) {
-        this.leaveAll(op);
+	public void deleteAll(Operation op, string gid, string[] posIDs) {
+		this.leaveAll(op, gid, posIDs);
 		foreach(string posID in posIDs) { this.delete(op, posID); }
 	}
 
-	public void moveAll(Operation op)
-    {
-        this.deleteAll(op, op.getPosIDs());
-		this.insertAll(op, op.getDestPosIDs(), this.getTextureTypesFrom(op.getPosIDs())); //Here
+	public void moveAll (Operation op)
+	{
+		int[] textureTypes = this.getTextureTypesFrom(op.getPosIDs());
+		this.deleteAll (op, op.getGID(), op.getPosIDs ());
+		this.insertAll(op, op.getGID(), op.getDestPosIDs(), textureTypes);
 	}
 
 	/**
@@ -273,9 +286,9 @@ public class ChainVoxel {
      * @param op 操作オブジェクト
      * @see Operation
      */
-	public void joinAll(Operation op) {
-		this.stt.joinAll(op.getTimestamp(), op.getPosIDs(), op.getGID());
-		this.joinedGIDs.Add(op.getGID());//最新のタイムスタンプのグループをとる
+	public void joinAll(Operation op, string gid, string[] posIDs) {
+		this.stt.joinAll(op.getTimestamp(), posIDs, gid);
+		this.joinedGIDs.Add(gid);//最新のタイムスタンプのグループをとる
 	}
 
 	/**
@@ -294,9 +307,9 @@ public class ChainVoxel {
      * @param op 操作オブジェクト
      * @see Operation
      */
-	public void leaveAll(Operation op) {
-		this.stt.leaveAll(op.getSID(), op.getTimestamp(), op.getPosIDs(), op.getGID());
-		foreach (string posID in op.getPosIDs()) {
+	public void leaveAll(Operation op, string gid, string[] posIDs) {
+		this.stt.leaveAll(op.getSID(), op.getTimestamp(), posIDs, gid);
+		foreach (string posID in posIDs) {
 			Voxel aVoxel = this.getVoxel (posID);
 			this.insert (op, posID, aVoxel.getTextureType());
 		}
@@ -504,8 +517,8 @@ public class ChainVoxel {
 	/**
 	 * Test a ChainVoxel class.
 	 */
-	public static void Test() {
-		ChainVoxel cv = new ChainVoxel(new ChainXController());
+	public static void Test ()
+	{
 		/*
 		//
 		// 単体Voxel操作（挿入、削除、移動）をテスト
@@ -530,60 +543,60 @@ public class ChainVoxel {
 			
 		//
 		// グループVoxel（参加、離脱、移動）のテスト
-		// Here
 		//
 		int numberOfTest = Const.TEST_QUALITY;
-		//Debug.Log ("Number of test: " + numberOfTest);
 
-
-		for (int t = 0; t < numberOfTest; t++)
-		{
+		for (int t = 0; t < numberOfTest; t++) {
 			//Debug.Log("test " + t);
+
+			ChainVoxel cv = new ChainVoxel (new ChainXController ());
 			Operation o;
 			int numberOfPosIDs = UnityEngine.Random.Range (1, 3);
-			Vector3 transMatrix = Util.CreateRandomVector3(-1,2);
+			Vector3 transMatrix = Util.CreateRandomVector3 (-1, 2);
 			string[] posIDs = new string[numberOfPosIDs];
 			string[] destPosIDs = new string[numberOfPosIDs];
 			string textureTypes = "";
-			string gid = ChainXModel.PAINT_TOOL_GROUP_ID + Util.GetGUID();
+			string gid = ChainXModel.PAINT_TOOL_GROUP_ID + Util.GetGUID ();
 
 			for (int p = 0; p < numberOfPosIDs; ++p) {
 				Vector3 v = Util.CreateRandomVector3 (-1000, 1000);
 				Vector3 destV = v + transMatrix;
-				posIDs[p] = Util.CreatePosID(v);
-				destPosIDs[p] = Util.CreatePosID(destV);
-				textureTypes += UnityEngine.Random.Range(0, 8).ToString() + Const.SPLIT_CHAR;
+				posIDs [p] = Util.CreatePosID (v);
+				destPosIDs [p] = Util.CreatePosID (destV);
+				textureTypes += UnityEngine.Random.Range (0, 8).ToString () + Const.SPLIT_CHAR;
 			}
-			textureTypes = textureTypes.TrimEnd(Const.SPLIT_CHAR);
+			textureTypes = textureTypes.TrimEnd (Const.SPLIT_CHAR);
 
 			//複数Voxelをinsertした後、それらをjoinする
-			o = new Operation(0, Operation.CREATE,
+			o = new Operation (0, Operation.CREATE,
 				"{\"gid\": \"" + gid + "\"}");
-			cv.apply(o);
+			cv.apply (o);
 
-			o = new Operation(0, Operation.INSERT_ALL,
-                "{\"gid\": \"" + gid +
-				"\", \"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) +
+			o = new Operation (0, Operation.INSERT_ALL,
+				"{\"gid\": \"" + gid +
+				"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
 				"\", \"textureTypes\": \"" + textureTypes + "\"}");
-			cv.apply(o);
-			Debug.Assert(cv.isIncludingAll(posIDs));
-			Debug.Assert(cv.stt.isGroupingAll(posIDs));
+			cv.apply (o);
+			Debug.Assert (cv.isIncludingAll (posIDs));
+			Debug.Assert (cv.stt.isGroupingAll (posIDs));
+			//Debug.Log ("Inserted posIDs: " + Util.GetCommaLineFrom(posIDs));
+			//cv.show ();
+			//cv.stt.show ();
 
-			Debug.Log ("Inserted posIDs: " + Util.GetCommaLineFrom(posIDs));
-			cv.show();
-			cv.stt.show();
-
-			/*
 			o = new Operation(0, Operation.MOVE_ALL,
                 "{\"gid\": \"" + gid +
 				"\", \"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) +
 				"\", \"transMatrix\": \"" + Util.CreatePosID(transMatrix) + "\"}");
 			cv.apply(o);
-			Debug.Log(o.opParams);
-			Debug.Log(Util.GetCommaLineFrom(destPosIDs));
+			Debug.Assert(cv.isIncludingAll(destPosIDs)); //ここもちょっとバグってる
 			Debug.Assert(cv.stt.isGroupingAll(destPosIDs)); //バグってる
+			cv.show();
+			cv.stt.show();
+			//Debug.Log ("Moved posIDs: " + Util.GetCommaLineFrom(posIDs));
+			Debug.Log ("Moved destPosIDs: " + Util.GetCommaLineFrom(destPosIDs));
+			//Debug.Log ("Moved textureType: " + textureTypes);
 
-
+			/*
 			o = new Operation(0, Operation.LEAVE_ALL,
                 "{\"gid\": \"" + gid +
 				"\", \"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) + "\"}");
