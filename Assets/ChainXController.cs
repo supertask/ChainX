@@ -41,89 +41,114 @@ public class ChainXController : MonoBehaviour
         yield return this.socket.Listen();
     }
 
-    void Update()
-    {
-        lock (ChainXController.thisLock) {
+    void Update ()
+	{
+		lock (ChainXController.thisLock) {
+			this.UpdateVoxels ();
+			this.SetUpGUICompornets ();
 
-            this.UpdateVoxels ();
-            this.SetUpGUICompornets ();
+			//スクリーンサイズが変更された時、実行される
+			if (this.screenSize.width != Screen.width ||
+			    this.screenSize.height != Screen.height) {
+				this.SetPositionOfPaintTool ();
+				this.screenSize.width = Screen.width;
+				this.screenSize.height = Screen.height;
+			}
 
-            //スクリーンサイズが変更された時、実行される
-            if (this.screenSize.width != Screen.width ||
-                this.screenSize.height != Screen.height)
-            {
-                this.SetPositionOfPaintTool();
-                this.screenSize.width = Screen.width;
-                this.screenSize.height = Screen.height;
-            }
+			//マウスクリックの際の処理
+			if (Input.GetMouseButtonDown (Const.MOUSE_LEFT_CLICK)) {
+				if (Input.GetKey (KeyCode.LeftAlt)) {
+					//Do nothing for Orbit, Zoom, etc..
+				} else if (this.clickUI ()) {
+					this.cleanSelectedObjects (); //Voxelの選択解除
+				} else if (this.paintTool.name == Const.UI_SELECTING_POINTER_NAME) {
+					this.clickVoxel (); //マウスクリックしてオブジェクトを選択する
+				} else {
+					//VoxelまたはVoxelsが選択中のとき
+					this.paintVoxels (); //VoxelまたはVoxelsをペイントする
+				}
+			}
 
-
-            Operation o = null;
-            if (Input.GetMouseButtonDown(Const.MOUSE_LEFT_CLICK))
-            {
-                if (Input.GetKey(KeyCode.LeftAlt)) {
-                    //Orbit, Zoom, etc..
-                }
-                else if (this.clickUI()) {
-                    this.cleanSelectedObjects(); //Voxelの選択解除
-                }
-                else if (this.paintTool.name == Const.UI_SELECTING_POINTER_NAME) {
-                    this.clickVoxel(); //マウスクリックしてオブジェクトを選択する
-                }
-                else {
-                    //VoxelまたはVoxelsが選択中のとき
-                    this.paintVoxels(); //VoxelまたはVoxelsをペイントする
-                }
-            }
-
-            if (this.selectedObjects.Count > 0) {
-				if (Input.GetKeyUp (KeyCode.UpArrow)) o = this.model.CreateMoveOperation(this.selectedObjects, new Vector3(1, 0, 0));
-				else if (Input.GetKeyUp (KeyCode.DownArrow)) o = this.model.CreateMoveOperation(this.selectedObjects, new Vector3(-1, 0, 0));
-				else if (Input.GetKeyUp (KeyCode.RightArrow)) o = this.model.CreateMoveOperation(this.selectedObjects,new Vector3(0, 0, -1));
-				else if (Input.GetKeyUp (KeyCode.LeftArrow)) o = this.model.CreateMoveOperation(this.selectedObjects, new Vector3(0, 0, 1));
-				else if (Input.GetKeyUp (KeyCode.U)) o = this.model.CreateMoveOperation(this.selectedObjects, new Vector3(0, 1, 0));
-				else if (Input.GetKeyUp (KeyCode.D)) o = this.model.CreateMoveOperation(this.selectedObjects, new Vector3(0, -1, 0));
-                else if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.LeftCommand) ||
-                    Input.GetKey (KeyCode.RightControl) || Input.GetKey(KeyCode.RightCommand))
-                {
-                    if (Input.GetKeyDown (KeyCode.D)) {
-                        //Here
-                        //TODO(Tasuku): selectedObjectsを編集する
+			//キーボード操作（移動、グループ作成、解除、削除）
+			Operation o = null;
+			if (this.selectedObjects.Count > 0) {
+				//Here
+				//3. MOVEコマンドを追加
+				if (Input.GetKeyUp (KeyCode.UpArrow)) {
+					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (1, 0, 0));
+					this.ApplyChainVoxel (o);
+				}
+				else if (Input.GetKeyUp (KeyCode.DownArrow)) {
+					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (-1, 0, 0));
+					this.ApplyChainVoxel (o);
+				}
+				else if (Input.GetKeyUp (KeyCode.RightArrow)) {
+					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (0, 0, -1));
+					this.ApplyChainVoxel (o);
+				}
+				else if (Input.GetKeyUp (KeyCode.LeftArrow)) {
+					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (0, 0, 1));
+					this.ApplyChainVoxel (o);
+				}
+				else if (Input.GetKeyUp (KeyCode.U)) {
+					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (0, 1, 0));
+					this.ApplyChainVoxel (o);
+				}
+				else if (Input.GetKeyUp (KeyCode.D)) {
+					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (0, -1, 0));
+					this.ApplyChainVoxel (o);
+				}
+				else if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.LeftCommand) ||
+				         Input.GetKey (KeyCode.RightControl) || Input.GetKey (KeyCode.RightCommand)) {
+					if (Input.GetKeyDown (KeyCode.D)) {
+						//
+						// VoxelまたはGroupVoxelを削除する
+						//
 						foreach (GameObject anObj in this.selectedObjects) {
-							//if (anObj.)
-							//	o = new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}");
-							//else
-							//	o = new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}");
-							o = new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}");
+							if (anObj.transform.childCount > 0) {
+								List<string> posIDs = new List<string> ();	
+								foreach (Transform child in anObj.transform) {
+									posIDs.Add (child.name);
+								}
+								string tmp = "{\"gid\": \"" + anObj.name + "\", \"posIDs\": \""
+								+ Util.GetCommaLineFrom (posIDs) + "\"}";
+								Debug.Log(tmp);
+								o = new Operation (0, Operation.DELETE_ALL, tmp);
+							} else {
+								o = new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}");
+							}
+							this.ApplyChainVoxel (o);
 						}
-                        this.selectedObjects.Clear();
-                    }
-                    else if (Input.GetKeyDown (KeyCode.G))
-                    {
-                        string gid = ChainXModel.PAINT_TOOL_GROUP_ID + Util.GetGUID();
+						this.selectedObjects.Clear ();
+					} else if (Input.GetKeyDown (KeyCode.G)) {
+						//Here
+						//2. Join, Leaveコマンドを追加
+						string gid = ChainXModel.PAINT_TOOL_GROUP_ID + Util.GetGUID ();
 
-                        if (this.selectedObjects.Count == 1) {
-                            if (this.selectedObjects[0].transform.childCount > 0) {
-                                //選択したオブジェクトが一つで、それがグループである場合、グループを解除
-                                o = new Operation (0, Operation.LEAVE_ALL, "{\"posIDs\": \"" + 
-                                    this.model.getPosIDsFrom(this.selectedObjects) + "\", \"gid\": \"" + gid +
-                                "\"}");
-                            }
-                            else { o = null; }
+						if (this.selectedObjects.Count == 1) {
+							if (this.selectedObjects [0].transform.childCount > 0) {
+								//選択したオブジェクトが一つで、それがグループである場合、グループを解除
+								o = new Operation (0, Operation.LEAVE_ALL, "{\"posIDs\": \"" +
+								this.model.getPosIDsFrom (this.selectedObjects) + "\", \"gid\": \"" + gid +
+								"\"}");
+								this.ApplyChainVoxel (o);
+							} else {
+								//何もしない
+							}
                         }
                         else {
                             //グループをそもそも作成し忘れてる
                             o = new Operation (0, Operation.JOIN_ALL, "{\"posIDs\": \"" + 
                                 this.model.getPosIDsFrom(this.selectedObjects) + "\", \"gid\": \"" + gid +
                             "\"}");
+							this.ApplyChainVoxel(o);
                         }
-
                     }
                 }
             }
             if (o != null) {
-                this.ApplyChainVoxel(o);
-                this.cv.show();
+	            //this.cv.show();
+            	//this.cv.stt.show();
             }
         }
     }
@@ -418,21 +443,29 @@ public class ChainXController : MonoBehaviour
          */
         foreach (string gid in this.cv.joinedGIDs) {
             GameObject aParent = new GameObject(gid);
-            this.model.AddGroup(gid);
+			this.model.AddGroupToUI(gid);
 
             foreach(string posID in this.cv.stt.getPosIDs(gid)) {
                 GameObject aChild = GameObject.Find(posID);
                 aChild.transform.SetParent(aParent.transform);
 
             }
+
         }
         cv.joinedGIDs.Clear ();
 
         /*
          * For LEAVE ALL operations.
          */
-        //leave all
-        //this.selectedObjects[0].transform.DetachChildren(); //グループ一括解除
+        foreach (string gid in this.cv.leftGIDs) {
+            this.model.RemoveGroupFromUI(gid);
+			GameObject aParent = GameObject.Find(gid);
+			aParent.transform.DetachChildren();
+			GameObject.Destroy(aParent);
+        }
+        cv.leftGIDs.Clear ();
+
+
     }
 
     /*

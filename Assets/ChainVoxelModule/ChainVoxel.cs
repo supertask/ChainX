@@ -41,6 +41,7 @@ public class ChainVoxel {
 	public List<string> deletedPosIDs;
 	public Dictionary<string,string> movedPosIDs;
 	public List<string> joinedGIDs;
+	public List<string> leftGIDs;
 	public string textPath;
 
 
@@ -56,6 +57,7 @@ public class ChainVoxel {
 		this.deletedPosIDs = new List<string>();
 		this.movedPosIDs = new Dictionary<string,string>();
 		this.joinedGIDs = new List<string>();
+		this.leftGIDs = new List<string>();
 		if (!Directory.Exists (Const.SAVED_DIR)) Directory.CreateDirectory(Const.SAVED_DIR);
 	}
 
@@ -299,6 +301,7 @@ public class ChainVoxel {
 		Voxel aVoxel = this.getVoxel (op.getPosID());
 		this.stt.leave(op.getSID(), op.getTimestamp(), op.getPosID(), op.getGID());
 		this.insert(op, op.getTimestamp(), op.getPosID(), aVoxel.getTextureType());
+		this.leftGIDs.Add(op.getGID());//最新のタイムスタンプのグループをとる
 	}
 
 	/**

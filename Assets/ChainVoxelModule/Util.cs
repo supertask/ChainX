@@ -26,12 +26,21 @@ public class Util {
 		return Util.CreateRandomPosID (int.MinValue, int.MaxValue);
 	}
 
+
+	public static string GetCommaLineFrom (List<string> aList) {
+		string res = "";
+		foreach (string s in aList) {
+			res += s + Const.SPLIT_CHAR;
+		}
+		return res.TrimEnd(Const.SPLIT_CHAR);
+	}
+
 	/*
 	 * 
 	 */
-	public static string GetCommaLineFrom(string[] aList) {
+	public static string GetCommaLineFrom(string[] strs) {
 		string res = "";
-		foreach (string s in aList) {
+		foreach (string s in strs) {
 			res += s + Const.SPLIT_CHAR;
 		}
 		return res.TrimEnd(Const.SPLIT_CHAR);

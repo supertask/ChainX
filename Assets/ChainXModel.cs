@@ -101,13 +101,13 @@ public class ChainXModel
 		return this.getPaintTool(0,0);
 	}
 
-	public void AddGroup(string gid) {
+	public void AddGroupToUI(string gid) {
 		if (this.paintTools.Count <= 2) { this.paintTools.Add(new List<string>()); }
 		if (this.paintTools[2].Contains(gid)) { return; }
 		this.paintTools[2].Add(gid);
 	}
 
-	public void RemoveGroup(string gid) {
+	public void RemoveGroupFromUI(string gid) {
 		if (this.paintTools.Count <= 2) { return; }
 		this.paintTools[2].Remove(gid);
 		if (this.paintTools[2].Count == 0) {
@@ -212,12 +212,12 @@ public class ChainXModel
 		Debug.Assert(model.getPaintTool(-1,0) == "voxel0");
 		Debug.Assert(model.getPaintTool(-1,0) == "voxel7");
 		Debug.Assert(model.getPaintTool(0,1) == "pointer");
-		model.AddGroup("group1");
+		model.AddGroupToUI("group1");
 		Debug.Assert(model.getPaintTool(0,1) == "voxel0");
 		Debug.Assert(model.getPaintTool(0,1) == "group1");
-		model.AddGroup("group1");
+		model.AddGroupToUI("group1");
 		Debug.Assert(model.getPaintTool(1,0) == "group1");
-		model.RemoveGroup("group1");
+		model.RemoveGroupFromUI("group1");
 		Debug.Assert(model.getCurrentPaintTool() == "pointer");
 		Debug.Assert(model.getPaintTool(-1,0) == "pointer"); 
 		Debug.Assert(model.getPaintTool(-1,0) == "pointer");
