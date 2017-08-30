@@ -77,28 +77,22 @@ public class ChainXController : MonoBehaviour
 				if (Input.GetKeyUp (KeyCode.UpArrow)) {
 					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (1, 0, 0));
 					this.ApplyChainVoxel (o);
-				}
-				else if (Input.GetKeyUp (KeyCode.DownArrow)) {
+				} else if (Input.GetKeyUp (KeyCode.DownArrow)) {
 					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (-1, 0, 0));
 					this.ApplyChainVoxel (o);
-				}
-				else if (Input.GetKeyUp (KeyCode.RightArrow)) {
+				} else if (Input.GetKeyUp (KeyCode.RightArrow)) {
 					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (0, 0, -1));
 					this.ApplyChainVoxel (o);
-				}
-				else if (Input.GetKeyUp (KeyCode.LeftArrow)) {
+				} else if (Input.GetKeyUp (KeyCode.LeftArrow)) {
 					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (0, 0, 1));
 					this.ApplyChainVoxel (o);
-				}
-				else if (Input.GetKeyUp (KeyCode.U)) {
+				} else if (Input.GetKeyUp (KeyCode.U)) {
 					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (0, 1, 0));
 					this.ApplyChainVoxel (o);
-				}
-				else if (Input.GetKeyUp (KeyCode.D)) {
+				} else if (Input.GetKeyUp (KeyCode.D)) {
 					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (0, -1, 0));
 					this.ApplyChainVoxel (o);
-				}
-				else if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.LeftCommand) ||
+				} else if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.LeftCommand) ||
 				         Input.GetKey (KeyCode.RightControl) || Input.GetKey (KeyCode.RightCommand)) {
 					if (Input.GetKeyDown (KeyCode.D)) {
 						//
@@ -110,9 +104,8 @@ public class ChainXController : MonoBehaviour
 								foreach (Transform child in anObj.transform) {
 									posIDs.Add (child.name);
 								}
-								string tmp = "{\"gid\": \"" + anObj.name + "\", \"posIDs\": \""
-								+ Util.GetCommaLineFrom (posIDs) + "\"}";
-								Debug.Log(tmp);
+								string tmp = "{\"gid\": \"" + anObj.name + "\"}";
+								Debug.Log (tmp);
 								o = new Operation (0, Operation.DELETE_ALL, tmp);
 							} else {
 								o = new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}");
@@ -120,29 +113,29 @@ public class ChainXController : MonoBehaviour
 							this.ApplyChainVoxel (o);
 						}
 						this.selectedObjects.Clear ();
-					} else if (Input.GetKeyDown (KeyCode.G)) {
-						//Here
-						//2. Join, Leaveコマンドを追加
-						string gid = ChainXModel.PAINT_TOOL_GROUP_ID + Util.GetGUID ();
-
+					}
+					else if (Input.GetKeyDown (KeyCode.G)) {
+						//
+						// グループの参加、離脱
+						// グループの中にグループは、今は処理しない
+						//
+						string gid;
 						if (this.selectedObjects.Count == 1) {
 							if (this.selectedObjects [0].transform.childCount > 0) {
 								//選択したオブジェクトが一つで、それがグループである場合、グループを解除
-								o = new Operation (0, Operation.LEAVE_ALL, "{\"posIDs\": \"" +
-								this.model.getPosIDsFrom (this.selectedObjects) + "\", \"gid\": \"" + gid +
-								"\"}");
+								gid = this.selectedObjects [0].transform.root.name;
+								Debug.Log (gid);
+								o = new Operation (0, Operation.LEAVE_ALL, "{\"gid\": \"" + gid + "\"}");
 								this.ApplyChainVoxel (o);
-							} else {
-								//何もしない
-							}
-                        }
-                        else {
-                            //グループをそもそも作成し忘れてる
-                            o = new Operation (0, Operation.JOIN_ALL, "{\"posIDs\": \"" + 
-                                this.model.getPosIDsFrom(this.selectedObjects) + "\", \"gid\": \"" + gid +
-                            "\"}");
+							} else { } //何もしない
+
+						} else {
+							gid = ChainXModel.PAINT_TOOL_GROUP_ID + Util.GetGUID ();
+							o = new Operation (0, Operation.JOIN_ALL, "{\"posIDs\": \"" +
+								this.model.getPosIDsFrom (this.selectedObjects) + "\", \"gid\": \"" + gid +
+							"\"}");
 							this.ApplyChainVoxel(o);
-                        }
+						}
                     }
                 }
             }
@@ -213,7 +206,7 @@ public class ChainXController : MonoBehaviour
 
             if (this.selectedObjects.Contains(hitObj)) {
                 if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) {
-                    this.RemoveToSelectedObjects(hitObj);
+                    this.RemoveFromSelectedObjects(hitObj);
                 } else {
                     this.cleanSelectedObjects();
                     this.AddToSelectedObjects(hitObj);
@@ -374,7 +367,7 @@ public class ChainXController : MonoBehaviour
         this.selectedObjects.Add(hitObj);
     }
 
-    private void RemoveToSelectedObjects(GameObject hitObj)
+    private void RemoveFromSelectedObjects(GameObject hitObj)
     {
         this.applyShader(hitObj, Const.DIFFUSE_SHADER);    
         this.selectedObjects.Remove(hitObj);
@@ -442,15 +435,14 @@ public class ChainXController : MonoBehaviour
          * For JOIN ALL operations.
          */
         foreach (string gid in this.cv.joinedGIDs) {
+			//本当にjoinしているかは、テーブルを参照しないとわからない（タイムスタンプなどの違いによる）
             GameObject aParent = new GameObject(gid);
 			this.model.AddGroupToUI(gid);
-
-            foreach(string posID in this.cv.stt.getPosIDs(gid)) {
+            foreach(string posID in this.cv.stt.getPosIDs(gid))
+			{
                 GameObject aChild = GameObject.Find(posID);
                 aChild.transform.SetParent(aParent.transform);
-
             }
-
         }
         cv.joinedGIDs.Clear ();
 
@@ -460,10 +452,16 @@ public class ChainXController : MonoBehaviour
         foreach (string gid in this.cv.leftGIDs) {
             this.model.RemoveGroupFromUI(gid);
 			GameObject aParent = GameObject.Find(gid);
+			this.RemoveFromSelectedObjects (aParent);
+			foreach (Transform child in aParent.transform) {
+				this.AddToSelectedObjects (child.gameObject);
+			}
 			aParent.transform.DetachChildren();
 			GameObject.Destroy(aParent);
         }
-        cv.leftGIDs.Clear ();
+		if (cv.leftGIDs.Count > 0) {
+			cv.leftGIDs.Clear ();
+		}
 
 
     }

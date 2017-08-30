@@ -121,26 +121,25 @@ public class ChainVoxel {
 				this.insertAll (op, op.getTimestamp (), op.getGID (), posIDs, op.getTextureTypes ());
 				break;
 			case Operation.DELETE_ALL:
-				posIDs = op.getPosIDs ();
 				isGrouping = false;
-				for (int i = 0; i < posIDs.Length; ++i) {
-					if (this.stt.isGrouping (posIDs [i])) {
+				foreach(string p in this.stt.getPosIDs(op.getGID())) {
+					if (this.stt.isGrouping (p)) {
 						isGrouping = true;
 						break;
 					}
 				}
 				if (isGrouping) {
-					this.deleteAll (op, op.getTimestamp (), op.getGID (), posIDs);
+					this.deleteAll (op, op.getTimestamp (), op.getGID ());
 				}
 				break;
 			case Operation.JOIN_ALL:
 				this.joinAll (op, op.getTimestamp(), op.getGID(), op.getPosIDs());
 				break;
 			case Operation.LEAVE_ALL:
-				this.leaveAll (op, op.getTimestamp(), op.getGID(), op.getPosIDs());
+				this.leaveAll (op, op.getTimestamp(), op.getGID());
 				break;
 			case Operation.MOVE_ALL:
-				posIDs = op.getPosIDs ();
+				posIDs = this.stt.getPosIDs(op.getGID());
 				isGrouping = false;
 				for (int i = 0; i < posIDs.Length; ++i) {
 					if (this.stt.isGrouping (posIDs [i])) {
@@ -251,17 +250,19 @@ public class ChainVoxel {
         this.joinAll(op, timestamp, gid, posIDs);
 	}
 
-	public void deleteAll(Operation op, long timestamp, string gid, string[] posIDs) {
-		this.leaveAll(op, timestamp, gid, posIDs);
+	public void deleteAll(Operation op, long timestamp, string gid) {
+		string[] posIDs = this.stt.getPosIDs (gid);
+		this.leaveAll(op, timestamp, gid);
 		foreach(string posID in posIDs) { this.delete(op, posID); }
 	}
 
 	public void moveAll (Operation op)
 	{
-		int[] textureTypes = this.getTextureTypesFrom(op.getPosIDs());
-		this.deleteAll (op, op.getTimestamp(), op.getGID(), op.getPosIDs());
+		string[] posIDs = this.stt.getPosIDs(op.getGID());
+		int[] textureTypes = this.getTextureTypesFrom(posIDs);
+		this.deleteAll (op, op.getTimestamp(), op.getGID());
 		this.insertAll(op, op.getTimestamp()+1L,
-			op.getGID(), op.getDestPosIDs(), textureTypes); //1Dは衝突を回避するため
+			op.getGID(), op.getDestPosIDs(posIDs), textureTypes); //1Dは衝突を回避するため
 	}
 
 	/**
@@ -301,7 +302,6 @@ public class ChainVoxel {
 		Voxel aVoxel = this.getVoxel (op.getPosID());
 		this.stt.leave(op.getSID(), op.getTimestamp(), op.getPosID(), op.getGID());
 		this.insert(op, op.getTimestamp(), op.getPosID(), aVoxel.getTextureType());
-		this.leftGIDs.Add(op.getGID());//最新のタイムスタンプのグループをとる
 	}
 
 	/**
@@ -309,12 +309,13 @@ public class ChainVoxel {
      * @param op 操作オブジェクト
      * @see Operation
      */
-	public void leaveAll(Operation op, long timestamp, string gid, string[] posIDs) {
-		this.stt.leaveAll(op.getSID(), timestamp, posIDs, gid);
-		foreach (string posID in posIDs) {
-			Voxel aVoxel = this.getVoxel (posID); //ここがNULL(Here)
+	public void leaveAll(Operation op, long timestamp, string gid) {
+		this.stt.leaveAll(op.getSID(), timestamp, gid);
+		foreach (string posID in this.stt.getPosIDs(gid)) {
+			Voxel aVoxel = this.getVoxel (posID);
 			this.insert (op, timestamp, posID, aVoxel.getTextureType());
 		}
+		this.leftGIDs.Add(gid);//最新のタイムスタンプのグループをとる
 	}
 
 	/**
@@ -561,7 +562,6 @@ public class ChainVoxel {
 			case 1:
 				o = new Operation(0, Operation.MOVE_ALL,
 		            "{\"gid\": \"" + gid +
-					"\", \"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) +
 					"\", \"transMatrix\": \"" + Util.CreatePosID(transMatrix) + "\"}");
 				cv.apply(o);
 				Debug.Assert(cv.isIncludingAll(destPosIDs));
@@ -569,16 +569,14 @@ public class ChainVoxel {
 				break;
 			case 2:
 				o = new Operation(0, Operation.DELETE_ALL,
-		            "{\"gid\": \"" + gid +
-					"\", \"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) + "\"}");
+		            "{\"gid\": \"" + gid + "\"}");
 				cv.apply(o);
 				Debug.Assert(!cv.isIncludingAll(posIDs));
 				Debug.Assert(!cv.stt.isGroupingAll(posIDs));
 				break;
 			case 3:
 				o = new Operation(0, Operation.LEAVE_ALL,
-		            "{\"gid\": \"" + gid +
-					"\", \"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) + "\"}");
+		            "{\"gid\": \"" + gid + "\"}");
 				cv.apply(o);
 				Debug.Assert(cv.isIncludingAll(posIDs));
 				Debug.Assert(! cv.stt.isGroupingAll(posIDs));

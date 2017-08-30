@@ -136,8 +136,11 @@ public class StructureTable {
      * @param gid グループ識別子
      * @see Operation
      */
-	public void leaveAll(int sid, long ts, string[] posIDs, string gid) {
-		foreach (string posID in posIDs) this.leave(sid, ts, posID, gid);
+	public void leaveAll(int sid, long ts, string gid) {
+		string[] posIDs = this.getPosIDs (gid);
+		foreach (string posID in posIDs) {
+			this.leave (sid, ts, posID, gid);
+		}
 	}
 
 	/**
@@ -235,9 +238,12 @@ public class StructureTable {
 	 * @param gid グループID
 	 * @return posIDのハッシュセット
 	 */
-	public HashSet<string> getPosIDs(string gid) {
+	public string[] getPosIDs(string gid) {
 		if (this.groupMembersTable.ContainsKey (gid)) {
-			return this.groupMembersTable [gid];
+			HashSet<string> hashPosIDs = this.groupMembersTable [gid];
+			string[] posIDs = new string[hashPosIDs.Count];
+			hashPosIDs.CopyTo(posIDs);
+			return posIDs;
 		}
 		else { return null; }
 	}
@@ -349,7 +355,7 @@ public class StructureTable {
 
 
 		foreach (string gid in gids) {
-			stt.leaveAll(1, 12L, posIDs.ToArray(), gid);
+			stt.leaveAll(1, 12L, gid);
 		}
 		stt.show("同時にleave");
 	}

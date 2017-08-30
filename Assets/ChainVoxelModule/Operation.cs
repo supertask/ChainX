@@ -123,10 +123,10 @@ public class Operation {
 			new List<string>() {"posID","transMatrix"}, // move
 
 			new List<string>() {"posIDs", "textureTypes", "gid"}, // insertAll
-			new List<string>() {"posIDs", "gid"}, // deleteAll
+			new List<string>() {"gid"}, // deleteAll
 			new List<string>() {"posIDs", "gid"}, // joinAll
-			new List<string>() {"posIDs", "gid"}, // leaveAll
-			new List<string>() {"posIDs","transMatrix", "gid"} // moveAll
+			new List<string>() {"gid"}, // leaveAll
+			new List<string>() {"transMatrix", "gid"} // moveAll
 		};
 		/*
 		Debug.Log(requirements[this.opType].Count);
@@ -224,11 +224,9 @@ public class Operation {
      * 移動先voxelの識別子のリストを返す．
      * @return voxelの識別子
      */
-	public string[] getDestPosIDs() {
+	public string[] getDestPosIDs(string[] posIDs) {
 		string transMatrix = this.getTransMatrix();
 		if (transMatrix == string.Empty) return null;
-
-		string[] posIDs = this.getPosIDs();
 		if (posIDs == null) return null;
 
 		List<string> destPosIDs = new List<string>();
@@ -396,8 +394,8 @@ public class Operation {
 		if (op.getTransMatrix() != string.Empty) {
 			Debug.Assert(op.getTransMatrix() == transMatrix);
 		}
-		if (op.getDestPosIDs() != null) {
-			Debug.Assert(Util.GetCommaLineFrom(op.getDestPosIDs()) == Util.GetCommaLineFrom(destPosIDs));
+		if (op.getDestPosIDs(op.getPosIDs()) != null) {
+			Debug.Assert(Util.GetCommaLineFrom(op.getDestPosIDs(op.getPosIDs())) == Util.GetCommaLineFrom(destPosIDs));
 		}
 
 		return op;
@@ -467,7 +465,8 @@ public class Operation {
 			case Operation.MOVE_ALL:
 				Debug.Assert (Util.GetCommaLineFrom(o1.getPosIDs()) == Util.GetCommaLineFrom(o2.getPosIDs()) );
 				Debug.Assert (o1.getTransMatrix() == o2.getTransMatrix());
-				Debug.Assert (Util.GetCommaLineFrom(o1.getDestPosIDs()) == Util.GetCommaLineFrom(o2.getDestPosIDs()) );
+				Debug.Assert (Util.GetCommaLineFrom(o1.getDestPosIDs(o1.getPosIDs()))
+					== Util.GetCommaLineFrom(o2.getDestPosIDs(o2.getPosIDs())) );
 				Debug.Assert (o1.getGID () == o2.getGID ());
 				break;
 			case Operation.INSERT_ALL:
