@@ -71,60 +71,43 @@ public class ChainXController : MonoBehaviour
 
 			//キーボード操作（移動、グループ作成、解除、削除）
 			Operation o = null;
+			Vector3 arrowV = Vector3.zero;
 			if (this.selectedObjects.Count > 0) {
-				//Here
 				//3. MOVEコマンドを追加
-				if (Input.GetKeyUp (KeyCode.UpArrow)) {
-					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (1, 0, 0));
-					this.ApplyChainVoxel (o);
-				} else if (Input.GetKeyUp (KeyCode.DownArrow)) {
-					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (-1, 0, 0));
-					this.ApplyChainVoxel (o);
-				} else if (Input.GetKeyUp (KeyCode.RightArrow)) {
-					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (0, 0, -1));
-					this.ApplyChainVoxel (o);
-				} else if (Input.GetKeyUp (KeyCode.LeftArrow)) {
-					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (0, 0, 1));
-					this.ApplyChainVoxel (o);
-				} else if (Input.GetKeyUp (KeyCode.U)) {
-					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (0, 1, 0));
-					this.ApplyChainVoxel (o);
-				} else if (Input.GetKeyUp (KeyCode.D)) {
-					o = this.model.CreateMoveOperation (this.selectedObjects, new Vector3 (0, -1, 0));
-					this.ApplyChainVoxel (o);
-				} else if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.LeftCommand) ||
+				if (Input.GetKeyUp (KeyCode.UpArrow)) arrowV = new Vector3 (1, 0, 0);
+				else if (Input.GetKeyUp (KeyCode.DownArrow)) arrowV = new Vector3 (-1, 0, 0);
+				else if (Input.GetKeyUp (KeyCode.RightArrow)) arrowV = new Vector3 (0, 0, -1);
+				else if (Input.GetKeyUp (KeyCode.LeftArrow)) arrowV = new Vector3 (0, 0, 1);
+				else if (Input.GetKeyUp (KeyCode.U)) arrowV = new Vector3 (0, 1, 0);
+				else if (Input.GetKeyUp (KeyCode.D)) arrowV = new Vector3 (0, -1, 0);
+
+				if (arrowV != Vector3.zero) {
+					foreach (GameObject anObj in this.selectedObjects) {
+						o = this.model.CreateMoveOperation(anObj, arrowV);
+						this.ApplyChainVoxel (o);
+					}
+				}
+				else if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.LeftCommand) ||
 				         Input.GetKey (KeyCode.RightControl) || Input.GetKey (KeyCode.RightCommand)) {
 					if (Input.GetKeyDown (KeyCode.D)) {
 						//
 						// VoxelまたはGroupVoxelを削除する
 						//
 						foreach (GameObject anObj in this.selectedObjects) {
-							if (anObj.transform.childCount > 0) {
-								List<string> posIDs = new List<string> ();	
-								foreach (Transform child in anObj.transform) {
-									posIDs.Add (child.name);
-								}
-								string tmp = "{\"gid\": \"" + anObj.name + "\"}";
-								Debug.Log (tmp);
-								o = new Operation (0, Operation.DELETE_ALL, tmp);
-							} else {
-								o = new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}");
-							}
+							o = this.model.CreateDeleteOperation(anObj);
 							this.ApplyChainVoxel (o);
 						}
-						this.selectedObjects.Clear ();
 					}
 					else if (Input.GetKeyDown (KeyCode.G)) {
 						//
 						// グループの参加、離脱
-						// グループの中にグループは、今は処理しない
+						// グループの中にグループは、今は処理しない！
 						//
 						string gid;
 						if (this.selectedObjects.Count == 1) {
 							if (this.selectedObjects [0].transform.childCount > 0) {
 								//選択したオブジェクトが一つで、それがグループである場合、グループを解除
 								gid = this.selectedObjects [0].transform.root.name;
-								Debug.Log (gid);
 								o = new Operation (0, Operation.LEAVE_ALL, "{\"gid\": \"" + gid + "\"}");
 								this.ApplyChainVoxel (o);
 							} else { } //何もしない
@@ -408,11 +391,11 @@ public class ChainXController : MonoBehaviour
         foreach (string posID in this.cv.deletedPosIDs) {
             GameObject anObj = GameObject.Find (posID);
             if (anObj != null) {
-                if (this.selectedObjects.Count > 0) {
+                if (this.selectedObjects.Count > 0) { //out of rangeを防ぐ
                     if (anObj == this.selectedObjects [0]) { //ここでout of range
                         /*
                          * For changing selectedObject.
-                          */
+                         */
                         if (this.cv.movedPosIDs.ContainsKey (posID)) {
                             string destPosID = this.cv.movedPosIDs [posID];    
                             GameObject destObj = GameObject.Find (destPosID);

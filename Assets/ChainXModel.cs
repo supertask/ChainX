@@ -128,14 +128,31 @@ public class ChainXModel
 	/*
 	 * 
 	 */
-	public Operation CreateMoveOperation(List<GameObject> selectedObjects, Vector3 transMatrix)
+	public Operation CreateMoveOperation(GameObject anObj, Vector3 transMatrix)
     {
-		//string posIDs = this.getPosIDsFrom(selectedObjects);
-	    //return new Operation (0, Operation.MOVE_ALL, "{\"posIDs\": \"" + posIDs + "\", \"transMatrix\": \"" + transMatrix + "\"}");
-		string posID = ChainXModel.CreatePosID(selectedObjects[0].transform.position);
-		return new Operation (0, Operation.MOVE, "{\"posID\": \"" + posID +
+		Operation o1 = new Operation (0, Operation.MOVE, "{\"posID\": \"" + anObj.name +
+				"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}");
+		Operation o2 = new Operation (0, Operation.MOVE_ALL, "{\"gid\": \"" + anObj.name +
 			"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}");
+		return this.CreateOperation (anObj, o1, o2);
     }
+
+	public Operation CreateDeleteOperation(GameObject anObj) {
+		Operation o1 = new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}");
+		Operation o2 = new Operation (0, Operation.DELETE_ALL, "{\"gid\": \"" + anObj.name + "\"}");
+		return this.CreateOperation (anObj, o1, o2);
+	}
+
+	private Operation CreateOperation(GameObject anObj, Operation singleOp, Operation multiOp) {
+		if (anObj.transform.childCount > 0) {
+			List<string> posIDs = new List<string> ();	
+			foreach (Transform child in anObj.transform) { posIDs.Add (child.name); }
+			return multiOp;
+		}
+		else { return singleOp; }
+	}
+
+
 
     public static string CreatePosID(Vector3 pos) { return pos.x + ":" + pos.y + ":" + pos.z; }
 
