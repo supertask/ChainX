@@ -130,6 +130,7 @@ public class ChainXModel
 	 */
 	public Operation CreateMoveOperation(GameObject anObj, Vector3 transMatrix)
     {
+		//Debug.Log (anObj.name);
 		Operation o1 = new Operation (0, Operation.MOVE, "{\"posID\": \"" + anObj.name +
 				"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}");
 		Operation o2 = new Operation (0, Operation.MOVE_ALL, "{\"gid\": \"" + anObj.name +
