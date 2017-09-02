@@ -17,6 +17,11 @@ public class Util {
 		return String.Format ("{0}:{1}:{2}", v.x, v.y, v.z);
 	}
 
+	public static Vector3 SplitPosID(string posID) {
+		string[] s = posID.Split(':');
+        return new Vector3(int.Parse(s[0]), int.Parse(s[1]), int.Parse(s[2]));
+    }
+
 	public static string CreateRandomPosID(int minValue, int maxValue) {
 		Vector3 v = Util.CreateRandomVector3 (minValue, maxValue);
 		return Util.CreatePosID(v);

@@ -20,7 +20,7 @@ public class ChainXController : MonoBehaviour
     private ScreenSize screenSize;
 
     public List<GameObject> selectedObjects;
-	public List<string> removedSelectedGIDs;
+	//public List<string> removedSelectedGIDs;
 
     IEnumerator Start() {
         this.model = new ChainXModel();
@@ -37,7 +37,7 @@ public class ChainXController : MonoBehaviour
 
         this.cv = new ChainVoxel(this);
         this.selectedObjects = new List<GameObject> ();
-		this.removedSelectedGIDs = new List<string> ();
+		//this.removedSelectedGIDs = new List<string> ();
         this.socket = new EmulatedWebSocket (this);
         StartCoroutine(this.socket.Connect());
         yield return this.socket.Listen();
@@ -111,7 +111,9 @@ public class ChainXController : MonoBehaviour
 							if (this.selectedObjects [0].transform.childCount > 0) {
 								//選択したオブジェクトが一つで、それがグループである場合、グループを解除
 								gid = this.selectedObjects [0].transform.root.name;
-								o = new Operation (0, Operation.LEAVE_ALL, "{\"gid\": \"" + gid + "\"}");
+								o = new Operation (0, Operation.LEAVE_ALL, "{\"posIDs\": \"" +
+									this.model.getPosIDsFrom (this.selectedObjects) + "\", \"gid\": \"" + gid +
+									"\"}");
 								this.ApplyChainVoxel (o);
 							} else { } //何もしない
 
@@ -341,9 +343,7 @@ public class ChainXController : MonoBehaviour
 
     private void cleanSelectedObjects()
     {
-		//Debug.Log ("cleanSelectedObjects(): " + this.selectedObjects[0]);
         foreach(GameObject anObj in this.selectedObjects) {
-			//Debug.Log ("cleanSelectedObjects(): " + anObj.transform.position);
             this.applyShader(anObj, Const.DIFFUSE_SHADER);    
         }
         this.selectedObjects.Clear();
@@ -423,9 +423,6 @@ public class ChainXController : MonoBehaviour
          * For JOIN ALL operations.
          */
 		if (this.cv.joinedGIDs.Count > 0) {
-			//foreach (GameObject anObj in this.selectedObjects) { Debug.Log (anObj); }
-			Debug.Log("JJJ");
-
 			foreach (string gid in this.cv.joinedGIDs) {
 				//グループ（親）を作り、子供を追加
 				GameObject aParent = new GameObject (gid);
@@ -435,6 +432,7 @@ public class ChainXController : MonoBehaviour
 					this.RemoveFromSelectedObjects (aChild);
 				}
 				//UIにこのグループオブジェクトを登録
+				//Debug.Log(gid);
 				this.model.AddGroupToUI (gid);
 				this.AddToSelectedObjects (aParent);
 			}
@@ -445,18 +443,12 @@ public class ChainXController : MonoBehaviour
          * For LEAVE ALL operations.
          */
 		if (this.cv.leftGIDs.Count > 0) {
-			//foreach (GameObject anObj in this.selectedObjects) { Debug.Log (anObj); }
-
 			foreach (string gid in this.cv.leftGIDs) {
 				this.model.RemoveGroupFromUI (gid);
 				GameObject aParent = GameObject.Find (gid);
 				if (aParent != null) {
-					if (this.selectedObjects.Contains (aParent)) {
-						this.removedSelectedGIDs.Add(gid);
-					}
+					//if (this.selectedObjects.Contains (aParent)) { this.removedSelectedGIDs.Add(gid); }
 					this.selectedObjects.Remove (aParent);
-
-					//foreach (Transform child in aParent.transform) { this.AddToSelectedObjects (child.gameObject); }
 					aParent.transform.DetachChildren ();
 					GameObject.Destroy (aParent);
 				}

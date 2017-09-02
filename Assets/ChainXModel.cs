@@ -130,29 +130,28 @@ public class ChainXModel
 	 */
 	public Operation CreateMoveOperation(GameObject anObj, Vector3 transMatrix)
     {
-		//Debug.Log (anObj.name);
-		Operation o1 = new Operation (0, Operation.MOVE, "{\"posID\": \"" + anObj.name +
-				"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}");
-		Operation o2 = new Operation (0, Operation.MOVE_ALL, "{\"gid\": \"" + anObj.name +
-			"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}");
-		return this.CreateOperation (anObj, o1, o2);
-    }
-
-	public Operation CreateDeleteOperation(GameObject anObj) {
-		Operation o1 = new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}");
-		Operation o2 = new Operation (0, Operation.DELETE_ALL, "{\"gid\": \"" + anObj.name + "\"}");
-		return this.CreateOperation (anObj, o1, o2);
-	}
-
-	private Operation CreateOperation(GameObject anObj, Operation singleOp, Operation multiOp) {
 		if (anObj.transform.childCount > 0) {
 			List<string> posIDs = new List<string> ();	
 			foreach (Transform child in anObj.transform) { posIDs.Add (child.name); }
-			return multiOp;
+			return new Operation (0, Operation.MOVE_ALL, "{\"gid\": \"" + anObj.name +
+				"\", \"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) + 
+				"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}");
 		}
-		else { return singleOp; }
-	}
+		else {
+			return new Operation (0, Operation.MOVE, "{\"posID\": \"" + anObj.name +
+				"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}");
+		}
+    }
 
+	public Operation CreateDeleteOperation(GameObject anObj) {
+		if (anObj.transform.childCount > 0) {
+			List<string> posIDs = new List<string> ();	
+			foreach (Transform child in anObj.transform) { posIDs.Add (child.name); }
+			return new Operation (0, Operation.DELETE_ALL, "{\"gid\": \"" + anObj.name +
+				"\", \"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) + "\"}");
+		}
+		else { return new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}"); }
+	}
 
 
     public static string CreatePosID(Vector3 pos) { return pos.x + ":" + pos.y + ":" + pos.z; }

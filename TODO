@@ -1,14 +1,6 @@
-・グループ選択機能を追加（バグ付き）
-・（選択したオブジェクトを一斉に動かせる機能追加）
-    裏側
-     ・make moveGroup() 
-     ・make leaveAll()
-     ・make joinAll()
-     ・make a test for those
-    表側
-     ・ほぼ実装済（グループを選択機能は、leaveAll(),joinAll()によって変わった情報を使う）、leaveAllの処理はまだ
-     ・実装済（GUI側はmoveAll()によって変わったVoxelを使い描画）
 
+
+・タイムスタンプによって消えるVoxelを治す
 ・StructureTableの墓石をdestroy操作によって捨てる
 ・コードクローンのあるところを修正＋ChainXModelにおけるやつは移動する
 
