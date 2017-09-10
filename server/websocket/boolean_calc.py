@@ -2,45 +2,68 @@
 import os
 import bpy
 import math
+from mathutils import Vector
 bpy.context.scene.unit_settings.system='METRIC'
 
-# TARGETのオブジェクトを設定する
-bpy.ops.mesh.primitive_uv_sphere_add(location=(0,0,1))
-sphere = bpy.data.objects["Sphere"]
-#sphere.scale = (1,1,1)
+def create_voxel(x,y,z):
+    bpy.ops.mesh.primitive_cube_add()
+    bpy.context.object.name = '%s:%s:%s' % (x,y,z)
+    bpy.context.object.location = Vector([x,y,z])
+    bpy.context.object.dimensions = Vector([1,1,1])
+    return bpy.context.object
 
+def boolean_modifier(cube, polygon):
+    bpy.context.scene.objects.active = cube
+    cube.data.use_auto_smooth = 1 #Smoothを解除
+    bpy.ops.object.modifier_add( type = 'BOOLEAN' )
+    cube.modifiers["Boolean"].operation = 'INTERSECT'
+    cube.modifiers["Boolean"].object = polygon
+    bpy.ops.object.modifier_apply( modifier = "Boolean" )
 
-#
-# ここからがメインの処理
-# デフォルトで存在する立方体から球をブーリアンで引く
-# ================================================
-#
-cube = bpy.data.objects["Cube"]
-cube.scale = (1,1,1)
-cube.location = (-10,-10,-10)
+def delete_obj(name):
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.data.objects[name].select = True
+    bpy.ops.object.delete()
+    
 
-bpy.context.scene.objects.active = cube
-bpy.ops.object.modifier_add( type = 'BOOLEAN' )
-cube.modifiers["Boolean"].operation = 'DIFFERENCE'
-cube.modifiers["Boolean"].object = sphere
-bpy.ops.object.modifier_apply( modifier = "Boolean" )
+def split_object(path):
+    # Delete the default cube
+    delete_obj('Cube')
 
-# 球を転がす用のサイズに変更
-sphere.location = ( 0.9, 0, 1 )
-sphere.scale = ( 0.1, 0.1, 0.1 )
+    # Import an obj that you want to split
+    imported_object = bpy.ops.import_scene.obj(filepath=path)
+    target = bpy.context.selected_objects[0] ####<--Fix
+    print('Imported name: ', target.name)
+    #mat = bpy.data.materials.get("Material")
 
+    # Calc bounds
+    bpy.data.objects[target.name].select = True
+    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS') #move to center of bounds
+    target.location.x = 0.0
+    target.location.y = 0.0
+    target.location.z = 0.0
+    half_dimensions = target.dimensions / 2
+    center = target.location
 
+    print(center)
+    print(target.dimensions)
+    print(half_dimensions)
 
+    minDZ, maxDZ = round(-half_dimensions.z), round(half_dimensions.z)
+    minDY, maxDY = round(-half_dimensions.y), round(half_dimensions.y)
+    minDX, maxDX = round(-half_dimensions.x), round(half_dimensions.x)
+    print(minDZ, maxDZ)
+    print(minDY, maxDY)
+    print(minDX, maxDX)
+    print()
+    for z in range(minDZ, maxDZ+1):
+        for y in range(minDY, maxDY+1):
+            for x in range(minDX, maxDX+1):
+                voxel = create_voxel(x,y,z)
+                boolean_modifier(voxel, target)
+    delete_obj(target.name)
 
-
-
-
-
-
-
-
-
-
+split_object(path="./monkey.obj")
 
 
 ## 5つの空のオブジェクトを配置
