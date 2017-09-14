@@ -215,13 +215,16 @@ public class Operation {
 	}
 
 
+	public string[] getDestPosIDs() {
+		return this.getDestPosIDs (this.getPosIDs ());
+	}
+
 	/**
      * 移動先voxelの識別子のリストを返す．
      * @return voxelの識別子
      */
-	public string[] getDestPosIDs() {
+	public string[] getDestPosIDs(string[] posIDs) {
 		string transMatrix = this.getTransMatrix();
-		string[] posIDs = this.getPosIDs();
 		if (transMatrix == string.Empty) return null;
 		if (posIDs == null) return null;
 

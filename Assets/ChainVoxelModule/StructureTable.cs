@@ -121,7 +121,6 @@ public class StructureTable {
 		if (!groupEntriesSet.Contains(aGroup) || Mathf.Abs(this.getTimestamp(posID, gid)) >= ts) {
 			return;
 		} 
-		//Debug.Log("Here");
 		this.groupMembersTable[gid].Remove(posID);
 
 		// タイムスタンプの更新 + tombstone化

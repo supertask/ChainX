@@ -1,11 +1,48 @@
+var path = require('path');
 var WebSocket = require('ws').Server;
 var server;
-var SAVED_FILE = 'data/worked3D_1.txt';
+var SAVE_FILE = 'data/worked3D_1.txt';
+var OBJ_FILE = 'data/monkey.obj';
+var IMG_FILE = 'data/monkey.jpg';
+var MTL_FILE = 'data/monkey.mtl';
+var SPLIT_CHAR = "@"
+//var TEXT_FILE_HEADER = "TEXT_FILE" + SPLIT_CHAR;
+//var IMG_FILE_HEADER = "IMG_FILE" + SPLIT_CHAR;
+//var OBJ_FILE_HEADER = "OBJ_FILE" + SPLIT_CHAR;
+//var MTL_FILE_HEADER = "MTL_FILE" + SPLIT_CHAR;
+var SOME_FILE_HEADER = "SOME_FILE" + SPLIT_CHAR;
+var OPERATION_HEADER = "OPERATION" + SPLIT_CHAR;
+
+
 
 var Server = function()
 {
-    var TEXT_FILE_HEADER = "TEXT_FILE:\n";
     var PORT_NUMBER = 18080;
+
+    /*
+    function _send_file(socket, filename) {
+        var fs = require('fs');
+        fs.readFile(filename, 'utf8', function (err, text) {
+            if (err == null) {
+                socket.send(text);
+            }
+            else { console.log(err); }
+        });
+    }
+    */
+
+    function _send_file(socket, filepath) {
+        var fs = require('fs');
+        var header = new Buffer(SOME_FILE_HEADER + path.basename(filepath) + SPLIT_CHAR);
+
+        fs.readFile(filepath, function (err, data) {
+            if (err == null) {
+                //fs.writeFile("data/x.jpg", new Buffer(data), function (err) { });
+                socket.send(Buffer.concat([header, data])); //or new Buffer(data)
+            }
+            else { console.log(err); }
+        });
+    }
 
     function _broadcast(socket, message) {
         this.clients.forEach(function(client, index) {
@@ -15,38 +52,34 @@ var Server = function()
 
     function _connect(socket) {
         console.log('connected!');
-        var fs = require('fs');
-        var loading_text = TEXT_FILE_HEADER;
-        fs.readFile(SAVED_FILE, 'utf8', function (err, text) {
-            if (err == null) {
-                loading_text += text;
-                socket.send(loading_text);
-            }
-            else { console.log(err); }
-        });
+
+        socket.send(OPERATION_HEADER + "{}");
+        server.send_file(socket, IMG_FILE);
+        server.send_file(socket, OBJ_FILE);
+        server.send_file(socket, SAVE_FILE);
 
         socket.on('message', function (message) {
-            console.log(message.toString());
+            strs = message.toString().split(SPLIT_CHAR);
             //var json_obj = JSON.parse(message);
             //socket.send(message); //送信者に返す
+            console.log(message.toString());
             server.broadcast(socket, message); //送信者以外にBroadcast
         });
         socket.on('close', function _onClose(message) {
             console.log('disconnected...');
         });
-
-        //setInterval(function() { socket.send("Hi!"); }, 1000);
     }
 
     function _run() {
         server = new WebSocket({ port: PORT_NUMBER });
         server.broadcast = _broadcast;
+        server.send_file = _send_file;
         server.on('connection', _connect);
         console.log("Start a server for WebSocket.");
     }
 
     return {
-        run: _run,
+        run: _run
     };
 }
 

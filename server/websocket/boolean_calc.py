@@ -44,15 +44,16 @@ def delete_all_objects():
     bpy.ops.object.delete()
 
 
-def split_object(path, texture_path):
+def split_object(obj_path, texture_path):
     delete_all_objects()
 
     # Import an obj that you want to split
-    imported_object = bpy.ops.import_scene.obj(filepath=path)
+    imported_object = bpy.ops.import_scene.obj(filepath=obj_path)
     target = bpy.context.selected_objects[0] ####<--Fix
 
     # Create a texture
-    texture_name, _ = os.path.splitext(basename("./monkey.jpg"))
+    obj_name, _ = os.path.splitext(basename(obj_path))
+    texture_name, _ = os.path.splitext(basename(texture_path))
     target.active_material.use_nodes = True
     tree = target.active_material.node_tree
     diffuse_node = tree.nodes['Diffuse BSDF']
@@ -87,6 +88,7 @@ def split_object(path, texture_path):
                 boolean_modifier(voxel, target)
 
     delete_obj(target.name)
+    bpy.ops.export_scene.obj(filepath= obj_name + "_boolean.obj")
 
-split_object(path="./monkey.obj", texture_path="./monkey.jpg")
+split_object(obj_path="./monkey.obj", texture_path="./monkey.jpg")
 
