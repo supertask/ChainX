@@ -30,22 +30,19 @@ public class Const {
 public class MessageType {
 	public static string OPERATION = "OPERATION";
 	public static string SOME_FILE = "SOME_FILE";
-	//public static string TEXT_FILE = "TEXT_FILE";
-	//public static string OBJ_FILE = "OBJ_FILE";
-	//public static string MTL_FILE = "MTL_FILE";
-	//public static string IMG_FILE = "IMG_FILE";
+
 	public static string EXIT = "EXIT";
 	public static string ERROR = "ERROR"; //no used
 }
 
 public class MessageHeader {
 	public static char SPLIT_CHAR = '@';
-	public static byte[] OPERATION = Encoding.UTF8.GetBytes(MessageType.OPERATION + MessageHeader.SPLIT_CHAR);
-	public static byte[] SOME_FILE = Encoding.UTF8.GetBytes(MessageType.SOME_FILE + MessageHeader.SPLIT_CHAR);
-	//public static string TEXT_FILE = MessageType.TEXT_FILE + MessageHeader.SPLIT_CHAR;
-	//public static string OBJ_FILE = MessageType.OBJ_FILE + MessageHeader.SPLIT_CHAR;
-	//public static string MTL_FILE = MessageType.MTL_FILE + MessageHeader.SPLIT_CHAR;
-	//public static string IMG_FILE = MessageType.IMG_FILE + MessageHeader.SPLIT_CHAR;
+	public static string OPERATION = MessageType.OPERATION + MessageHeader.SPLIT_CHAR;
+	public static string SOME_FILE = MessageType.SOME_FILE + MessageHeader.SPLIT_CHAR;
+
+	public static byte[] OPERATION_BINARY = Encoding.UTF8.GetBytes(MessageType.OPERATION + MessageHeader.SPLIT_CHAR);
+	public static byte[] SOME_FILE_BINARY = Encoding.UTF8.GetBytes(MessageType.SOME_FILE + MessageHeader.SPLIT_CHAR);
+
 	public static byte[] EXIT = Encoding.UTF8.GetBytes(MessageType.EXIT); //no used
 	public static byte[] ERROR = Encoding.UTF8.GetBytes(MessageType.ERROR + MessageHeader.SPLIT_CHAR); //no used
 }

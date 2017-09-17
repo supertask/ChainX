@@ -53,10 +53,11 @@ var Server = function()
     function _connect(socket) {
         console.log('connected!');
 
-        socket.send(OPERATION_HEADER + "{}");
-        server.send_file(socket, IMG_FILE);
-        server.send_file(socket, OBJ_FILE);
+        socket.send(OPERATION_HEADER + "{\"sid\":\"2\", \"opType\":\"0\", \"ts\":\"1\", \"opParams\": {\"posID\":\"1:1:1\", \"textureType\":\"1\"} }");
         server.send_file(socket, SAVE_FILE);
+        server.send_file(socket, OBJ_FILE);
+        server.send_file(socket, MTL_FILE);
+        server.send_file(socket, IMG_FILE);
 
         socket.on('message', function (message) {
             strs = message.toString().split(SPLIT_CHAR);

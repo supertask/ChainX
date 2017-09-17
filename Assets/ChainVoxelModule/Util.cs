@@ -13,6 +13,14 @@ public class Util {
 		return new Vector3(x,y,z);	
 	}
 
+	public static byte[] CombineBytes(byte[] a, byte[] b) {
+		int length = a.Length + b.Length;
+		byte[] combinedBinary = new byte[length];
+		a.CopyTo(combinedBinary, 0);
+		b.CopyTo(combinedBinary, a.Length);	
+		return combinedBinary;
+	}
+
 	public static string CreatePosID(Vector3 v) {
 		return String.Format ("{0}:{1}:{2}", v.x, v.y, v.z);
 	}

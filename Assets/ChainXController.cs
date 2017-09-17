@@ -1,6 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
@@ -137,12 +139,22 @@ public class ChainXController : MonoBehaviour
 
 	void OnGUI() {
 		if (GUILayout.Button("Load obj..", GUILayout.Width(100))) {
-			string path = EditorUtility.OpenFilePanel("Select an obj", "~/Downloads/", "obj");
-			if (path.Length > 0) {
-				this.socket.Send(MessageHeader.SOME_FILE + this.cv.GetSavedData()); //ここ
-				//GameObject anObj = OBJLoader.LoadOBJFile (path);
-				//anObj.transform.position = new Vector3 (1.0f, 5.0f, -1.0f);
-				//this.model.SplitObject(anObj);
+			string[] filePaths = new string[3];
+			filePaths[0] = EditorUtility.OpenFilePanel("Select an obj", "~/Downloads/", "obj");
+			if (filePaths[0].Length > 0) {
+				string dir = Path.GetDirectoryName(filePaths[0]);
+				string filenameWithoutExt = Path.GetFileNameWithoutExtension(filePaths[0]);
+				filePaths[1] = dir + "/" + filenameWithoutExt + ".mtl";
+				filePaths[2] = dir + "/" + filenameWithoutExt + ".jpg";
+				//
+				// JPG, MTL, OBJファイルを他のマシーンに転送
+				// メッセージ受信する際に、分割されたOBJファイルをローカル受け取り、
+				// その時点でオブジェクトが適用され、表示される
+				//
+				foreach(string path in filePaths) {
+					byte[] header = Encoding.UTF8.GetBytes(MessageHeader.SOME_FILE + path + MessageHeader.SPLIT_CHAR);
+					this.socket.SendBinary(Util.CombineBytes(header, File.ReadAllBytes(path)) );
+				}
 			}
 		}
 	}
@@ -530,8 +542,9 @@ public class ChainXController : MonoBehaviour
 
     private void OnApplicationQuit() {
         this.socket.Close();
-		this.socket.Send(MessageHeader.SOME_FILE + this.cv.GetSavedData()); //ここ
+		this.cv.SaveData(Const.SAVED_FILE);
+		byte[] savedDataBinary = File.ReadAllBytes (Const.SAVED_FILE);
+		this.socket.SendBinary(Util.CombineBytes (MessageHeader.SOME_FILE_BINARY, savedDataBinary));
         //TODO(Tasuku): SaveしましたのWindowを表示して終わる!!
     }
-
 }

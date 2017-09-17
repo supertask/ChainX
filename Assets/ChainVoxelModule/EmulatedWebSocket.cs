@@ -50,27 +50,61 @@ public class EmulatedWebSocket
 	}
 
 	public IEnumerator Listen() {
-		string exMsgType = "";
-		string receivedMessage = "";
 		byte[] receivedBinary = null;
+		Material[] materials = null;
+		Texture2D texture = null;
+		GameObject targetObj = null;
 
 		while (true) {
 			receivedBinary = this.ws.Recv();
 			if (receivedBinary != null) {
 				Debug.Log (receivedBinary);
-				if (this.partEqual (ref receivedBinary, ref MessageHeader.OPERATION)) {
+				if (this.partEqual (ref receivedBinary, ref MessageHeader.OPERATION_BINARY)) {
 					string line = Encoding.UTF8.GetString (receivedBinary);
 					line = line.Remove (0, MessageHeader.OPERATION.Length).Trim ();
-					Debug.Log (line);
+					Operation op = Operation.FromJson (line);
+					this.controller.cv.apply (op);
 				}
-				else if (this.partEqual (ref receivedBinary, ref MessageHeader.SOME_FILE)) {
+				else if (this.partEqual (ref receivedBinary, ref MessageHeader.SOME_FILE_BINARY)) {
 					string filepath = this.getStringUntilAt(ref receivedBinary);
-					Debug.Log (filepath);
 					int start_i = MessageHeader.SOME_FILE.Length + filepath.Length + 1; //1='@'
 					string path = Application.persistentDataPath + "/" + filepath;
 					FileStream fs = new FileStream(path, FileMode.Create, FileAccess.Write);
 					fs.Write (receivedBinary, start_i, receivedBinary.Length - start_i);
 					fs.Close ();
+					if (Path.GetExtension (path) == ".txt") {
+						this.controller.cv.LoadSavedData (path);
+					}
+					else if (Path.GetExtension (path) == ".obj") {
+						targetObj = OBJLoader.LoadOBJFile (path);
+					}
+					else if (Path.GetExtension (path) == ".mtl") {
+						materials = OBJLoader.LoadMTLFile (path);
+					}
+					else if (Path.GetExtension (path) == ".jpg") {
+						texture = TextureLoader.LoadTexture (path);
+					}
+
+					if (targetObj != null && materials != null && texture != null) {
+						//
+						// When all dependent files of a 3d obj have been collected, 
+						// Build the 3d obj.
+						//
+						targetObj.transform.position = new Vector3 (0,5,0);
+						if (targetObj.transform.childCount > 0) {
+							foreach (Transform child in targetObj.transform) {
+								child.gameObject.GetComponent<Renderer> ().material = new Material (Const.DIFFUSE_SHADER);;
+								child.gameObject.GetComponent<Renderer> ().material.mainTexture = texture;
+							}
+						}
+						else {
+							//Probably NEVER EXEC
+							targetObj.GetComponent<Renderer> ().material = new Material (Const.DIFFUSE_SHADER);;
+							targetObj.GetComponent<Renderer> ().material.mainTexture = texture;
+						}
+						//Clear for the next 3d objs
+						targetObj = null; materials = null; texture = null;
+					}
 				}
 				else if (this.partEqual (ref receivedBinary, ref MessageHeader.EXIT)) {
 					Debug.Log ("EXIT");
@@ -92,33 +126,6 @@ public class EmulatedWebSocket
 
 	private string operate(string receivedMessage)
 	{
-		/*
-		receivedMessage = receivedMessage.Trim();
-		if (receivedMessage.IndexOf (MessageHeader.OPERATION) == 0) {
-			receivedMessage = receivedMessage.Remove (0, MessageHeader.OPERATION.Length).Trim ();
-			Debug.Log (receivedMessage);
-			Operation op = Operation.FromJson (receivedMessage);
-			Debug.Log (Operation.ToJson (op));
-			//Debug.Log(receivedMessage);
-			this.controller.cv.apply (op);
-			this.controller.cv.showStructureTable ();
-			return MessageType.OPERATION;
-		}
-		else if (receivedMessage.IndexOf (MessageHeader.SOME_FILE) == 0) {
-			receivedMessage = receivedMessage.Remove (0, MessageHeader.SOME_FILE.Length).Trim ();
-			int i = 0;
-			while(receivedMessage[i] != MessageHeader.SPLIT_CHAR) {
-				filepath += receivedMessage[i];
-				i++;
-			}
-			//this.controller.cv.LoadSavedData(receivedMessage);
-			return MessageType.SOME_FILE;
-		}
-		else if (receivedMessage.IndexOf(MessageHeader.ERROR) == 0) {
-			Debug.LogError(receivedMessage); //TODO(Tasuku): Think about this errors
-			return MessageType.ERROR;
-		}	
-		*/
 			/*
 			 * 1. object fileをロードする
 			 * 		- object fileをどこかに保存しておく
@@ -133,6 +140,11 @@ public class EmulatedWebSocket
 	public void Send(string message) {
 		ws.SendString(message);
 	}
+
+	public void SendBinary(byte[] message) {
+		ws.Send(message);
+	}
+
 	public void Close() {
 		//ws.SendString(MessageHeader.EXIT);
 		ws.Send(MessageHeader.EXIT);

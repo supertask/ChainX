@@ -537,10 +537,11 @@ public class ChainVoxel {
 	/*
 	 * 
 	 */
-	public void LoadSavedData(string saved_data)
+	public void LoadSavedData(string saved_path)
 	{
 		try {
-			using (StringReader reader = new StringReader(saved_data)) {
+			//StringReader reader = new StringReader(saved_path)
+			using (StreamReader reader = new StreamReader(saved_path)) {
 
 				string line =reader.ReadLine();
 				string gid = "";
@@ -595,10 +596,12 @@ public class ChainVoxel {
 	/*
 	 * 
 	 */
-	public string GetSavedData()
+
+	public string SaveData(string saving_path)
 	{
 		try {
-			using (StringWriter writer = new StringWriter()) {
+			//using (StringWriter writer = new StringWriter()) {
+			using (StreamWriter writer = new StreamWriter(saving_path)) {
 				foreach (KeyValuePair<string, List<Voxel>> p in this.atoms) {
 					string posID = p.Key;
 					Voxel aVoxel = this.getVoxel(posID);
@@ -620,6 +623,10 @@ public class ChainVoxel {
 			Debug.LogError(e.Message);
 			return "";
 		}
+	}
+
+	public byte[] GetBinaryFromFile(string filepath) {
+		return File.ReadAllBytes (filepath);	
 	}
 
 
