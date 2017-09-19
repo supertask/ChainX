@@ -1,10 +1,10 @@
-# Blender MTL File: 'monkey.blend'
+# Blender MTL File: 'None'
 # Material Count: 1
 
-newmtl Monkey
-Ns 96.078431
+newmtl sphere
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
-Kd 0.640000 0.000000 0.001058
+Kd 0.640000 0.640000 0.640000
 Ks 0.500000 0.500000 0.500000
 Ke 0.000000 0.000000 0.000000
 Ni 1.000000

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import sys
 import bpy
 import math
 from mathutils import Vector
@@ -44,22 +45,23 @@ def delete_all_objects():
     bpy.ops.object.delete()
 
 
-def split_object(obj_path, texture_path):
+def split_object(obj_path, texture_path=None):
     delete_all_objects()
 
     # Import an obj that you want to split
     imported_object = bpy.ops.import_scene.obj(filepath=obj_path)
     target = bpy.context.selected_objects[0] ####<--Fix
+    #obj_name, _ = os.path.splitext(basename(obj_path))
 
     # Create a texture
-    obj_name, _ = os.path.splitext(basename(obj_path))
-    texture_name, _ = os.path.splitext(basename(texture_path))
-    target.active_material.use_nodes = True
-    tree = target.active_material.node_tree
-    diffuse_node = tree.nodes['Diffuse BSDF']
-    texture_node = tree.nodes.new("ShaderNodeTexImage")
-    texture_node.image = bpy.data.images.load(texture_path)
-    tree.links.new(diffuse_node.inputs['Color'], texture_node.outputs['Color'])
+    if texture_path:
+        texture_name, _ = os.path.splitext(basename(texture_path))
+        target.active_material.use_nodes = True
+        tree = target.active_material.node_tree
+        diffuse_node = tree.nodes['Diffuse BSDF']
+        texture_node = tree.nodes.new("ShaderNodeTexImage")
+        texture_node.image = bpy.data.images.load(texture_path)
+        tree.links.new(diffuse_node.inputs['Color'], texture_node.outputs['Color'])
 
     # Calc bounds
     bpy.data.objects[target.name].select = True
@@ -70,17 +72,17 @@ def split_object(obj_path, texture_path):
     half_dimensions = target.dimensions / 2
     center = target.location
 
-    print(center)
-    print(target.dimensions)
-    print(half_dimensions)
+    #print(center)
+    #print(target.dimensions)
+    #print(half_dimensions)
 
     minDZ, maxDZ = round(-half_dimensions.z), round(half_dimensions.z)
     minDY, maxDY = round(-half_dimensions.y), round(half_dimensions.y)
     minDX, maxDX = round(-half_dimensions.x), round(half_dimensions.x)
-    print(minDZ, maxDZ)
-    print(minDY, maxDY)
-    print(minDX, maxDX)
-    print()
+    #print(minDZ, maxDZ)
+    #print(minDY, maxDY)
+    #print(minDX, maxDX)
+    #print()
     for z in range(minDZ, maxDZ+1):
         for y in range(minDY, maxDY+1):
             for x in range(minDX, maxDX+1):
@@ -88,7 +90,10 @@ def split_object(obj_path, texture_path):
                 boolean_modifier(voxel, target)
 
     delete_obj(target.name)
-    bpy.ops.export_scene.obj(filepath= obj_name + "_boolean.obj")
+    #bpy.ops.export_scene.obj(filepath= obj_name + "_boolean.obj")
+    bpy.ops.export_scene.obj(filepath=obj_path)
 
-split_object(obj_path="./monkey.obj", texture_path="./monkey.jpg")
+argv = sys.argv[sys.argv.index("--") + 1:]
+#split_object(obj_path=argv[0], texture_path=argv[1])
+split_object(obj_path=argv[0])
 

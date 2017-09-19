@@ -152,7 +152,8 @@ public class ChainXController : MonoBehaviour
 				// その時点でオブジェクトが適用され、表示される
 				//
 				foreach(string path in filePaths) {
-					byte[] header = Encoding.UTF8.GetBytes(MessageHeader.SOME_FILE + path + MessageHeader.SPLIT_CHAR);
+					string filename = Path.GetFileName (path);
+					byte[] header = Encoding.UTF8.GetBytes(MessageHeader.SOME_FILE + filename + MessageHeader.SPLIT_CHAR);
 					this.socket.SendBinary(Util.CombineBytes(header, File.ReadAllBytes(path)) );
 				}
 			}

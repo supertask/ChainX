@@ -1,6 +1,6 @@
 # Blender v2.78 (sub 0) OBJ File: ''
 # www.blender.org
-mtllib monkey_boolean.mtl
+mtllib monkey.mtl
 o 1:1:1_Cube.027
 v 0.500000 0.500000 -0.500000
 v 0.500000 0.500000 -0.639661
