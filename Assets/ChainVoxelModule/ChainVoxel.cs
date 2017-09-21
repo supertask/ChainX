@@ -194,10 +194,10 @@ public class ChainVoxel {
 		voxelList.Sort(Voxel.Compare);
 		//Hereバグ: ここが原因！！！
 		if (this.getVoxel (posID) != null) {
-			//!posIDs.Contains(posID((destPosID)) );
-			this.insertedPosIDs.Add (posID);
-
-			//Debug.Log ("insert():" + posID);	//動いている！！
+			if (op.getOpType() == Operation.INSERT) {
+				this.insertedPosIDs.Add (posID);
+				//Debug.Log ("insert():" + posID);	//動いている！！
+			}
 		}
 
 		return;
@@ -238,9 +238,10 @@ public class ChainVoxel {
 
 		//Hereバグ: ここが原因！！！
 		if (this.getVoxel (posID) == null) {
-			Debug.Log ("delete():" + posID);	//動いている！！
-
-			this.deletedPosIDs.Add (posID);
+			if (op.getOpType() == Operation.DELETE) {
+				this.deletedPosIDs.Add (posID);
+				//Debug.Log ("delete():" + posID);	//動いている！！
+			}
 		}
 
 		return textureType;

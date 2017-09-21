@@ -421,35 +421,44 @@ public class ChainXController : MonoBehaviour
 				*/
 			}
 			cv.insertedPosIDs.Clear ();
-			Debug.Log ("----");	//動いている！！
 		}
 
         /*
-         * For DELETE & MOVE operations.
+         * For DELETE operations.
          */
 		if (this.cv.deletedPosIDs.Count > 0) {
 			foreach (string posID in this.cv.deletedPosIDs) {
 				GameObject deletingObj = GameObject.Find (posID);
 				if (deletingObj != null) {
-					//Debug.Log ("deleting" + posID);	//動いている！！
+              		// Remove following a ChainVoxel.
+					GameObject.Destroy (deletingObj);
+				}
+			}
+			cv.deletedPosIDs.Clear ();
+		}
+
+        /*
+         * For DELETE operations.
+         */
+		if (this.cv.movedPosIDs.Count > 0) {
+			foreach (KeyValuePair<string,string> aPair in this.cv.movedPosIDs) {
+				string posID = aPair.Key;
+				string destPosID = aPair.Value;
+				GameObject anObj = GameObject.Find (posID);
+				if (anObj != null) {
+					Vector3 v = Util.SplitPosID (destPosID);	
+					anObj.name = destPosID;
+					anObj.transform.position = v;
+					/*
 					for (int i = 0; i < this.selectedObjects.Count; ++i) {
-						//if (this.selectedObjects [i].transform.childCount > 0) { //グループ
-					
-						//}
-						if (deletingObj == this.selectedObjects [i]) { //ここでout of range
-							/*
-                         * For changing selectedObject.
-                         */
-							Debug.Log (this.cv.movedPosIDs.Count);
-							foreach (KeyValuePair<string,string> entry in this.cv.movedPosIDs) {
-								Debug.Log (entry.Key + " " + entry.Value);
-							}
-							//Here
+						if (anObj == this.selectedObjects [i]) { //ここでout of range
+							//
+	                        // For changing selectedObject.
+	                        //
 							//TODO(Tasuku): グループの際、ここが実行する
 							//なぜなら、this.selectedObjects[i]==gidであるケースを想定した記述がない
+							//
 							if (this.cv.movedPosIDs.ContainsKey (posID)) {
-								string destPosID = this.cv.movedPosIDs [posID];    
-								GameObject destObj = GameObject.Find (destPosID);
 								if (destObj != null) {
 									this.selectedObjects [i] = destObj;
 									this.selectedObjects [i].GetComponent<Renderer> ().material.shader = Const.TOON_SHADER;
@@ -457,13 +466,10 @@ public class ChainXController : MonoBehaviour
 							}
 						}
 					}
-					/*
-              		 * Remove following a ChainVoxel.
-              		 */
-					GameObject.Destroy (deletingObj);
+					*/
 				}
 			}
-			cv.deletedPosIDs.Clear ();
+			this.cv.movedPosIDs.Clear ();
 		}
 
         /*
@@ -475,7 +481,9 @@ public class ChainXController : MonoBehaviour
 				GameObject aParent = new GameObject (gid);
 				foreach (string posID in this.cv.stt.getPosIDs(gid)) {
 					GameObject aChild = GameObject.Find (posID);
-					aChild.transform.SetParent (aParent.transform); //Here、ここでバグ
+					//Debug.Log (aChild);
+					//Debug.Log ("joinPosID: " + posID);
+					aChild.transform.SetParent (aParent.transform); //Here、ここでバグ!!
 					this.RemoveFromSelectedObjects (aChild);
 				}
 				//UIにこのグループオブジェクトを登録

@@ -1,3 +1,9 @@
 バグ報告
 ・操作を一つしかしてないのに、ChainVoxelの中の複数のposIDが動いてる???
 ・StructureTableに、テストを付け加えよう
+・再現性のないエラー（ChainXController 486行目、NullPointer Exception）
+    aChild.transform.SetParent (aParent.transform); //Here、ここでバグ!!
+・グループで動かす際に色がスイッチしてしまう
+・複数選択で、タイムスタンプの順番のズレによるVoxel同士に隙間ができるバグ
+
+

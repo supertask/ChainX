@@ -83,9 +83,10 @@ var Server = function()
         socket.on('message', function (message) {
 
             if (_partEqual(message, OPERATION_BINARY_HEADER)) {
-                console.log("OPERATION");
+                console.log(message.toString());
                 //var json_obj = JSON.parse(message);
                 //socket.send(message); //送信者に返す
+                server.broadcast(socket, message); //送信者以外にBroadcast
             }
             else if (_partEqual(message, SOME_FILE_BINARY_HEADER)) {
                 var filename = _getStringUntilAt(message);
@@ -125,7 +126,7 @@ var Server = function()
             else if (_partEqual(message, ERROR_BINARY_HEADER)) {
                 console.log("ERROR");
             }
-            server.broadcast(socket, message); //送信者以外にBroadcast
+            //server.broadcast(socket, message); //送信者以外にBroadcast
         });
         socket.on('close', function _onClose(message) {
             console.log('disconnected...');
