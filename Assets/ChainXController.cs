@@ -88,9 +88,18 @@ public class ChainXController : MonoBehaviour
 
 				if (arrowV != Vector3.zero) {
 					foreach (GameObject anObj in this.selectedObjects) {
-						o = this.model.CreateMoveOperation(anObj, arrowV);
-						this.ApplyChainVoxel (o);
-						//Debug.Log("Move操作!!");
+						Debug.Log (anObj.name);
+					}
+					this.selectedObjects = Util.ArrangeGameObjects (this.selectedObjects, arrowV);
+
+					foreach (GameObject anObj in this.selectedObjects) {
+						Debug.Log (anObj.name);
+					}
+
+
+					List<Operation> moveOps = this.model.CreateMoveOperations(this.selectedObjects, arrowV);
+					foreach (Operation moveOp in moveOps) {
+						this.ApplyChainVoxel (moveOp);
 					}
 				}
 				else if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.LeftCommand) ||
@@ -178,7 +187,7 @@ public class ChainXController : MonoBehaviour
     }
 
 
-    private void ApplyChainVoxel(Operation o) {
+    public void ApplyChainVoxel(Operation o) {
         this.cv.apply(o);
         this.socket.Send (MessageHeader.OPERATION + Operation.ToJson (o) + "\n");
     }
@@ -361,7 +370,7 @@ public class ChainXController : MonoBehaviour
         }
         else {
             foreach(Transform aChildTransform in anObj.transform) {
-                aChildTransform.gameObject.GetComponent<Renderer>().material.shader = aShader;
+                aChildTransform.gameObject.GetComponent<Renderer>().material.shader = aShader; //Here, ここでもバグ！！！
             }
         }
     }

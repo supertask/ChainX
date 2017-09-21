@@ -1,9 +1,95 @@
 ﻿using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Util {
+public class Util{
+
+	/*
+	 public static List<GameObject> ArrangeGameObjects(List<GameObject> gameobjects,
+		string transMatrix)
+	{
+		List<GameObject> arrangedObjs = new List<GameObject>();
+		foreach(string posID in posIDs) { 
+			foreach (GameObject anObj in gameobjects) {
+				anObj.name
+			}
+
+		}
+	}
+*/
+
+	/*
+	public static string[] ArrangePosIDs(string[] posIDs, string transMatrix)
+	{
+        List<Vector3> vs = new List<Vector3>();
+        Vector3 tM = Util.SplitPosID(transMatrix);
+        foreach(string posID in posIDs) { vs.Add(Util.SplitPosID(posID)); }
+
+		IEnumerable<Vector3> sortedVs = null;
+		if (tM.x > 0) sortedVs = vs.OrderBy (v => v.x);
+		else if (tM.x < 0) sortedVs = vs.OrderByDescending (v => v.x);
+
+		else if (tM.y > 0) sortedVs = vs.OrderBy (v => v.y);
+		else if (tM.y < 0) sortedVs = vs.OrderByDescending (v => v.y);
+
+		else if (tM.z > 0) sortedVs = vs.OrderBy (v => v.z);
+		else if (tM.z < 0) sortedVs = vs.OrderByDescending (v => v.z);
+			
+		int i = 0;
+		foreach (Vector3 v in sortedVs) {
+			posIDs[i] = Util.CreatePosID (v);
+			i++;
+		}
+		return posIDs;
+    }
+	*/
+
+	public static string[] ArrangePosIDs(string[] posIDs, string transMatrix)
+	{
+		List<KeyValuePair<Vector3, GameObject>> pairs = new List<KeyValuePair<Vector3, GameObject>>();
+		foreach (string posID in posIDs) {
+			pairs.Add (new KeyValuePair<Vector3, GameObject>(Util.SplitPosID(posID), null));
+		}
+		Util._arrangeGameObjects (ref pairs, Util.SplitPosID(transMatrix));	
+
+		int i = 0;
+		foreach (KeyValuePair<Vector3, GameObject> p in pairs) {
+			posIDs[i] = Util.CreatePosID (p.Key);
+			i++;
+		}
+		return posIDs;
+	}
+
+	public static List<GameObject> ArrangeGameObjects(List<GameObject> gameobjects, Vector3 transMatrix)
+	{
+		List<KeyValuePair<Vector3, GameObject>> pairs = new List<KeyValuePair<Vector3, GameObject>>();
+		foreach (GameObject anObj in gameobjects) {
+			pairs.Add (new KeyValuePair<Vector3, GameObject>(anObj.transform.position, anObj));
+		}
+		Util._arrangeGameObjects (ref pairs, transMatrix);	
+		for(int i = 0; i < pairs.Count; ++i) {
+			gameobjects[i] = pairs[i].Value;
+		}
+		return gameobjects;
+	}
+
+	private static void _arrangeGameObjects(
+		ref List<KeyValuePair<Vector3, GameObject>> pairs,
+		Vector3 tM)
+	{
+		//構造体ソート!!!!
+		if (tM.x > 0) pairs = pairs.OrderByDescending (p => p.Key.x).ToList();
+		else if (tM.x < 0) pairs = pairs.OrderBy (p => p.Key.x).ToList();
+
+		else if (tM.y > 0) pairs = pairs.OrderByDescending (p => p.Key.y).ToList();
+		else if (tM.y < 0) pairs = pairs.OrderBy (p => p.Key.y).ToList();
+
+		else if (tM.z > 0) pairs = pairs.OrderByDescending (p => p.Key.z).ToList();
+		else if (tM.z < 0) pairs = pairs.OrderBy (p => p.Key.z).ToList();
+    }
+
 
 
 	public static Vector3 CreateRandomVector3(int minValue, int maxValue) {

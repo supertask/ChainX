@@ -286,7 +286,7 @@ public class ChainVoxel {
 	public void moveAll (Operation op)
 	{
 		string[] posIDs = op.getPosIDs();
-		posIDs = this.arrangePosIDs(posIDs, op.getTransMatrix());
+		posIDs = Util.ArrangePosIDs(posIDs, op.getTransMatrix());
 		string[] destPosIDs = op.getDestPosIDs(posIDs);
 
 		//移動時の衝突回避
@@ -318,7 +318,7 @@ public class ChainVoxel {
 	public void moveAll (Operation op)
 	{
 		string[] posIDs = op.getPosIDs();
-		posIDs = this.arrangePosIDs(posIDs, op.getTransMatrix());
+		posIDs = ChainVoxel.ArrangePosIDs(posIDs, op.getTransMatrix());
 		string[] destPosIDs = op.getDestPosIDs(posIDs);
 
 		for (int i = 0; i < posIDs.Length; ++i) { if (this.getVoxel (posIDs [i]) == null) return; }
@@ -474,28 +474,7 @@ public class ChainVoxel {
 	}
 
 
-    public string[] arrangePosIDs(string[] posIDs, string transMatrix) {
-        List<Vector3> vs = new List<Vector3>();
-        Vector3 tM = Util.SplitPosID(transMatrix);
-        foreach(string posID in posIDs) { vs.Add(Util.SplitPosID(posID)); }
 
-		IEnumerable<Vector3> sortedVs = null;
-		if (tM.x > 0) sortedVs = vs.OrderBy (v => v.x);
-		else if (tM.x < 0) sortedVs = vs.OrderByDescending (v => v.x);
-
-		else if (tM.y > 0) sortedVs = vs.OrderBy (v => v.y);
-		else if (tM.y < 0) sortedVs = vs.OrderByDescending (v => v.y);
-
-		else if (tM.z > 0) sortedVs = vs.OrderBy (v => v.z);
-		else if (tM.z < 0) sortedVs = vs.OrderByDescending (v => v.z);
-			
-		int i = 0;
-		foreach (Vector3 v in sortedVs) {
-			posIDs[i] = Util.CreatePosID (v);
-			i++;
-		}
-		return posIDs;
-    }
 
 	/**
      * ChainVoxelの状態を返す。
@@ -711,7 +690,7 @@ public class ChainVoxel {
 		posIDs[0] = "1:1:2";
 		posIDs[1] = "1:1:3";
 		posIDs[2] = "1:1:1";
-		foreach (string posID in cv.arrangePosIDs(posIDs, "0:0:-1")) {
+		foreach (string posID in Util.ArrangePosIDs(posIDs, "0:0:-1")) {
 			Debug.Log (posID);
 		}
 		/*

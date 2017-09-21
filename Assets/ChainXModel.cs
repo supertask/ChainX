@@ -191,19 +191,25 @@ public class ChainXModel
 	/*
 	 * 
 	 */
-	public Operation CreateMoveOperation(GameObject anObj, Vector3 transMatrix)
+	public List<Operation> CreateMoveOperations(List<GameObject> objects, Vector3 transMatrix)
     {
-		if (anObj.transform.childCount > 0) {
-			List<string> posIDs = new List<string> ();	
-			foreach (Transform child in anObj.transform) { posIDs.Add (child.name); }
-			return new Operation (0, Operation.MOVE_ALL, "{\"gid\": \"" + anObj.name +
-				"\", \"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) + 
-				"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}");
+		List<Operation> operations = new List<Operation>();
+		foreach (GameObject anObj in objects) {
+			if (anObj.transform.childCount > 0) {
+				List<string> posIDs = new List<string> ();	
+				foreach (Transform child in anObj.transform) { posIDs.Add (child.name); }
+				operations.Add(new Operation (0, Operation.MOVE_ALL, "{\"gid\": \"" + anObj.name +
+					"\", \"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) + 
+					"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}")
+				);
+			}
+			else {
+				operations.Add(new Operation (0, Operation.MOVE, "{\"posID\": \"" + anObj.name +
+					"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}")
+				);
+			}
 		}
-		else {
-			return new Operation (0, Operation.MOVE, "{\"posID\": \"" + anObj.name +
-				"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}");
-		}
+		return operations;
     }
 
 	public Operation CreateDeleteOperation(GameObject anObj) {
