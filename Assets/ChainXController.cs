@@ -534,6 +534,16 @@ public class ChainXController : MonoBehaviour
         }
     }
 
+	/*
+	// https://github.com/RichLogan/ObjLoader
+	public void LoadObj(string path) {
+		Debug.Log (path);
+		OBJ objLoader = GameObject.Find("Plane").AddComponent<OBJ>();
+		objLoader.objPath = path;
+		StartCoroutine(objLoader.Load (path));
+	}
+	*/
+
     private void OnApplicationQuit() {
         this.socket.Close();
 		this.cv.SaveData(Const.SAVED_FILE);
@@ -541,4 +551,5 @@ public class ChainXController : MonoBehaviour
 		this.socket.SendBinary(Util.CombineBytes (MessageHeader.SOME_FILE_BINARY, savedDataBinary));
         //TODO(Tasuku): SaveしましたのWindowを表示して終わる!!
     }
+
 }

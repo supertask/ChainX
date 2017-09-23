@@ -54,6 +54,7 @@ public class EmulatedWebSocket
 		Material[] materials = null;
 		Texture2D texture = null;
 		GameObject targetObj = null;
+		string[] filepaths = {"", "", ""};
 
 		while (true) {
 			receivedBinary = this.ws.Recv();
@@ -72,24 +73,33 @@ public class EmulatedWebSocket
 					FileStream fs = new FileStream(path, FileMode.Create, FileAccess.Write);
 					fs.Write (receivedBinary, start_i, receivedBinary.Length - start_i);
 					fs.Close ();
+
 					if (Path.GetExtension (path) == ".txt") {
 						this.controller.cv.LoadSavedData (path);
 					}
 					else if (Path.GetExtension (path) == ".obj") {
-						targetObj = OBJLoader.LoadOBJFile (path);
+						filepaths[0] = path;
+						//materials = OBJLoader.LoadOBJFile (path);
 					}
 					else if (Path.GetExtension (path) == ".mtl") {
-						materials = OBJLoader.LoadMTLFile (path);
+						filepaths[1] = path;
+						//materials = OBJLoader.LoadMTLFile (path);
 					}
 					else if (Path.GetExtension (path) == ".jpg") {
-						texture = TextureLoader.LoadTexture (path);
+						filepaths[2] = path;
+						//texture = TextureLoader.LoadTexture (path);
 					}
 
-					if (targetObj != null && materials != null && texture != null) {
+					if (filepaths[0] != "" && filepaths[1] != "" && filepaths[2] != "") {
 						//
 						// When all dependent files of a 3d obj have been collected, 
 						// Build the 3d obj.
 						//
+						//this.controller.LoadObj(filepaths[0]);
+						targetObj = OBJLoader.LoadOBJFile (filepaths[0]);
+						materials = OBJLoader.LoadMTLFile (filepaths[1]);
+						texture = TextureLoader.LoadTexture (filepaths[2]);
+
 						targetObj.transform.position = new Vector3 (0,5,0);
 						if (targetObj.transform.childCount > 0) {
 							foreach (Transform child in targetObj.transform) {
@@ -99,11 +109,11 @@ public class EmulatedWebSocket
 						}
 						else {
 							//Probably NEVER EXEC
-							targetObj.GetComponent<Renderer> ().material = new Material (Const.DIFFUSE_SHADER);;
-							targetObj.GetComponent<Renderer> ().material.mainTexture = texture;
+							//targetObj.GetComponent<Renderer> ().material = new Material (Const.DIFFUSE_SHADER);;
+							//targetObj.GetComponent<Renderer> ().material.mainTexture = texture;
 						}
 						//Clear for the next 3d objs
-						targetObj = null; materials = null; texture = null;
+						filepaths = new string[]{"", "", ""}; 
 					}
 				}
 				else if (this.partEqual (ref receivedBinary, ref MessageHeader.EXIT)) {

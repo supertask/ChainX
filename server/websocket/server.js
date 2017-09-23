@@ -103,12 +103,14 @@ var Server = function()
 
                 if (filepaths[0] != "" && filepaths[1] != "" && filepaths[2] != "") {
                     //objファイルをブーリアン演算し、data/tmp/に保存！
+                    /*
                     exec_line = boolean_calc + " \"" + filepaths[0]  + "\"";
                     console.log("Exec \'" + exec_line + "\'.");
 
                     execSync(exec_line, function(err, stdout) {
                         //console.log(stdout);
                     });
+                    */
 
                     //全てのファイル情報送信
                     for(var i = 0; i < filepaths.length; i++) {
