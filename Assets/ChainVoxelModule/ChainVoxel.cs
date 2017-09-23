@@ -306,12 +306,7 @@ public class ChainVoxel {
 
 		for (int i = 0; i < posIDs.Length; ++i) {
 			this.movedPosIDs[posIDs[i]] = destPosIDs[i];
-			//Debug.Log (posIDs [i] + " " + destPosIDs [i]); //ここにもしっかり入っている
 		}
-		//Here(バグ)
-		//データ構造にはしっかり入っているよう、表示だけがおかしい!!
-		//foreach(string posID in posIDs) { Debug.Log (posID + " " + this.getVoxel(posID)); }
-		//foreach(string posID in destPosIDs) { Debug.Log (posID + " " + this.getVoxel(posID)); }
 	}
 
 	/*
@@ -366,7 +361,9 @@ public class ChainVoxel {
      */
 	public void joinAll(Operation op, long timestamp, string gid, string[] posIDs) {
 		this.stt.joinAll(timestamp, posIDs, gid);
-		this.joinedGIDs.Add(gid);//最新のタイムスタンプのグループをとる
+		if (op.getOpType() == Operation.JOIN_ALL) {
+			this.joinedGIDs.Add(gid);//最新のタイムスタンプのグループをとる
+		}
 	}
 
 	/**
@@ -397,7 +394,9 @@ public class ChainVoxel {
 			this.insert (op, timestamp, posIDs[i], voxels[i].getTextureType());
 			timestamp++;
 		}
-		this.leftGIDs.Add(gid);//最新のタイムスタンプのグループをとる
+		if (op.getOpType() == Operation.LEAVE_ALL) {
+			this.leftGIDs.Add(gid);//最新のタイムスタンプのグループをとる
+		}
 
 		return timestamp;
 	}

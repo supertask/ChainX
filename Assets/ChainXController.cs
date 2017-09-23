@@ -87,15 +87,12 @@ public class ChainXController : MonoBehaviour
 				else if (Input.GetKeyUp (KeyCode.D)) arrowV = new Vector3 (0, -1, 0);
 
 				if (arrowV != Vector3.zero) {
+					/*
 					foreach (GameObject anObj in this.selectedObjects) {
 						Debug.Log (anObj.name);
 					}
+					*/
 					this.selectedObjects = Util.ArrangeGameObjects (this.selectedObjects, arrowV);
-
-					foreach (GameObject anObj in this.selectedObjects) {
-						Debug.Log (anObj.name);
-					}
-
 
 					List<Operation> moveOps = this.model.CreateMoveOperations(this.selectedObjects, arrowV);
 					foreach (Operation moveOp in moveOps) {
@@ -407,9 +404,6 @@ public class ChainXController : MonoBehaviour
     }
 
 
-
-
-
     /*
      * 
      */
@@ -447,7 +441,7 @@ public class ChainXController : MonoBehaviour
 		}
 
         /*
-         * For DELETE operations.
+         * For MOVE operations.
          */
 		if (this.cv.movedPosIDs.Count > 0) {
 			foreach (KeyValuePair<string,string> aPair in this.cv.movedPosIDs) {
@@ -458,24 +452,6 @@ public class ChainXController : MonoBehaviour
 					Vector3 v = Util.SplitPosID (destPosID);	
 					anObj.name = destPosID;
 					anObj.transform.position = v;
-					/*
-					for (int i = 0; i < this.selectedObjects.Count; ++i) {
-						if (anObj == this.selectedObjects [i]) { //ここでout of range
-							//
-	                        // For changing selectedObject.
-	                        //
-							//TODO(Tasuku): グループの際、ここが実行する
-							//なぜなら、this.selectedObjects[i]==gidであるケースを想定した記述がない
-							//
-							if (this.cv.movedPosIDs.ContainsKey (posID)) {
-								if (destObj != null) {
-									this.selectedObjects [i] = destObj;
-									this.selectedObjects [i].GetComponent<Renderer> ().material.shader = Const.TOON_SHADER;
-								}
-							}
-						}
-					}
-					*/
 				}
 			}
 			this.cv.movedPosIDs.Clear ();
@@ -488,11 +464,11 @@ public class ChainXController : MonoBehaviour
 			foreach (string gid in this.cv.joinedGIDs) {
 				//グループ（親）を作り、子供を追加
 				GameObject aParent = new GameObject (gid);
-				foreach (string posID in this.cv.stt.getPosIDs(gid)) {
+				foreach (string posID in this.cv.stt.getPosIDs(gid))
+				{
 					GameObject aChild = GameObject.Find (posID);
-					//Debug.Log (aChild);
-					//Debug.Log ("joinPosID: " + posID);
-					aChild.transform.SetParent (aParent.transform); //Here、ここでバグ!!
+					//過去のバグ：すると、NULLになってかつ、無限ループし、グループが無限に作られる
+					aChild.transform.SetParent (aParent.transform);
 					this.RemoveFromSelectedObjects (aChild);
 				}
 				//UIにこのグループオブジェクトを登録
