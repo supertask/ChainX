@@ -195,17 +195,32 @@ public class ChainXController : MonoBehaviour
      * 「後ろ側から手前に」辿っていき、Voxelを挿入する。
      */
     private void paintVoxels() {
+		string paintToolName = this.model.getCurrentPaintTool ();
+
         Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
         RaycastHit hit = new RaycastHit ();
         if (Physics.Raycast (ray, out hit)) {
             float distance = hit.distance - 0.5f;
             Vector3 hitPointShort = ray.GetPoint(distance); //ヒットしたRayより少し手前のPointをたどる
             Vector3 fixedHitPointShort = ChainXModel.GetRoundIntPoint(hitPointShort);
-            int textureType = int.Parse(this.paintTool.GetComponent<Text>().text);
-            Operation o = new Operation(0, Operation.INSERT,
-                "{\"posID\": \"" + ChainXModel.CreatePosID(fixedHitPointShort) +
-                "\", \"textureType\":\"" + textureType + "\"}"
-            );
+
+			Operation o = null;
+			if (paintToolName.IndexOf(ChainXModel.PAINT_TOOL_VOXEL_ID) > -1) {
+				//単位Voxel
+	            int textureType = int.Parse(this.paintTool.GetComponent<Text>().text);
+	            o = new Operation(0, Operation.INSERT,
+	                "{\"posID\": \"" + ChainXModel.CreatePosID(fixedHitPointShort) +
+	                "\", \"textureType\":\"" + textureType + "\"}"
+	            );
+			}
+			else if (paintToolName.IndexOf (ChainXModel.PAINT_TOOL_GROUP_ID) > -1) {
+				//グループVoxel
+				/*
+	            o = new Operation(0, Operation.INSERT_ALL,
+	                "{\"posID\": \"" + ChainXModel.CreatePosID(fixedHitPointShort) +
+	                "\", \"textureType\":\"" + textureType + "\"}"
+				*/
+			}
             this.ApplyChainVoxel(o);
             //Debug.DrawLine(ray.origin, hitPointShort, Color.red, 60.0f, true); //レーザービーム
         }
@@ -552,4 +567,5 @@ public class ChainXController : MonoBehaviour
         //TODO(Tasuku): SaveしましたのWindowを表示して終わる!!
     }
 
+	public ChainXModel getModel() { return this.model; }
 }

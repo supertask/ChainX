@@ -14,28 +14,41 @@ public class Voxel {
 	private int textureType;
 
 	/**
+     * Voxelのテクスチャパス
+     * 実際には、テクスチャパス＋中心座標から割り出したマージン
+     */
+	private string texturePath;
+
+	/**
      * Voxelのタイムスタンプ
      */
 	private long timestamp;
 
 	/**
-     * 負のVoxelを作成する．
+	 * 
+     * 負のVoxelを作成するためのもの．
      * @param timestamp タイムスタンプ
      */
-	public Voxel(long timestamp) {
-		this.id = -1; // not exists site id.
-		this.textureType = -1;
-		this.timestamp = timestamp;
-	}
+	public Voxel(long timestamp):
+		this(-1, -1, "", timestamp) { }
+
+	public Voxel(int id, string texturePath, long timestamp):
+		this(id, -1, texturePath, timestamp) { }
+
+	public Voxel(int id, int textureType, long timestamp):
+		this(id, textureType, "", timestamp) { } 
 
 	/**
      * 作成したSiteの識別子を持つVoxelを作成する
      * @param id Siteの識別子
+     * @param textureType テクスチャ番号
+     * @param texturePath テクスチャパス
      * @param timestamp タイムスタンプ
      */
-	public Voxel(int id, int textureType, long timestamp) {
+	public Voxel(int id, int textureType, string texturePath, long timestamp) {
 		this.id = id;
 		this.textureType = textureType;
+		this.texturePath = texturePath;
 		this.timestamp = timestamp;
 	}
 
@@ -62,6 +75,18 @@ public class Voxel {
      * @param textureType テクスチャ番号
      */
 	public void setTextureType(int textureType) { this.textureType = textureType; }
+
+	/**
+     * Voxelのテクスチャパスを返す．
+     * @return テクスチャパス
+     */
+	public string getTexturePath() { return this.texturePath; }
+
+	/**
+     * Voxelのテクスチャパスを設定する．
+     * @param textureType テクスチャパス
+     */
+	public void setTexturePath(string texturePath) { this.texturePath = texturePath; }
 
 
 	/**
@@ -95,7 +120,8 @@ public class Voxel {
 	 * 
 	 */
 	public override string ToString() {
-		return "id=" + this.getId() + ", textureType=" + this.getTextureType() + ", timestamp=" + this.getTimestamp();
+		return "id=" + this.getId() + ", textureType=" + this.getTextureType() +
+			", texturePath=" + this.getTexturePath() + ", timestamp=" + this.getTimestamp();
 	}
 
 	/**

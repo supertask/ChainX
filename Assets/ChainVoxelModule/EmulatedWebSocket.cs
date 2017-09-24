@@ -51,9 +51,7 @@ public class EmulatedWebSocket
 
 	public IEnumerator Listen() {
 		byte[] receivedBinary = null;
-		Material[] materials = null;
-		Texture2D texture = null;
-		GameObject targetObj = null;
+
 		string[] filepaths = {"", "", ""};
 
 		while (true) {
@@ -79,15 +77,12 @@ public class EmulatedWebSocket
 					}
 					else if (Path.GetExtension (path) == ".obj") {
 						filepaths[0] = path;
-						//materials = OBJLoader.LoadOBJFile (path);
 					}
 					else if (Path.GetExtension (path) == ".mtl") {
 						filepaths[1] = path;
-						//materials = OBJLoader.LoadMTLFile (path);
 					}
 					else if (Path.GetExtension (path) == ".jpg") {
 						filepaths[2] = path;
-						//texture = TextureLoader.LoadTexture (path);
 					}
 
 					if (filepaths[0] != "" && filepaths[1] != "" && filepaths[2] != "") {
@@ -95,25 +90,8 @@ public class EmulatedWebSocket
 						// When all dependent files of a 3d obj have been collected, 
 						// Build the 3d obj.
 						//
-						//this.controller.LoadObj(filepaths[0]);
-						targetObj = OBJLoader.LoadOBJFile (filepaths[0]);
-						materials = OBJLoader.LoadMTLFile (filepaths[1]);
-						texture = TextureLoader.LoadTexture (filepaths[2]);
-
-						targetObj.transform.position = new Vector3 (0,5,0);
-						if (targetObj.transform.childCount > 0) {
-							foreach (Transform child in targetObj.transform) {
-								child.gameObject.GetComponent<Renderer> ().material = new Material (Const.DIFFUSE_SHADER);;
-								child.gameObject.GetComponent<Renderer> ().material.mainTexture = texture;
-							}
-						}
-						else {
-							//Probably NEVER EXEC
-							//targetObj.GetComponent<Renderer> ().material = new Material (Const.DIFFUSE_SHADER);;
-							//targetObj.GetComponent<Renderer> ().material.mainTexture = texture;
-						}
-						//Clear for the next 3d objs
-						filepaths = new string[]{"", "", ""}; 
+						this.controller.getModel().LoadObj(filepaths);
+						filepaths = new string[]{"", "", ""}; //Clear for the next 3d objs 
 					}
 				}
 				else if (this.partEqual (ref receivedBinary, ref MessageHeader.EXIT)) {

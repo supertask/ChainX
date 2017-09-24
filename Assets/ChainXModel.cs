@@ -28,67 +28,68 @@ public class ChainXModel
 		this.initPaintTool();
 	}
 
-	public void SplitObject(GameObject target) {
+	public void LoadObj(string[] filepaths) {
+		GameObject targetObj = OBJLoader.LoadOBJFile (filepaths[0]);
+		Material[] materials = OBJLoader.LoadMTLFile (filepaths[1]);
+		Texture2D texture = TextureLoader.LoadTexture (filepaths[2]);
+
+		//TODO(Tasuku): 位置をどう決めるかをそのうち決める必要がある
+		targetObj.transform.position = new Vector3 (0,5,0);
+		if (targetObj.transform.childCount > 0) {
+			foreach (Transform child in targetObj.transform) {
+				child.gameObject.GetComponent<Renderer> ().material = new Material (Const.DIFFUSE_SHADER);;
+				child.gameObject.GetComponent<Renderer> ().material.mainTexture = texture;
+			}
+		}
+		string[] emptyPosIDs = this.MoveCenter(targetObj);
+		string polygonPosID = emptyPosIDs [emptyPosIDs.Length - 1];
+		
+	}
+
+	private string[] MoveCenter(GameObject target)
+	{
 		Vector3 halfSize = Vector3.zero;
-		Debug.Log ("pos: " + target.transform.position);
 		foreach (Transform t in target.transform) {
 			Mesh m = t.gameObject.GetComponent<MeshFilter> ().mesh;
 			halfSize = m.bounds.extents;
-			Debug.Log("extends: "+ m.bounds.extents.x + " " + m.bounds.extents.y + " " + m.bounds.extents.z);
-			Debug.Log("size: "+ m.bounds.size.x + " " + m.bounds.size.y + " " + m.bounds.size.z);
 		}
-
 		Vector3 minV = target.transform.position - halfSize;
 		Vector3 maxV = target.transform.position + halfSize;
-		int minX = (int)Mathf.Round (minV.x), maxX = (int)Mathf.Round (maxV.x);
-		int minY = (int)Mathf.Round (minV.y), maxY = (int)Mathf.Round (maxV.y);
-		int minZ = (int)Mathf.Round (minV.z), maxZ = (int)Mathf.Round (maxV.z);
-		//Debug.Log (minX + " ~ " + maxX);
-		//Debug.Log (minY + " ~ " + maxY);
-		//Debug.Log (minZ + " ~ " + maxZ);
+		//Debug.Log ("maxV: " + maxV.x + " " + maxV.y + " " + maxV.z);
+		//Debug.Log ("minV: " + minV.x + " " + minV.y + " " + minV.z);
+		Vector3 mergin = Vector3.zero;
+		mergin.x = Mathf.Round (maxV.x) + 0.5f - maxV.x;
+		mergin.y = Mathf.Round (maxV.y) + 0.5f - maxV.y;
+		mergin.z = Mathf.Round (maxV.z) + 0.5f - maxV.z;
+		target.transform.position = target.transform.position + mergin;
+		//Debug.Log ("mergin: " + mergin.x + " " + mergin.y + " " + mergin.z);
 
-		int b = 0;
-		int stop_point = 27;
-		for(int z = minZ; z <= maxZ; ++z) {
-			if (b == stop_point) { break; }
-
-			for(int y = minY; y <= maxY; ++y) {
-				if (b == stop_point) { break; }
-
-				for(int x = minX; x <= maxX; ++x) {
-					if (b == stop_point) { break; }
-					//Debug.Log (x + " " + y + " " + z);
-					GameObject aBooleanVoxel = GameObject.CreatePrimitive(PrimitiveType.Cube);
-					aBooleanVoxel.name = "BooleanVoxel";
-					aBooleanVoxel.transform.position = new Vector3 (x,y,z);
-
-					//Box内に猿オブジェクトがなければ、パス！！！！
-					/*
-					foreach (Transform aPart in target.transform) {
-						if (aPart.gameObject.GetComponent<MeshCollider>() == null) {
-							aPart.gameObject.AddComponent<MeshCollider>().sharedMesh = aPart.gameObject.GetComponent<MeshFilter> ().mesh;
-						}
-						//aBooleanVoxel.GetComponent<MeshRenderer>().bounds.Contains(aPart.GetComponent<MeshRenderer>().bounds));
-					}
-					*/
-
-					//オブジェクトの全てのパーツに対してブーリアン演算する
-					GameObject polygon = new GameObject("x" + Util.CreatePosID(aBooleanVoxel.transform.position));
-					foreach (Transform aPart in target.transform) {
-						Debug.Log (aBooleanVoxel.transform.position);
-						Mesh m = CSG.Subtract (aBooleanVoxel, aPart.gameObject); //ヌルポのエラー
-						//Mesh m = CSG.Subtract (aPart.gameObject, aBooleanVoxel);
-						//Mesh m = CSG.Intersect (aPart.gameObject, aBooleanVoxel);
-						//Mesh m = CSG.Intersect (aBooleanVoxel, aPart.gameObject);
-						polygon.AddComponent<MeshFilter>().mesh = m;
-						polygon.AddComponent<MeshRenderer>().material = new Material(Const.DIFFUSE_SHADER);
-					}
-					b++;
-					GameObject.Destroy(aBooleanVoxel);
+		//minV, maxVを再計算
+		minV = target.transform.position - halfSize;
+		maxV = target.transform.position + halfSize - new Vector3(0.5f, 0.5f, 0.5f);
+		//Debug.Log ("maxV: " + maxV.x + " " + maxV.y + " " + maxV.z);
+		//Debug.Log ("minV: " + minV.x + " " + minV.y + " " + minV.z);
+		minV.x = Mathf.Round (minV.x);
+		minV.y = Mathf.Round (minV.y);
+		minV.z = Mathf.Round (minV.z);
+		List<string> posIDList = new List<string> ();
+		//Debug.Log ("minV: " + minV.x + " " + minV.y + " " + minV.z);
+		for (int z = (int)minV.z; z <= (int)maxV.z; ++z) {
+			for (int y = (int)minV.y; y <= (int)maxV.y; ++y) {
+				for (int x = (int)minV.x; x <= (int)maxV.x; ++x) {
+					posIDList.Add (Util.CreatePosID(new Vector3(x,y,z)));
+					//GameObject aBooleanVoxel = GameObject.CreatePrimitive(PrimitiveType.Cube);
+					//aBooleanVoxel.name = "EMPTY";
+					//aBooleanVoxel.transform.position = new Vector3 (x,y,z);
 				}
 			}
 		}
-		GameObject.Destroy(target);
+		target.name = posIDList[0];
+		GameObject aBooleanVoxel = GameObject.CreatePrimitive(PrimitiveType.Cube);
+		aBooleanVoxel.transform.position = Util.SplitPosID(target.name);
+		Debug.Log (target.name);
+
+		return posIDList.ToArray();
 	}
 
 	/*
