@@ -117,7 +117,7 @@ public class ChainVoxel {
 						isGrouping = true;
 					}
 				}
-				if (isGrouping) { break; }
+				if (isGrouping) break;
 				this.insertAll (op, op.getTimestamp (), op.getGID (), posIDs, op.getTextureTypes ());
 				break;
 			case Operation.DELETE_ALL:
@@ -194,7 +194,7 @@ public class ChainVoxel {
 		voxelList.Sort(Voxel.Compare);
 		//Hereバグ: ここが原因！！！
 		if (this.getVoxel (posID) != null) {
-			if (op.getOpType() == Operation.INSERT) {
+			if (op.getOpType() != Operation.MOVE_ALL && op.getOpType() != Operation.MOVE) {
 				this.insertedPosIDs.Add (posID);
 				//Debug.Log ("insert():" + posID);	//動いている！！
 			}
@@ -235,12 +235,9 @@ public class ChainVoxel {
 		}
 
 		voxelList.Sort(Voxel.Compare);
-
-		//Hereバグ: ここが原因！！！
 		if (this.getVoxel (posID) == null) {
-			if (op.getOpType() == Operation.DELETE) {
+			if (op.getOpType() != Operation.MOVE_ALL &&  op.getOpType() != Operation.MOVE) {
 				this.deletedPosIDs.Add (posID);
-				//Debug.Log ("delete():" + posID);	//動いている！！
 			}
 		}
 
@@ -249,10 +246,8 @@ public class ChainVoxel {
 
 	public void move(Operation op, long timestamp, string posID, string destPosID) {
 		int textureType = this.delete(op, timestamp, posID);
-		//Debug.Log ("deleted" + posID + " " + timestamp);
-		//timestamp++;
-		this.insert(op, timestamp+1L, destPosID, textureType);
-		//Debug.Log("inserted" + destPosID + " " + (timestamp+1L));
+		timestamp++;
+		this.insert(op, timestamp, destPosID, textureType);
 		this.movedPosIDs[posID] = destPosID;
 	}
 
@@ -263,7 +258,6 @@ public class ChainVoxel {
 		//insertAll時にtextureoTypesをInputする必要がある
 		for (int i = 0; i < posIDs.Length; ++i) {
 			this.insert (op, timestamp, posIDs [i], textureTypes[i]);
-			//Debug.Log ("inserted " + timestamp + " " + posIDs[i]);
 			timestamp++;
 		}
         this.joinAll(op, timestamp, gid, posIDs);
@@ -272,18 +266,24 @@ public class ChainVoxel {
 		return timestamp;
 	}
 
+	/*
+	public long insertPolygon(Operation op, long timestamp,
+		string gid, string[] posIDs, string texturePath) {
+
+	}
+	*/
+
 	public long deleteAll(Operation op, long timestamp, string gid, string[] posIDs) {
 		timestamp = this.leaveAll(op, timestamp, gid, posIDs);
 		timestamp++;
 		foreach(string posID in posIDs) {
 			this.delete(op, timestamp, posID);
-			//Debug.Log ("deleted " + timestamp + " " + posID);
 			timestamp++;
 		}
 		return timestamp;
 	}
 
-	public void moveAll (Operation op)
+	public void moveAll(Operation op)
 	{
 		string[] posIDs = op.getPosIDs();
 		posIDs = Util.ArrangePosIDs(posIDs, op.getTransMatrix());
@@ -295,7 +295,6 @@ public class ChainVoxel {
 			Voxel aDestVoxel = this.getVoxel(destPosIDs[i]);
 			if (aDestVoxel != null) { if (! posIDs.Contains(destPosIDs[i])) return; }
 		}
-		Debug.Log ("MOVE_ALL");
 		int[] textureTypes = this.getTextureTypesFrom(posIDs);
 		long timestamp = op.getTimestamp();
 
@@ -361,7 +360,7 @@ public class ChainVoxel {
      */
 	public void joinAll(Operation op, long timestamp, string gid, string[] posIDs) {
 		this.stt.joinAll(timestamp, posIDs, gid);
-		if (op.getOpType() == Operation.JOIN_ALL) {
+		if (op.getOpType() != Operation.MOVE_ALL) {
 			this.joinedGIDs.Add(gid);//最新のタイムスタンプのグループをとる
 		}
 	}
@@ -394,7 +393,7 @@ public class ChainVoxel {
 			this.insert (op, timestamp, posIDs[i], voxels[i].getTextureType());
 			timestamp++;
 		}
-		if (op.getOpType() == Operation.LEAVE_ALL) {
+		if (op.getOpType() != Operation.MOVE_ALL) {
 			this.leftGIDs.Add(gid);//最新のタイムスタンプのグループをとる
 		}
 
@@ -654,6 +653,7 @@ public class ChainVoxel {
 			case 1:
 				o = new Operation(0, Operation.MOVE_ALL,
 		            "{\"gid\": \"" + gid +
+					"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
 					"\", \"transMatrix\": \"" + Util.CreatePosID(transMatrix) + "\"}");
 				cv.apply(o);
 				Debug.Assert(cv.isIncludingAll(destPosIDs));
@@ -689,9 +689,11 @@ public class ChainVoxel {
 		posIDs[0] = "1:1:2";
 		posIDs[1] = "1:1:3";
 		posIDs[2] = "1:1:1";
+		/*
 		foreach (string posID in Util.ArrangePosIDs(posIDs, "0:0:-1")) {
 			Debug.Log (posID);
 		}
+		*/
 		/*
 		for (int p = 0; p < posIDs.Length; ++p) {
 			Vector3 v = Util.CreateRandomVector3 (-1000, 1000);

@@ -67,6 +67,21 @@ public class Operation {
 	public const int MOVE_ALL = 10;
 
 	/**
+     * insertPolygon操作を示す定数
+     */
+	public const int INSERT_POLYGON = 11;
+
+
+
+	private static List<int> operation_types = new List<int>() {
+		Operation.INSERT, Operation.DELETE, Operation.CREATE, Operation.JOIN,
+		Operation.LEAVE, Operation.MOVE, 
+		Operation.INSERT_ALL, Operation.DELETE_ALL, Operation.JOIN_ALL,
+		Operation.LEAVE_ALL, Operation.MOVE_ALL, 
+		Operation.INSERT_POLYGON
+	};
+
+	/**
      * 操作を行なったSiteの識別子
      */
 	private int sid;
@@ -126,7 +141,8 @@ public class Operation {
 			new List<string>() {"posIDs", "gid"}, // deleteAll
 			new List<string>() {"posIDs", "gid"}, // joinAll
 			new List<string>() {"posIDs", "gid"}, // leaveAll
-			new List<string>() {"posIDs", "transMatrix", "gid"} // moveAll
+			new List<string>() {"posIDs", "transMatrix", "gid"}, // moveAll
+			new List<string>() {"posIDs", "texturePath", "gid"} // insertPolygon
 		};
 		/*
 		Debug.Log(requirements[this.opType].Count);
@@ -145,6 +161,7 @@ public class Operation {
 		Debug.LogError("工事中");
 		//this.opParams.AddField ("textureType", textureType.ToString());
 	}
+
 
 	/* Not exist setter method as much as possible. Because, class field should not be changed since init. */
 
@@ -263,6 +280,11 @@ public class Operation {
 
 	}
 
+	public string getTexturePath() {
+		return this.opParams.HasField("texturePath") ? this.opParams.GetField("texturePath").str : "";
+	}
+
+
 	/**
      * Group IDを返す．
      * @return voxelの識別子
@@ -309,12 +331,6 @@ public class Operation {
 		return j.Print();
 	}
 
-	private static List<int> operation_types = new List<int>() {
-		Operation.INSERT, Operation.DELETE, Operation.CREATE, Operation.JOIN,
-		Operation.LEAVE, Operation.MOVE , Operation.MOVE_ALL, Operation.JOIN_ALL
-	};
-
-
 
 	public static Operation CreateRandomOperation()
 	{
@@ -330,6 +346,8 @@ public class Operation {
 		string[] destPosIDs = new string[numberOfPosIDs];
 		string transMatrix = Util.CreateRandomPosID(-1, 2);
 		string[] textureTypes = new string[numberOfPosIDs];
+		string texturePath = Guid.NewGuid ().ToString ("N").Substring(0, 12);
+
 		for(int i=0; i<numberOfPosIDs; ++i)
 		{
 			posIDs[i] = Util.CreateRandomPosID(intMin, intMax);
@@ -353,6 +371,11 @@ public class Operation {
 		case Operation.INSERT_ALL:
 			j.AddField ("posIDs", Util.GetCommaLineFrom(posIDs));
 			j.AddField ("textureTypes", Util.GetCommaLineFrom(textureTypes));
+			j.AddField ("gid", gid);
+			break;
+		case Operation.INSERT_POLYGON:
+			j.AddField ("posIDs", Util.GetCommaLineFrom(posIDs));
+			j.AddField ("texturePath", texturePath);
 			j.AddField ("gid", gid);
 			break;
 		case Operation.DELETE_ALL:
@@ -477,6 +500,11 @@ public class Operation {
 				Debug.Assert (Util.GetCommaLineFrom(o1.getPosIDs()) == Util.GetCommaLineFrom(o2.getPosIDs()) );
 				Debug.Assert (o1.getGID () == o2.getGID ());
                 break;
+			case Operation.INSERT_POLYGON:
+				Debug.Assert (Util.GetCommaLineFrom(o1.getPosIDs()) == Util.GetCommaLineFrom(o2.getPosIDs()) );
+				Debug.Assert (o1.getTexturePath() == o2.getTexturePath());
+				Debug.Assert (o1.getGID () == o2.getGID ());
+				break;
 			default:
 				throw new System.InvalidOperationException (
 					String.Format("Operation{0} at CreateRandomOperation()",

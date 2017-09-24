@@ -127,7 +127,7 @@ public class ChainXController : MonoBehaviour
 							} else { } //何もしない
 
 						} else {
-							gid = ChainXModel.PAINT_TOOL_GROUP_ID + Util.GetGUID ();
+							gid = ChainXModel.CreateGID();
 							o = new Operation (0, Operation.JOIN_ALL, "{\"posIDs\": \"" +
 								this.model.getPosIDsFrom (this.selectedObjects) + "\", \"gid\": \"" + gid +
 							"\"}");
@@ -200,26 +200,71 @@ public class ChainXController : MonoBehaviour
         Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
         RaycastHit hit = new RaycastHit ();
         if (Physics.Raycast (ray, out hit)) {
-            float distance = hit.distance - 0.5f;
-            Vector3 hitPointShort = ray.GetPoint(distance); //ヒットしたRayより少し手前のPointをたどる
-            Vector3 fixedHitPointShort = ChainXModel.GetRoundIntPoint(hitPointShort);
 
 			Operation o = null;
 			if (paintToolName.IndexOf(ChainXModel.PAINT_TOOL_VOXEL_ID) > -1) {
-				//単位Voxel
+				//
+				//単位Voxelをペイントする
+				//
+	            float distance = hit.distance - 0.5f; //ヒットしたRayより少し手前のPointをたどる
+				Vector3 hitPointShort = ChainXModel.GetRoundIntPoint(ray.GetPoint(distance));
 	            int textureType = int.Parse(this.paintTool.GetComponent<Text>().text);
 	            o = new Operation(0, Operation.INSERT,
-	                "{\"posID\": \"" + ChainXModel.CreatePosID(fixedHitPointShort) +
+					"{\"posID\": \"" + ChainXModel.CreatePosID(hitPointShort) +
 	                "\", \"textureType\":\"" + textureType + "\"}"
 	            );
 			}
 			else if (paintToolName.IndexOf (ChainXModel.PAINT_TOOL_GROUP_ID) > -1) {
-				//グループVoxel
-				/*
-	            o = new Operation(0, Operation.INSERT_ALL,
-	                "{\"posID\": \"" + ChainXModel.CreatePosID(fixedHitPointShort) +
-	                "\", \"textureType\":\"" + textureType + "\"}"
-				*/
+				//
+				//グループVoxelsをペイントする
+				//				
+				float cursor_d = hit.distance - 0.5f;
+				Vector3 hitPointShort = ChainXModel.GetRoundIntPoint (ray.GetPoint (cursor_d));
+
+				//もっともヒットポイントに近いオブジェクトをグループVoxelsの中から見つける
+				GameObject closeObjToHitPoint = null;
+				float minDistance = float.MaxValue;
+				GameObject groupObj = GameObject.Find (paintToolName);
+				foreach (Transform aPart in groupObj.transform) {
+					float d = Vector3.Distance (aPart.gameObject.transform.position, hitPointShort);
+					if (d < minDistance) {
+						minDistance = d;
+						closeObjToHitPoint = aPart.gameObject;
+					}
+				}
+
+				bool put_enable;
+				Vector3 diffV = Vector3.zero;
+				string posIDs = "";
+				string textureTypes = "";
+				while (cursor_d > 0)
+				{
+					posIDs = "";
+					textureTypes = "";
+					hitPointShort = ChainXModel.GetRoundIntPoint (ray.GetPoint (cursor_d));
+					diffV = hitPointShort - closeObjToHitPoint.transform.position;
+					put_enable = true;
+					foreach (Transform aPart in groupObj.transform) {
+						Vector3 movingV = aPart.gameObject.transform.position + diffV;
+						if (GameObject.Find (Util.CreatePosID (movingV)) != null) {
+							put_enable = false;	
+							break;	
+						}
+						posIDs += Util.CreatePosID(movingV) + Const.SPLIT_CHAR;
+						textureTypes += aPart.gameObject.GetComponent<Text>().text + Const.SPLIT_CHAR;
+					}
+					if (put_enable) break;
+					cursor_d--;
+				}
+				posIDs = posIDs.TrimEnd (Const.SPLIT_CHAR);
+				textureTypes = textureTypes.TrimEnd (Const.SPLIT_CHAR);
+				this.selectedObjects.Remove(groupObj);
+
+				string gid = ChainXModel.CreateGID ();
+				o = new Operation (0, Operation.INSERT_ALL,
+					"{\"posIDs\": \"" + posIDs +
+					"\", \"gid\": \"" + gid +
+					"\", \"textureTypes\":\"" + textureTypes + "\"}");
 			}
             this.ApplyChainVoxel(o);
             //Debug.DrawLine(ray.origin, hitPointShort, Color.red, 60.0f, true); //レーザービーム
@@ -449,6 +494,7 @@ public class ChainXController : MonoBehaviour
 				GameObject deletingObj = GameObject.Find (posID);
 				if (deletingObj != null) {
               		// Remove following a ChainVoxel.
+					this.selectedObjects.Remove(deletingObj);
 					GameObject.Destroy (deletingObj);
 				}
 			}
@@ -487,6 +533,7 @@ public class ChainXController : MonoBehaviour
 					this.RemoveFromSelectedObjects (aChild);
 				}
 				//UIにこのグループオブジェクトを登録
+				//TODO(Tasuku): グループオブジェクトが2重に登録されないようにする
 				this.model.AddGroupToUI (gid);
 				this.AddToSelectedObjects (aParent);
 			}
@@ -548,16 +595,6 @@ public class ChainXController : MonoBehaviour
             log.text = this.log; //this.showStructureTable();
         }
     }
-
-	/*
-	// https://github.com/RichLogan/ObjLoader
-	public void LoadObj(string path) {
-		Debug.Log (path);
-		OBJ objLoader = GameObject.Find("Plane").AddComponent<OBJ>();
-		objLoader.objPath = path;
-		StartCoroutine(objLoader.Load (path));
-	}
-	*/
 
     private void OnApplicationQuit() {
         this.socket.Close();

@@ -43,7 +43,6 @@ public class ChainXModel
 		}
 		string[] emptyPosIDs = this.MoveCenter(targetObj);
 		string polygonPosID = emptyPosIDs [emptyPosIDs.Length - 1];
-		
 	}
 
 	private string[] MoveCenter(GameObject target)
@@ -233,6 +232,10 @@ public class ChainXModel
         }
 		return res.TrimEnd(Const.SPLIT_CHAR);
     }
+
+	public static string CreateGID() {
+		return ChainXModel.PAINT_TOOL_GROUP_ID + Util.GetGUID ();
+	}
 
 
 	public static void Test() {
