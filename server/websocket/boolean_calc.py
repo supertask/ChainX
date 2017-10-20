@@ -6,6 +6,7 @@ import math
 from mathutils import Vector
 from os.path import basename
 
+print("start boolean_calc.py")
 bpy.context.scene.unit_settings.system='METRIC'
 #bpy.context.scene.render.engine = 'BLENDER_RENDER'
 bpy.context.scene.render.engine = 'CYCLES'
@@ -51,7 +52,7 @@ def split_object(obj_path, texture_path=None):
     # Import an obj that you want to split
     imported_object = bpy.ops.import_scene.obj(filepath=obj_path)
     target = bpy.context.selected_objects[0] ####<--Fix
-    #obj_name, _ = os.path.splitext(basename(obj_path))
+    obj_name, _ = os.path.splitext(basename(obj_path))
 
     # Create a texture
     if texture_path:
@@ -90,10 +91,15 @@ def split_object(obj_path, texture_path=None):
                 boolean_modifier(voxel, target)
 
     delete_obj(target.name)
-    #bpy.ops.export_scene.obj(filepath= obj_name + "_boolean.obj")
-    bpy.ops.export_scene.obj(filepath=obj_path)
+    bpy.ops.export_scene.obj(filepath= obj_name + "_boolean.obj")
+    #bpy.ops.export_scene.obj(filepath=obj_path)
 
 argv = sys.argv[sys.argv.index("--") + 1:]
-#split_object(obj_path=argv[0], texture_path=argv[1])
-split_object(obj_path=argv[0])
+print(len(argv))
+if len(argv) == 2:
+    print (argv[0],argv[1])
+    split_object(obj_path=argv[0], texture_path=argv[1])
+elif len(argv) == 1:
+    print (argv[0])
+    split_object(obj_path=argv[0])
 
