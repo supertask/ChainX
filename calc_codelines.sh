@@ -15,6 +15,8 @@ SRCS="./Assets/ChainVoxelModule/ChainVoxel.cs \
     ./Assets/ChainXTester.cs \
     ./Assets/Example/EchoTest.cs \
     ./Assets/Plugins/MaxCamera.cs
-    ./server/websocket/server.js"
+    ./server/websocket/server.js\
+    ./server/signalingWebsocket/server.js\
+"
 
 wc -l ${SRCS}

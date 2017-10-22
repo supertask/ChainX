@@ -67,7 +67,7 @@ public class ChainXController : MonoBehaviour
 				} else if (this.clickUI ()) {
 					this.cleanSelectedObjects (); //Voxelの選択解除
 				} else if (this.paintTool.name == Const.UI_SELECTING_POINTER_NAME) {
-					this.clickVoxel (); //マウスクリックしてオブジェクトを選択する
+					this.clickVoxel(); //マウスクリックしてオブジェクトを選択する
 				} else {
 					//VoxelまたはVoxelsが選択中のとき
 					this.paintVoxels (); //VoxelまたはVoxelsをペイントする
@@ -76,9 +76,9 @@ public class ChainXController : MonoBehaviour
 
 			//キーボード操作（移動、グループ作成、解除、削除）
 			Operation o = null;
-			Vector3 arrowV = Vector3.zero;
 			if (this.selectedObjects.Count > 0) {
-				//3. MOVEコマンドを追加
+				//3. MOVEの移動方向を追加
+				Vector3 arrowV = Vector3.zero;
 				if (Input.GetKeyUp (KeyCode.UpArrow)) arrowV = new Vector3 (1, 0, 0);
 				else if (Input.GetKeyUp (KeyCode.DownArrow)) arrowV = new Vector3 (-1, 0, 0);
 				else if (Input.GetKeyUp (KeyCode.RightArrow)) arrowV = new Vector3 (0, 0, -1);
@@ -92,6 +92,7 @@ public class ChainXController : MonoBehaviour
 						Debug.Log (anObj.name);
 					}
 					*/
+					Debug.Log (this.selectedObjects[0].name);
 					this.selectedObjects = Util.ArrangeGameObjects (this.selectedObjects, arrowV);
 
 					List<Operation> moveOps = this.model.CreateMoveOperations(this.selectedObjects, arrowV);
@@ -277,12 +278,13 @@ public class ChainXController : MonoBehaviour
      */
     private void clickVoxel() {
         GameObject hitObj = this.getHitObject();
+		if (hitObj != null) {
+			while (hitObj.transform.parent != null)
+				hitObj = hitObj.transform.parent.gameObject;
+		}
 
-        if (hitObj != null && Const.REGEX_POSID.IsMatch (hitObj.name)) {
-            if (hitObj.transform.parent != null) {
-                hitObj = hitObj.transform.parent.gameObject;
-            }
-
+		if (hitObj != null && (Const.REGEX_POSID.IsMatch (hitObj.name) ||
+				Const.REGEX_GROUP.IsMatch (hitObj.name)) ) {
             if (this.selectedObjects.Contains(hitObj)) {
                 if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) {
                     this.RemoveFromSelectedObjects(hitObj);
@@ -388,7 +390,7 @@ public class ChainXController : MonoBehaviour
                     aPaintToolObj.name = gid;
 
 					float scale = this.model.GetScale(aPaintToolObj, this.model.VOXEL_PLATE_DIAMETER);
-                    float y_margin = 0.5f;    
+                    float y_margin = 0.5f;
                     if (scale < 1.0) {
                         y_margin *= scale;
                         aPaintToolObj.transform.localScale = aPaintToolObj.transform.localScale * scale;
@@ -425,11 +427,11 @@ public class ChainXController : MonoBehaviour
         if (anObj.transform.childCount == 0) {
             anObj.GetComponent<Renderer>().material.shader = aShader;
         }
-        else {
+        else { //childCount > 0
             foreach(Transform aChildTransform in anObj.transform) {
-                aChildTransform.gameObject.GetComponent<Renderer>().material.shader = aShader; //Here, ここでもバグ！！！
+				applyShader(aChildTransform.gameObject, aShader);
             }
-        }
+		}
     }
 
     private void cleanSelectedObjects()
@@ -528,14 +530,17 @@ public class ChainXController : MonoBehaviour
 				foreach (string posID in this.cv.stt.getPosIDs(gid))
 				{
 					GameObject aChild = GameObject.Find (posID);
-					//過去のバグ：すると、NULLになってかつ、無限ループし、グループが無限に作られる
-					aChild.transform.SetParent (aParent.transform);
-					this.RemoveFromSelectedObjects (aChild);
+					//過去のバグ：NULLになってかつ、無限ループし、グループが無限に作られる
+					if (aChild != null) {
+						//Polygonの場合、一つだけ挿入されそれ以外（NULL）は挿入されず、グループのみ追加される
+						aChild.transform.SetParent (aParent.transform);
+						this.RemoveFromSelectedObjects (aChild);
+					}
 				}
 				//UIにこのグループオブジェクトを登録
 				//TODO(Tasuku): グループオブジェクトが2重に登録されないようにする
 				this.model.AddGroupToUI (gid);
-				this.AddToSelectedObjects (aParent);
+				this.AddToSelectedObjects (aParent); //ここでバグが起こるだけで無限ループが起こる
 			}
 			cv.joinedGIDs.Clear ();
 		}

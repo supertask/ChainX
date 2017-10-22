@@ -5,6 +5,8 @@ using System.Text;
 using UnityEngine;
 
 public class Const {
+	public static string SERVER_ID = "127.0.0.1";
+
 	public static int MOUSE_LEFT_CLICK = 0;
 	public static int MOUSE_RIGHT_CLICK = 1;
 	public static int MOUSE_BOTH_CLICK = 2;
@@ -20,7 +22,8 @@ public class Const {
 	public static string SAVED_DIR = Application.persistentDataPath;
 	public static string SAVED_FILE = Application.persistentDataPath + "/worked3D.txt";
 	public static int UI_LAYER = 8;
-	public static Regex REGEX_POSID = new Regex( @"[-]?[\d]+:[-]?[\d]+:[-]?[\d]+");
+	public static Regex REGEX_POSID = new Regex(@"[-]?[\d]+:[-]?[\d]+:[-]?[\d]+");
+	public static Regex REGEX_GROUP = new Regex(@"group.+");
 	public static int NUMBER_OF_TEXTURE = 8;
 	public static Vector3 PAINT_TOOL_PLATE_POSITION = Camera.main.ScreenToWorldPoint (new Vector3(-5,-30,5));
 

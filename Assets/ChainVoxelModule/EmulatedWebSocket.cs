@@ -16,7 +16,7 @@ public class EmulatedWebSocket
 
 	public EmulatedWebSocket(ChainXController aController) {
 		this.controller = aController;
-		this.ws = new WebSocket(new Uri("ws://localhost:18080"));
+		this.ws = new WebSocket(new Uri("ws://" + Const.SERVER_ID + ":18080"));
 	}
 
 	public IEnumerator Connect() {
@@ -57,7 +57,7 @@ public class EmulatedWebSocket
 		while (true) {
 			receivedBinary = this.ws.Recv();
 			if (receivedBinary != null) {
-				Debug.Log (receivedBinary);
+				//Debug.Log (receivedBinary);
 				if (this.partEqual (ref receivedBinary, ref MessageHeader.OPERATION_BINARY)) {
 					string line = Encoding.UTF8.GetString (receivedBinary);
 					line = line.Remove (0, MessageHeader.OPERATION.Length).Trim ();
@@ -90,7 +90,14 @@ public class EmulatedWebSocket
 						// When all dependent files of a 3d obj have been collected, 
 						// Build the 3d obj.
 						//
-						this.controller.getModel().LoadObj(filepaths);
+						string[] posIDs = this.controller.getModel().LoadObj(filepaths);
+						Operation op = new Operation (0, Operation.INSERT_POLYGON,
+							"{\"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) +
+							"\", \"gid\": \"" + ChainXModel.CreateGID() +
+							"\", \"objPath\":\"" + filepaths[0] + "\"}");
+						//Debug.Log(Operation.ToJson(op));
+						this.controller.cv.apply (op);
+
 						filepaths = new string[]{"", "", ""}; //Clear for the next 3d objs 
 					}
 				}

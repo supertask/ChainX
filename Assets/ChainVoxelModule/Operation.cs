@@ -71,14 +71,22 @@ public class Operation {
      */
 	public const int INSERT_POLYGON = 11;
 
+	/**
+     * deletePolygon操作を示す定数
+     */
+	public const int DELETE_POLYGON = 12;
 
+	/**
+     * movePolygon操作を示す定数
+     */
+	public const int MOVE_POLYGON = 13;
 
 	private static List<int> operation_types = new List<int>() {
 		Operation.INSERT, Operation.DELETE, Operation.CREATE, Operation.JOIN,
 		Operation.LEAVE, Operation.MOVE, 
 		Operation.INSERT_ALL, Operation.DELETE_ALL, Operation.JOIN_ALL,
 		Operation.LEAVE_ALL, Operation.MOVE_ALL, 
-		Operation.INSERT_POLYGON
+		Operation.INSERT_POLYGON, Operation.DELETE_POLYGON, Operation.MOVE_POLYGON
 	};
 
 	/**
@@ -130,19 +138,23 @@ public class Operation {
      */
 	private bool satisfyRequirements() {
 		List<List<string>> requirements = new List<List<string>>() {
-			new List<string>() {"posID", "textureType"}, // insert
-			new List<string>() {"posID"}, // delete
-			new List<string>() {"gid"}, // create
-			new List<string>() {"posID", "gid"}, // join
-			new List<string>() {"posID", "gid"}, // leave
-			new List<string>() {"posID","transMatrix"}, // move
+			new List<string>() {"posID", "textureType"}, // insert(INSERT)
+			new List<string>() {"posID"}, // delete(DELETE)
+			new List<string>() {"gid"}, // create(CREATE)
+			new List<string>() {"posID", "gid"}, // join(JOIN)
+			new List<string>() {"posID", "gid"}, // leave(LEAVE)
+			new List<string>() {"posID","transMatrix"}, // move(MOVE)
 
-			new List<string>() {"posIDs", "textureTypes", "gid"}, // insertAll
-			new List<string>() {"posIDs", "gid"}, // deleteAll
-			new List<string>() {"posIDs", "gid"}, // joinAll
-			new List<string>() {"posIDs", "gid"}, // leaveAll
-			new List<string>() {"posIDs", "transMatrix", "gid"}, // moveAll
-			new List<string>() {"posIDs", "texturePath", "gid"} // insertPolygon
+			new List<string>() {"posIDs", "textureTypes", "gid"}, // insertAll(INSERT_ALL)
+			new List<string>() {"posIDs", "gid"}, // deleteAll(DELETE_ALL)
+			new List<string>() {"posIDs", "gid"}, // joinAll(JOIN_ALL)
+			new List<string>() {"posIDs", "gid"}, // leaveAll(LEAVE_ALL)
+			new List<string>() {"posIDs", "transMatrix", "gid"}, // moveAll((MOVE_ALL)
+
+			//重要！ posIDsの最後の要素だけがobjPathをもち，insertされる．それ以外は空要素
+			new List<string>() {"posIDs", "objPath", "gid"}, // insertPolygon(INSERT_POLYGON)
+			new List<string>() {"posIDs", "gid"}, // deletePolygon(DELETE_POLYGON)
+			new List<string>() {"posIDs", "transMatrix", "gid"} // movePolygon((MOVE_POLYGON)
 		};
 		/*
 		Debug.Log(requirements[this.opType].Count);
@@ -280,8 +292,8 @@ public class Operation {
 
 	}
 
-	public string getTexturePath() {
-		return this.opParams.HasField("texturePath") ? this.opParams.GetField("texturePath").str : "";
+	public string getObjPath() {
+		return this.opParams.HasField("objPath") ? this.opParams.GetField("objPath").str : "";
 	}
 
 
@@ -346,7 +358,7 @@ public class Operation {
 		string[] destPosIDs = new string[numberOfPosIDs];
 		string transMatrix = Util.CreateRandomPosID(-1, 2);
 		string[] textureTypes = new string[numberOfPosIDs];
-		string texturePath = Guid.NewGuid ().ToString ("N").Substring(0, 12);
+		string objPath = Guid.NewGuid ().ToString ("N").Substring(0, 12);
 
 		for(int i=0; i<numberOfPosIDs; ++i)
 		{
@@ -375,15 +387,24 @@ public class Operation {
 			break;
 		case Operation.INSERT_POLYGON:
 			j.AddField ("posIDs", Util.GetCommaLineFrom(posIDs));
-			j.AddField ("texturePath", texturePath);
+			j.AddField ("objPath", objPath);
 			j.AddField ("gid", gid);
 			break;
 		case Operation.DELETE_ALL:
 			j.AddField ("posIDs", Util.GetCommaLineFrom(posIDs));
 			j.AddField ("gid", gid);
 			break;
+		case Operation.DELETE_POLYGON:
+			j.AddField ("posIDs", Util.GetCommaLineFrom(posIDs));
+			j.AddField ("gid", gid);
+			break;
 		case Operation.MOVE_ALL:
 			j.AddField ("posIDs", Util.GetCommaLineFrom(posIDs));
+			j.AddField ("transMatrix", transMatrix);
+			j.AddField ("gid", gid);
+			break;
+		case Operation.MOVE_POLYGON:
+			j.AddField ("posIDs", Util.GetCommaLineFrom (posIDs));
 			j.AddField ("transMatrix", transMatrix);
 			j.AddField ("gid", gid);
 			break;
@@ -502,7 +523,18 @@ public class Operation {
                 break;
 			case Operation.INSERT_POLYGON:
 				Debug.Assert (Util.GetCommaLineFrom(o1.getPosIDs()) == Util.GetCommaLineFrom(o2.getPosIDs()) );
-				Debug.Assert (o1.getTexturePath() == o2.getTexturePath());
+				Debug.Assert (o1.getObjPath() == o2.getObjPath());
+				Debug.Assert (o1.getGID () == o2.getGID ());
+				break;
+			case Operation.DELETE_POLYGON:
+				Debug.Assert (Util.GetCommaLineFrom(o1.getPosIDs()) == Util.GetCommaLineFrom(o2.getPosIDs()) );
+				Debug.Assert (o1.getGID () == o2.getGID ());
+				break;
+			case Operation.MOVE_POLYGON:
+				Debug.Assert (Util.GetCommaLineFrom (o1.getPosIDs ()) == Util.GetCommaLineFrom (o2.getPosIDs ()));
+				Debug.Assert (o1.getTransMatrix () == o2.getTransMatrix ());
+				Debug.Assert (Util.GetCommaLineFrom (o1.getDestPosIDs ())
+				== Util.GetCommaLineFrom (o2.getDestPosIDs ()));
 				Debug.Assert (o1.getGID () == o2.getGID ());
 				break;
 			default:

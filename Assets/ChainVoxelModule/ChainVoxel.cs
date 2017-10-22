@@ -79,16 +79,12 @@ public class ChainVoxel {
 			bool isGrouping;
 			switch (op.getOpType ()) {
 			case Operation.INSERT:
-				posID = op.getPosID();
-				if (this.stt.isGrouping (posID))
-					break;
-				this.insert (op, op.getTimestamp(), posID, op.getTextureType());
+				if (this.stt.isGrouping (op.getPosID())) break;
+				this.insert(op);
 				break;
 			case Operation.DELETE:
-				posID = op.getPosID ();
-				if (this.stt.isGrouping(posID))
-					break;
-				this.delete (op, op.getTimestamp(), posID);
+				if (this.stt.isGrouping(op.getPosID())) break;
+				this.delete(op);
 				break;
 			case Operation.CREATE:
 				this.create (op);
@@ -111,25 +107,25 @@ public class ChainVoxel {
 
 			case Operation.INSERT_ALL:
 				posIDs = op.getPosIDs ();
-				isGrouping = false;
-				for (int i = 0; i < posIDs.Length; ++i) {
-					if (this.stt.isGrouping (posIDs [i])) {
-						isGrouping = true;
-					}
-				}
-				if (isGrouping) break;
-				this.insertAll (op, op.getTimestamp (), op.getGID (), posIDs, op.getTextureTypes ());
+				if(this.isGroupingAll(posIDs)) break;
+				this.insertAll(op);
 				break;
+			case Operation.INSERT_POLYGON:
+				posIDs = op.getPosIDs ();
+				if(this.isGroupingAll(posIDs)) break;
+				this.insertPolygon(op);
+				break;
+				
 			case Operation.DELETE_ALL:
-				isGrouping = false;
-				foreach(string p in this.stt.getPosIDs(op.getGID())) {
-					if (this.stt.isGrouping (p)) {
-						isGrouping = true;
-						break;
-					}
-				}
-				if (isGrouping) { this.deleteAll (op, op.getTimestamp (), op.getGID (), op.getPosIDs()); }
+				if (this.isGroupingAll (this.stt.getPosIDs(op.getGID ()) ))
+					this.deleteAll (op, op.getTimestamp (), op.getGID (), op.getPosIDs());
 				break;
+			case Operation.DELETE_POLYGON:
+				//Here
+				posIDs = op.getPosIDs ();
+				if(this.isGroupingAll(posIDs)) this.deletePolygon(op);
+				break;
+
 			case Operation.JOIN_ALL:
 				this.joinAll (op, op.getTimestamp(), op.getGID(), op.getPosIDs());
 				break;
@@ -137,27 +133,14 @@ public class ChainVoxel {
 				this.leaveAll (op, op.getTimestamp(), op.getGID(), op.getPosIDs());
 				break;
 			case Operation.MOVE_ALL:
-
 				posIDs = op.getPosIDs();
-				isGrouping = false;
-				for (int i = 0; i < posIDs.Length; ++i) {
-					if (this.stt.isGrouping (posIDs [i])) {
-						isGrouping = true;
-						break;
-					}
-				}
-				if (isGrouping) {
-					this.moveAll (op);
-				}
-
+				if (this.isGroupingAll(posIDs)) this.moveAll (op);
 				//foreach (GameObject anObj in this.controller.selectedObjects) { Debug.Log ("xxx" + anObj); }
-
-				/*
-				Voxel[] voxels = this.getVoxelBlock(posIDs);
-				for (int i = 0; i < voxels.Length; ++i) {
-					Debug.Log (posIDs[i] + ", " + voxels[i]);
-				}
-				*/
+				break;
+			case Operation.MOVE_POLYGON:
+				posIDs = op.getPosIDs();
+				if (this.isGroupingAll(posIDs)) this.movePolygon(op);
+				//foreach (GameObject anObj in this.controller.selectedObjects) { Debug.Log ("xxx" + anObj); }
 				break;
 			default:
 				Debug.Assert (false);
@@ -168,14 +151,42 @@ public class ChainVoxel {
 		return;
 	}
 
+	private bool isGroupingAll(string[] posIDs) {
+		for (int i = 0; i < posIDs.Length; ++i) {
+			if (this.stt.isGrouping(posIDs[i])) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+
+	public void insert(Operation op) {
+		this.insert(op, op.getTimestamp(), op.getPosID(), op.getTextureType());
+	}
+
+	public void insert(Operation op, long timestamp, string posID, int textureType){
+		this.insert(op, timestamp, posID, textureType, "");
+	}
+
+	public void insert(Operation op, long timestamp, string posID, string objPath) {
+		this.insert(op, timestamp, posID, -1, objPath);
+	}
+
 	/**
      * ChainVoxel内にvoxelを挿入するメソッド
      * @param op 操作オブジェクト
      * @see Operation
      */
-	public void insert(Operation op, long timestamp, string posID, int textureType) {
+	public void insert(Operation op, long timestamp, string posID, int textureType, string texturePath) {
 		int id = op.getSID();
-		Voxel insertVoxel = new Voxel(id, textureType, timestamp);
+		Voxel insertVoxel;
+		if (textureType < 0) {
+			insertVoxel = new Voxel(id, texturePath, timestamp);
+		}
+		else {
+			insertVoxel = new Voxel(id, textureType, timestamp);
+		}
 
 		List<Voxel> voxelList = this.getVoxelList(posID);
 
@@ -203,6 +214,11 @@ public class ChainVoxel {
 		return;
 	}
 
+
+	public int delete(Operation op) {
+		return this.delete(op, op.getTimestamp(), op.getPosID());
+	}
+
 	/**
      * ChainVoxel内の指定したvoxelを削除するメソッド
      * @param op 操作オブジェクト
@@ -214,13 +230,6 @@ public class ChainVoxel {
 		if (!this.negativeVoxels.ContainsKey(posID) || this.negativeVoxels[posID].getTimestamp() < timestamp) {
 			this.negativeVoxels[posID] = new Voxel(timestamp);
 		}
-
-		/*
-		//DEBUG!!!!!!
-		foreach (KeyValuePair<string,Voxel> aVoxel in this.negativeVoxels) {
-			Debug.Log(aVoxel.ToString());
-		}
-		*/
 
 		List<Voxel> voxelList = this.getVoxelList(posID);
 		Voxel tmpVoxel = this.getVoxel (posID); //NULL(06/03/2017)
@@ -252,12 +261,17 @@ public class ChainVoxel {
 	}
 
 
+
+	public long insertAll(Operation op) {
+		return this.insertAll(op, op.getTimestamp(), op.getGID(), op.getPosIDs(), op.getTextureTypes() );
+	}
+
 	//編集の必要がある
 	public long insertAll(Operation op, long timestamp,
 		string gid, string[] posIDs, int[] textureTypes) {
 		//insertAll時にtextureoTypesをInputする必要がある
 		for (int i = 0; i < posIDs.Length; ++i) {
-			this.insert (op, timestamp, posIDs [i], textureTypes[i]);
+			this.insert(op, timestamp, posIDs [i], textureTypes[i]);
 			timestamp++;
 		}
         this.joinAll(op, timestamp, gid, posIDs);
@@ -266,12 +280,20 @@ public class ChainVoxel {
 		return timestamp;
 	}
 
-	/*
-	public long insertPolygon(Operation op, long timestamp,
-		string gid, string[] posIDs, string texturePath) {
-
+	public long insertPolygon(Operation op) {
+		return this.insertPolygon(op, op.getTimestamp(), op.getGID(), op.getPosIDs(), op.getObjPath());
 	}
-	*/
+			
+	public long insertPolygon(Operation op, long timestamp,
+		string gid, string[] posIDs, string objPath) {
+		int polyIndex = posIDs.Length - 1;
+		this.insert(op, timestamp, posIDs[polyIndex], objPath);
+		timestamp++;
+		this.joinAll(op, timestamp, gid, posIDs);
+		timestamp++;
+
+		return timestamp;
+	}
 
 	public long deleteAll(Operation op, long timestamp, string gid, string[] posIDs) {
 		timestamp = this.leaveAll(op, timestamp, gid, posIDs);
@@ -283,29 +305,85 @@ public class ChainVoxel {
 		return timestamp;
 	}
 
-	public void moveAll(Operation op)
-	{
+	public long deletePolygon(Operation op) {
+		return this.deletePolygon(op, op.getTimestamp(), op.getGID(), op.getPosIDs());
+	}
+	public long deletePolygon(Operation op, long timestamp, string gid, string[] posIDs) {
+		timestamp = this.leaveAll(op, timestamp, gid, posIDs);
+		timestamp++;
+		int polyIndex = posIDs.Length - 1;
+		this.delete(op, timestamp, posIDs[polyIndex]);
+		timestamp++;
+		return timestamp;
+	}
+
+	public void moveAll(Operation op) {
 		string[] posIDs = op.getPosIDs();
 		posIDs = Util.ArrangePosIDs(posIDs, op.getTransMatrix());
 		string[] destPosIDs = op.getDestPosIDs(posIDs);
 
 		//移動時の衝突回避
-		for (int i = 0; i < posIDs.Length; ++i) { if (this.getVoxel (posIDs [i]) == null) return; }
+		for (int i = 0; i < posIDs.Length; ++i) { if (this.getVoxel(posIDs [i]) == null) return; //移動前のVoxelが削除されていればreturn
+		}
 		for (int i = 0; i < posIDs.Length; ++i) {
 			Voxel aDestVoxel = this.getVoxel(destPosIDs[i]);
-			if (aDestVoxel != null) { if (! posIDs.Contains(destPosIDs[i])) return; }
+			if (aDestVoxel != null) {
+                //基本的には移動先Voxelに何かあれば処理せずreturnする
+                //＊ただし移動してるVoxel郡が移動先と被っている状態を除く
+				if (! posIDs.Contains(destPosIDs[i])) return;
+			}
 		}
 		int[] textureTypes = this.getTextureTypesFrom(posIDs);
 		long timestamp = op.getTimestamp();
 
 		timestamp = this.deleteAll (op, timestamp, op.getGID(), posIDs);
 		timestamp++;
-		timestamp = this.insertAll(op, timestamp, op.getGID(), destPosIDs, textureTypes); //2Dは衝突を回避するため
+		timestamp = this.insertAll(op, timestamp, op.getGID(), destPosIDs, textureTypes);
 		timestamp++;
 
 		for (int i = 0; i < posIDs.Length; ++i) {
 			this.movedPosIDs[posIDs[i]] = destPosIDs[i];
 		}
+	}
+
+
+	public void movePolygon(Operation op) {
+		string[] posIDs = op.getPosIDs();
+		posIDs = Util.ArrangePosIDs(posIDs, op.getTransMatrix());
+		string[] destPosIDs = op.getDestPosIDs(posIDs);
+
+		//移動時の衝突回避
+		int polyIndex = posIDs.Length - 1;
+		Debug.Log("0");
+		if (this.getVoxel (posIDs[polyIndex]) == null) return; //移動前のVoxelが削除されていればreturn
+		Debug.Log("1");
+		for (int i = 0; i < destPosIDs.Length; ++i) {
+            //
+			//posIDsはjoin操作によってグループに参加しているが，
+			//primary layerのChainVoxelの中には入ってないこと場合もあるためこのような条件となる
+            //つまり，移動先にvoxelがあるまたは，空だがグループposIDがある場合
+            //
+			if (this.stt.isGrouping(destPosIDs[i]) ||
+				this.getVoxel(destPosIDs[i]) != null) {
+                //基本的には移動先Voxelに何かあれば処理せずreturnする
+                //＊ただし移動してるVoxel郡が移動先と被っている状態を除く
+                Debug.Log(posIDs[i] + " " + destPosIDs[i]);
+				if (! posIDs.Contains(destPosIDs[i])) {
+                    //Debug.Log(posIDs[i] + " " + destPosIDs[i]);
+                    return;
+                }
+			}
+		}
+		Debug.Log("2");
+		string objPath = this.getVoxel(posIDs[polyIndex]).getObjPath();
+		long timestamp = op.getTimestamp();
+
+		timestamp = this.deletePolygon(op, timestamp, op.getGID(), posIDs);
+		timestamp++;
+		timestamp = this.insertPolygon(op, timestamp, op.getGID(), destPosIDs, objPath);
+		timestamp++;
+
+		this.movedPosIDs[posIDs[polyIndex]] = destPosIDs[polyIndex];
 	}
 
 	/*
@@ -390,7 +468,7 @@ public class ChainVoxel {
 		timestamp++;
 		for(int i = 0; i < voxels.Length; ++i) {
 			//Debug.Log ("voxel:" + voxels[i] + ", posID: " + posIDs[i]);
-			this.insert (op, timestamp, posIDs[i], voxels[i].getTextureType());
+			this.insert(op, timestamp, posIDs[i], voxels[i].getTextureType());
 			timestamp++;
 		}
 		if (op.getOpType() != Operation.MOVE_ALL) {
@@ -429,6 +507,7 @@ public class ChainVoxel {
 		}
 		return textureTypes;
 	}		
+
 
 	public bool isIncludingAll(string[] posIDs) {
 		Voxel[] voxels = this.getVoxelBlock (posIDs);	

@@ -14,10 +14,10 @@ public class Voxel {
 	private int textureType;
 
 	/**
-     * Voxelのテクスチャパス
-     * 実際には、テクスチャパス＋中心座標から割り出したマージン
+     * Voxelのオブジェクトパス
+     * 実際には、オブジェクトパス＋中心座標から割り出したマージン
      */
-	private string texturePath;
+	private string objPath;
 
 	/**
      * Voxelのタイムスタンプ
@@ -45,10 +45,10 @@ public class Voxel {
      * @param texturePath テクスチャパス
      * @param timestamp タイムスタンプ
      */
-	public Voxel(int id, int textureType, string texturePath, long timestamp) {
+	public Voxel(int id, int textureType, string objPath, long timestamp) {
 		this.id = id;
 		this.textureType = textureType;
-		this.texturePath = texturePath;
+		this.objPath = objPath;
 		this.timestamp = timestamp;
 	}
 
@@ -80,13 +80,13 @@ public class Voxel {
      * Voxelのテクスチャパスを返す．
      * @return テクスチャパス
      */
-	public string getTexturePath() { return this.texturePath; }
+	public string getObjPath() { return this.objPath; }
 
 	/**
      * Voxelのテクスチャパスを設定する．
      * @param textureType テクスチャパス
      */
-	public void setTexturePath(string texturePath) { this.texturePath = texturePath; }
+	public void setObjPath(string texturePath) { this.objPath = objPath; }
 
 
 	/**
@@ -121,7 +121,7 @@ public class Voxel {
 	 */
 	public override string ToString() {
 		return "id=" + this.getId() + ", textureType=" + this.getTextureType() +
-			", texturePath=" + this.getTexturePath() + ", timestamp=" + this.getTimestamp();
+			", texturePath=" + this.getObjPath() + ", timestamp=" + this.getTimestamp();
 	}
 
 	/**

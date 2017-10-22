@@ -21,6 +21,7 @@ public class ChainXModel
 	public static string PAINT_TOOL_POINTER_ID = "pointer";
 	public static string PAINT_TOOL_VOXEL_ID = "voxel";
 	public static string PAINT_TOOL_GROUP_ID = "group";
+	public static string PAINT_TOOL_POLYGON_ID = "groupPolygon";
 	public float VOXEL_PLATE_DIAMETER = 0.0f;
 
 	public ChainXModel() {
@@ -28,24 +29,27 @@ public class ChainXModel
 		this.initPaintTool();
 	}
 
-	public void LoadObj(string[] filepaths) {
+	public string[] LoadObj(string[] filepaths) {
 		GameObject targetObj = OBJLoader.LoadOBJFile (filepaths[0]);
-		Material[] materials = OBJLoader.LoadMTLFile (filepaths[1]);
+		//Material[] materials = OBJLoader.LoadMTLFile (filepaths[1]);
 		Texture2D texture = TextureLoader.LoadTexture (filepaths[2]);
 
 		//TODO(Tasuku): 位置をどう決めるかをそのうち決める必要がある
 		targetObj.transform.position = new Vector3 (0,5,0);
 		if (targetObj.transform.childCount > 0) {
 			foreach (Transform child in targetObj.transform) {
-				child.gameObject.GetComponent<Renderer> ().material = new Material (Const.DIFFUSE_SHADER);;
+				child.gameObject.AddComponent<MeshCollider>();
+				child.gameObject.GetComponent<Renderer> ().material = new Material (Const.DIFFUSE_SHADER);
 				child.gameObject.GetComponent<Renderer> ().material.mainTexture = texture;
 			}
 		}
-		string[] emptyPosIDs = this.MoveCenter(targetObj);
+		this.MoveCenterToCorner (targetObj);
+		string[] emptyPosIDs = this.getEmptyVoxels(targetObj);
 		string polygonPosID = emptyPosIDs [emptyPosIDs.Length - 1];
+		return emptyPosIDs;
 	}
 
-	private string[] MoveCenter(GameObject target)
+	private void MoveCenterToCorner(GameObject target)
 	{
 		Vector3 halfSize = Vector3.zero;
 		foreach (Transform t in target.transform) {
@@ -54,25 +58,27 @@ public class ChainXModel
 		}
 		Vector3 minV = target.transform.position - halfSize;
 		Vector3 maxV = target.transform.position + halfSize;
-		//Debug.Log ("maxV: " + maxV.x + " " + maxV.y + " " + maxV.z);
-		//Debug.Log ("minV: " + minV.x + " " + minV.y + " " + minV.z);
 		Vector3 mergin = Vector3.zero;
 		mergin.x = Mathf.Round (maxV.x) + 0.5f - maxV.x;
 		mergin.y = Mathf.Round (maxV.y) + 0.5f - maxV.y;
 		mergin.z = Mathf.Round (maxV.z) + 0.5f - maxV.z;
 		target.transform.position = target.transform.position + mergin;
-		//Debug.Log ("mergin: " + mergin.x + " " + mergin.y + " " + mergin.z);
+	}
 
+	private string[] getEmptyVoxels(GameObject target)
+	{
+		Vector3 halfSize = Vector3.zero;
+		foreach (Transform t in target.transform) {
+			Mesh m = t.gameObject.GetComponent<MeshFilter> ().mesh;
+			halfSize = m.bounds.extents;
+		}
 		//minV, maxVを再計算
-		minV = target.transform.position - halfSize;
-		maxV = target.transform.position + halfSize - new Vector3(0.5f, 0.5f, 0.5f);
-		//Debug.Log ("maxV: " + maxV.x + " " + maxV.y + " " + maxV.z);
-		//Debug.Log ("minV: " + minV.x + " " + minV.y + " " + minV.z);
+		Vector3 minV = target.transform.position - halfSize;
+		Vector3 maxV = target.transform.position + halfSize - new Vector3(0.5f, 0.5f, 0.5f);
 		minV.x = Mathf.Round (minV.x);
 		minV.y = Mathf.Round (minV.y);
 		minV.z = Mathf.Round (minV.z);
 		List<string> posIDList = new List<string> ();
-		//Debug.Log ("minV: " + minV.x + " " + minV.y + " " + minV.z);
 		for (int z = (int)minV.z; z <= (int)maxV.z; ++z) {
 			for (int y = (int)minV.y; y <= (int)maxV.y; ++y) {
 				for (int x = (int)minV.x; x <= (int)maxV.x; ++x) {
@@ -83,9 +89,9 @@ public class ChainXModel
 				}
 			}
 		}
-		target.name = posIDList[0];
-		GameObject aBooleanVoxel = GameObject.CreatePrimitive(PrimitiveType.Cube);
-		aBooleanVoxel.transform.position = Util.SplitPosID(target.name);
+		target.name = posIDList[posIDList.Count - 1];
+		//GameObject aBooleanVoxel = GameObject.CreatePrimitive(PrimitiveType.Cube);
+		//aBooleanVoxel.transform.position = Util.SplitPosID(target.name);
 		Debug.Log (target.name);
 
 		return posIDList.ToArray();
@@ -147,10 +153,12 @@ public class ChainXModel
 			voxels.Add(ChainXModel.PAINT_TOOL_VOXEL_ID + i.ToString());
 		}
 		this.paintTools.Add(voxels);
+		//this.paintTools.Add(); //Here
 	}
 
 	public string getPaintTool(int dx, int dy) {
 		Point p = this.paintToolLocation;
+		//this.paintTools[p.y + dy]; //Here
 		p.y = Util.mod(p.y + dy, this.paintTools.Count);
 		p.x = Util.mod(p.x + dx, this.paintTools[p.y].Count);
 
@@ -162,6 +170,13 @@ public class ChainXModel
 
 	public string getCurrentPaintTool() {
 		return this.getPaintTool(0,0);
+	}
+
+	public void AddPolygonToUI(string gid) {
+
+	}
+
+	public void RemovePolygonToUI(string gid) {
 	}
 
 	public void AddGroupToUI(string gid) {
