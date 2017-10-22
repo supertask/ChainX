@@ -36,6 +36,8 @@ public class ChainXModel
 
 		//TODO(Tasuku): 位置をどう決めるかをそのうち決める必要がある
 		targetObj.transform.position = new Vector3 (0,5,0);
+
+		//コリダー，マテリアルの設定
 		if (targetObj.transform.childCount > 0) {
 			foreach (Transform child in targetObj.transform) {
 				child.gameObject.AddComponent<MeshCollider>();
@@ -43,7 +45,9 @@ public class ChainXModel
 				child.gameObject.GetComponent<Renderer> ().material.mainTexture = texture;
 			}
 		}
-		this.MoveCenterToCorner (targetObj);
+
+		//ボクセルブロックに合わせるため，メッシュを移動させる
+		this.MoveCenterToCorner(targetObj);
 		string[] emptyPosIDs = this.getEmptyVoxels(targetObj);
 		string polygonPosID = emptyPosIDs [emptyPosIDs.Length - 1];
 		return emptyPosIDs;
@@ -56,28 +60,65 @@ public class ChainXModel
 			Mesh m = t.gameObject.GetComponent<MeshFilter> ().mesh;
 			halfSize = m.bounds.extents;
 		}
+
 		Vector3 minV = target.transform.position - halfSize;
 		Vector3 maxV = target.transform.position + halfSize;
-		Vector3 mergin = Vector3.zero;
-		mergin.x = Mathf.Round (maxV.x) + 0.5f - maxV.x;
-		mergin.y = Mathf.Round (maxV.y) + 0.5f - maxV.y;
-		mergin.z = Mathf.Round (maxV.z) + 0.5f - maxV.z;
-		target.transform.position = target.transform.position + mergin;
+		//Debug.Log ("maxV: " + maxV);
+		//Debug.Log ("minV: " + minV);
+
+		//
+		//Update maxV to fixed maxV for fitting into this voxels.
+		//
+		Vector3 fixedMaxV = Vector3.zero;
+		fixedMaxV.x = Mathf.Round (maxV.x) + 0.5f;
+		fixedMaxV.y = Mathf.Round (maxV.y) + 0.5f;
+		fixedMaxV.z = Mathf.Round (maxV.z) + 0.5f;
+
+		//Move the target position for masV
+		Vector3 fixingMergin = Vector3.zero;
+		fixingMergin = fixedMaxV - maxV;
+		target.transform.position += fixingMergin;
+
+		Vector3 cornerPosition = fixedMaxV - new Vector3 (0.5f, 0.5f, 0.5f);
+		Vector3 verticesMergin = cornerPosition - target.transform.position;
+
+		//ポジションを移動
+		target.transform.position = cornerPosition;
+		target.name = Util.CreatePosID(target.transform.position);
+
+		//メッシュ移動
+		foreach (Transform child in target.transform) {
+			child.position = child.position - verticesMergin;
+		}
+
+		//targetポリゴンの位置を可視化しデバッグ
+		//GameObject anObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+		//anObj.transform.position = Util.SplitPosID(target.name);
+
+		//Debug.Log ("obj position: " + target.transform.position);
 	}
 
+	/*
+	 *
+	 * @param target 一番右上の角のオブジェクトであり，このオブジェクトのみでポリゴン形成する
+	 */
 	private string[] getEmptyVoxels(GameObject target)
 	{
-		Vector3 halfSize = Vector3.zero;
+		Vector3 totalSize = Vector3.zero;
+		//TODO(Tasuku): totalSizeを全てのオブジェクトのBound情報から計算する必要がある
 		foreach (Transform t in target.transform) {
 			Mesh m = t.gameObject.GetComponent<MeshFilter> ().mesh;
-			halfSize = m.bounds.extents;
+			totalSize = m.bounds.size;
 		}
 		//minV, maxVを再計算
-		Vector3 minV = target.transform.position - halfSize;
-		Vector3 maxV = target.transform.position + halfSize - new Vector3(0.5f, 0.5f, 0.5f);
+		Vector3 halfVoxelSize = new Vector3(0.5f, 0.5f, 0.5f);
+		Vector3 minV = target.transform.position - totalSize + halfVoxelSize;
+		Vector3 maxV = target.transform.position + halfVoxelSize;
 		minV.x = Mathf.Round (minV.x);
 		minV.y = Mathf.Round (minV.y);
 		minV.z = Mathf.Round (minV.z);
+
+		//一番右上の角のボクセルをtargetとしており，リストの最後はtargetボクセルである
 		List<string> posIDList = new List<string> ();
 		for (int z = (int)minV.z; z <= (int)maxV.z; ++z) {
 			for (int y = (int)minV.y; y <= (int)maxV.y; ++y) {
@@ -89,11 +130,6 @@ public class ChainXModel
 				}
 			}
 		}
-		target.name = posIDList[posIDList.Count - 1];
-		//GameObject aBooleanVoxel = GameObject.CreatePrimitive(PrimitiveType.Cube);
-		//aBooleanVoxel.transform.position = Util.SplitPosID(target.name);
-		Debug.Log (target.name);
-
 		return posIDList.ToArray();
 	}
 
