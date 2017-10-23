@@ -30,9 +30,9 @@ public class ChainXModel
 	}
 
 	public string[] LoadObj(string[] filepaths) {
-		GameObject targetObj = OBJLoader.LoadOBJFile (filepaths[0]);
+		GameObject targetObj = OBJLoader.LoadOBJFile(filepaths[0]);
 		//Material[] materials = OBJLoader.LoadMTLFile (filepaths[1]);
-		Texture2D texture = TextureLoader.LoadTexture (filepaths[2]);
+		Texture2D texture = TextureLoader.LoadTexture(filepaths[2]);
 
 		//TODO(Tasuku): 位置をどう決めるかをそのうち決める必要がある
 		targetObj.transform.position = new Vector3 (0,5,0);
@@ -41,30 +41,50 @@ public class ChainXModel
 		if (targetObj.transform.childCount > 0) {
 			foreach (Transform child in targetObj.transform) {
 				child.gameObject.AddComponent<MeshCollider>();
-				child.gameObject.GetComponent<Renderer> ().material = new Material (Const.DIFFUSE_SHADER);
-				child.gameObject.GetComponent<Renderer> ().material.mainTexture = texture;
+				child.gameObject.GetComponent<Renderer>().material = new Material (Const.DIFFUSE_SHADER);
+				child.gameObject.GetComponent<Renderer>().material.mainTexture = texture;
 			}
 		}
 
 		//ボクセルブロックに合わせるため，メッシュを移動させる
 		this.MoveCenterToCorner(targetObj);
 		string[] emptyPosIDs = this.getEmptyVoxels(targetObj);
-		string polygonPosID = emptyPosIDs [emptyPosIDs.Length - 1];
+		string polygonPosID = emptyPosIDs[emptyPosIDs.Length - 1];
 		return emptyPosIDs;
 	}
 
-	private void MoveCenterToCorner(GameObject target)
+
+	/*
+	 * 範囲を計算
+	 */
+	/*
+	public string[] CalcMergin(string[] filepaths) {
+		GameObject targetObj = OBJLoader.LoadOBJFile(filepaths[0]);
+		Vector3 exTargetV = new Vector3 (0,5,0);
+		targetObj.transform.position = exTargetV;
+
+		Vector3 meshMerginV = this.MoveCenterToCorner(targetObj);
+		Vector3 positionMerginV = targetObj.transform.position - exTargetV;
+	}
+	*/
+
+	/*
+	 * 
+	 * targetのポジション情報とtargetのメッシュをどのくらいずらすかのマージン情報を返す．
+	 * @return 
+	 */
+	private Vector3 MoveCenterToCorner(GameObject target)
 	{
 		Vector3 halfSize = Vector3.zero;
 		foreach (Transform t in target.transform) {
 			Mesh m = t.gameObject.GetComponent<MeshFilter> ().mesh;
 			halfSize = m.bounds.extents;
 		}
-
-		Vector3 minV = target.transform.position - halfSize;
+		//
+		//targetのboundsの一番右上の座標(maxV)と一番右下の座標(minV)
+		//
 		Vector3 maxV = target.transform.position + halfSize;
-		//Debug.Log ("maxV: " + maxV);
-		//Debug.Log ("minV: " + minV);
+		Vector3 minV = target.transform.position - halfSize;
 
 		//
 		//Update maxV to fixed maxV for fitting into this voxels.
@@ -74,7 +94,9 @@ public class ChainXModel
 		fixedMaxV.y = Mathf.Round (maxV.y) + 0.5f;
 		fixedMaxV.z = Mathf.Round (maxV.z) + 0.5f;
 
-		//Move the target position for masV
+		//
+		//Move the target position for mergin between masV and fixedMaxV
+		//
 		Vector3 fixingMergin = Vector3.zero;
 		fixingMergin = fixedMaxV - maxV;
 		target.transform.position += fixingMergin;
@@ -82,19 +104,24 @@ public class ChainXModel
 		Vector3 cornerPosition = fixedMaxV - new Vector3 (0.5f, 0.5f, 0.5f);
 		Vector3 verticesMergin = cornerPosition - target.transform.position;
 
-		//ポジションを移動
+		//
+		// Move a position of the target
+		//
 		target.transform.position = cornerPosition;
 		target.name = Util.CreatePosID(target.transform.position);
 
-		//メッシュ移動
+		//
+		// Move meshes of the target
+		//
 		foreach (Transform child in target.transform) {
 			child.position = child.position - verticesMergin;
 		}
 
+		return verticesMergin;
+
 		//targetポリゴンの位置を可視化しデバッグ
 		//GameObject anObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
 		//anObj.transform.position = Util.SplitPosID(target.name);
-
 		//Debug.Log ("obj position: " + target.transform.position);
 	}
 
@@ -109,14 +136,18 @@ public class ChainXModel
 		foreach (Transform t in target.transform) {
 			Mesh m = t.gameObject.GetComponent<MeshFilter> ().mesh;
 			totalSize = m.bounds.size;
+			//Debug.Log ("totalSize: " + m.bounds.size);
 		}
 		//minV, maxVを再計算
 		Vector3 halfVoxelSize = new Vector3(0.5f, 0.5f, 0.5f);
-		Vector3 minV = target.transform.position - totalSize + halfVoxelSize;
-		Vector3 maxV = target.transform.position + halfVoxelSize;
+		Vector3 maxV = target.transform.position;
+		Vector3 minV = target.transform.position - totalSize + new Vector3(1,1,1);
 		minV.x = Mathf.Round (minV.x);
 		minV.y = Mathf.Round (minV.y);
 		minV.z = Mathf.Round (minV.z);
+		//Debug.Log("target: " + target.transform.position);
+		//Debug.Log("maxV: " + maxV);
+		//Debug.Log("minV: " + minV);
 
 		//一番右上の角のボクセルをtargetとしており，リストの最後はtargetボクセルである
 		List<string> posIDList = new List<string> ();
@@ -130,6 +161,9 @@ public class ChainXModel
 				}
 			}
 		}
+		//Debug.Log ("num of posIDs: " + posIDList.Count);
+		//Debug.Log ("-----");
+		Debug.Assert (posIDList.Count == 12);
 		return posIDList.ToArray();
 	}
 
@@ -247,12 +281,32 @@ public class ChainXModel
 		List<Operation> operations = new List<Operation>();
 		foreach (GameObject anObj in objects) {
 			if (anObj.transform.childCount > 0) {
-				List<string> posIDs = new List<string> ();	
-				foreach (Transform child in anObj.transform) { posIDs.Add (child.name); }
-				operations.Add(new Operation (0, Operation.MOVE_ALL, "{\"gid\": \"" + anObj.name +
-					"\", \"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) + 
-					"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}")
-				);
+				//
+				//When selecting multiple voxels or polygon
+				//
+				if (anObj.transform.childCount == 1) {
+					//When selecting polygon
+					foreach (Transform child in anObj.transform) {
+						//Here!!!!!!!!!!!!!
+						string[] posIDs = this.getEmptyVoxels(child.gameObject);
+						//Debug.Log ("posID(emptyVoxel)" + posIDs [posIDs.Length-1]);
+						operations.Add (new Operation (0, Operation.MOVE_POLYGON, "{\"gid\": \"" + anObj.name +
+							"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
+							"\", \"transMatrix\": \"" + ChainXModel.CreatePosID (transMatrix) + "\"}")
+						);
+					}
+				}
+				else {
+					//When selecting multiple voxels
+					List<string> posIDs = new List<string> ();	
+					foreach (Transform child in anObj.transform) {
+						posIDs.Add(child.name);
+					}
+					operations.Add (new Operation (0, Operation.MOVE_ALL, "{\"gid\": \"" + anObj.name +
+						"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
+						"\", \"transMatrix\": \"" + ChainXModel.CreatePosID (transMatrix) + "\"}")
+					);
+				}
 			}
 			else {
 				operations.Add(new Operation (0, Operation.MOVE, "{\"posID\": \"" + anObj.name +

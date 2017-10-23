@@ -121,7 +121,7 @@ public class Voxel {
 	 */
 	public override string ToString() {
 		return "id=" + this.getId() + ", textureType=" + this.getTextureType() +
-			", texturePath=" + this.getObjPath() + ", timestamp=" + this.getTimestamp();
+			", objPath=" + this.getObjPath() + ", timestamp=" + this.getTimestamp();
 	}
 
 	/**

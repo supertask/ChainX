@@ -92,7 +92,6 @@ public class ChainXController : MonoBehaviour
 						Debug.Log (anObj.name);
 					}
 					*/
-					Debug.Log (this.selectedObjects[0].name);
 					this.selectedObjects = Util.ArrangeGameObjects (this.selectedObjects, arrowV);
 
 					List<Operation> moveOps = this.model.CreateMoveOperations(this.selectedObjects, arrowV);
