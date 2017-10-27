@@ -18,3 +18,9 @@ certificate!
 
 Any problems setting up your own server?
 Send a mail to contact@because-why-not.com or visit http://because-why-not.com !
+
+
+Wireshark && tcpdump filter info
+    ip.src == 192.168.1.7 && ip.dst==192.168.1.7
+
+    tcpdump dst port 18080 -i lo0 -s0

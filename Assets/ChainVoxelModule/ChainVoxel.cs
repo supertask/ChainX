@@ -378,8 +378,8 @@ public class ChainVoxel {
 		string[] destPosIDs = op.getDestPosIDs(posIDs);
 
 		Voxel aVoxel = this.getVoxel(polygonPosID);
-		Debug.Log ("posID: " + polygonPosID);
-		Debug.Log (aVoxel);
+		//Debug.Log ("posID: " + polygonPosID);
+		//Debug.Log (aVoxel);
 		//Debug.Log ("destPosID: " + destPosIDs[polyIndex]);
 		//Debug.Log ("-------");
 
@@ -736,6 +736,61 @@ public class ChainVoxel {
 	}
 
 
+	public static void TestPolygonOperations(ChainVoxel cv)
+	{
+		//ChainVoxel cv = new ChainVoxel (new ChainXController ());
+		Operation o;
+		int numberOfPosIDs = UnityEngine.Random.Range (1, 3);
+		Vector3 transMatrix = Util.CreateRandomVector3 (-1, 2);
+		string[] posIDs = new string[numberOfPosIDs];
+		string[] destPosIDs = new string[numberOfPosIDs];
+		string textureTypes = "";
+		string gid = ChainXModel.PAINT_TOOL_GROUP_ID + Util.GetGUID ();
+
+		for (int p = 0; p < numberOfPosIDs; ++p) {
+			Vector3 v = Util.CreateRandomVector3 (-1000, 1000);
+			Vector3 destV = v + transMatrix;
+			posIDs [p] = Util.CreatePosID (v);
+			destPosIDs [p] = Util.CreatePosID (destV);
+			textureTypes += UnityEngine.Random.Range (0, 8).ToString () + Const.SPLIT_CHAR;
+		}
+		textureTypes = textureTypes.TrimEnd (Const.SPLIT_CHAR);
+
+		o = new Operation (0, Operation.INSERT_POLYGON,
+			"{\"gid\": \"" + gid +
+			"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
+			"\", \"objPath\": \"" + Const.TEST_OBJ_PATH + "monkey.obj\"}");
+		cv.apply (o);
+		Debug.Assert (cv.getVoxel(posIDs[posIDs.Length - 1]) != null);
+		Debug.Assert (cv.stt.isGroupingAll (posIDs));
+
+		switch(UnityEngine.Random.Range(1, 3)) {
+			case 1:
+			{
+				o = new Operation (0, Operation.MOVE_POLYGON,
+					"{\"gid\": \"" + gid +
+					"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
+					"\", \"transMatrix\": \"" + Util.CreatePosID (transMatrix) + "\"}");
+				cv.apply (o);
+				Debug.Log (cv.getVoxel (destPosIDs [destPosIDs.Length - 1]));
+				Debug.Assert (cv.getVoxel (destPosIDs [destPosIDs.Length - 1]) != null);
+				Debug.Assert (cv.stt.isGroupingAll (destPosIDs));
+				break;
+			}
+			case 2:
+			{
+				o = new Operation (0, Operation.DELETE_POLYGON,
+					"{\"gid\": \"" + gid +
+					"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) + "\"}");
+				cv.apply (o);
+				Debug.Assert (cv.getVoxel (destPosIDs [destPosIDs.Length - 1]) == null);
+				Debug.Assert (!cv.stt.isGroupingAll (destPosIDs));
+				break;
+			}
+		}
+
+	}
+
 	//
 	// Tests
 	//----------------------------------------------------
@@ -771,8 +826,8 @@ public class ChainVoxel {
 			"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
 			"\", \"textureTypes\": \"" + textureTypes + "\"}");
 		cv.apply (o);
-		Debug.Assert (cv.isIncludingAll (posIDs));
-		Debug.Assert (cv.stt.isGroupingAll (posIDs));
+		Debug.Assert (cv.isIncludingAll(posIDs) );
+		Debug.Assert (cv.stt.isGroupingAll(posIDs) );
 		//Debug.Log ("Inserted posIDs: " + Util.GetCommaLineFrom(posIDs));
 		//cv.show();
 		//cv.stt.show();
@@ -788,13 +843,12 @@ public class ChainVoxel {
 				Debug.Assert(cv.stt.isGroupingAll(destPosIDs));
 				break;
 			case 2:
-			/*
 				o = new Operation(0, Operation.DELETE_ALL,
-		            "{\"gid\": \"" + gid + "\"}");
+		            "{\"gid\": \"" + gid +
+					"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) + "\"}");
 				cv.apply(o);
 				Debug.Assert(!cv.isIncludingAll(posIDs));
 				Debug.Assert(!cv.stt.isGroupingAll(posIDs));
-			*/
 				break;
 			case 3:
 				o = new Operation(0, Operation.LEAVE_ALL,
@@ -806,7 +860,6 @@ public class ChainVoxel {
 			default:
 				break;
 		}
-
 	}
 
 	public static void UTestFunction()
@@ -864,9 +917,10 @@ public class ChainVoxel {
 		//
 		int numberOfTest = Const.TEST_QUALITY;
 
-		ChainVoxel cv = new ChainVoxel (new ChainXController ());
+		ChainVoxel cv = new ChainVoxel(new ChainXController ());
 		for (int t = 0; t < numberOfTest; t++) {
 			ChainVoxel.TestGroupOperations(cv);
+			//ChainVoxel.TestPolygonOperations(cv);
 		}
 		Debug.Log("End a ChainXVoxel class test");
 	}

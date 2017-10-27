@@ -4,7 +4,7 @@
  *      "J"
  *      "L<number>"
  * Sender:
- *      "<number>,<number>,..."
+ *      "<number>,<number>,..." (A list of a node id)
  */
 
 
