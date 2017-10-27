@@ -90,7 +90,7 @@ public class EmulatedWebSocket
 						// When all dependent files of a 3d obj have been collected, 
 						// Build the 3d obj.
 						//
-						string[] posIDs = this.controller.getModel().LoadObj(filepaths);
+						string[] posIDs = ObjLoadHelper.LoadObj(filepaths, new Vector3 (0,5,0));
 						Operation op = new Operation (0, Operation.INSERT_POLYGON,
 							"{\"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) +
 							"\", \"gid\": \"" + ChainXModel.CreateGID() +
