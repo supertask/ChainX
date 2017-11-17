@@ -8,6 +8,7 @@ var server;
 
 var TMP_DIR = "data/tmp/";
 var SAVE_FILE = 'data/worked3D_1.txt';
+//var SAVE_FILE = 'data/worked3D.txt';
 var OBJ_FILE = 'data/monkey.obj';
 var IMG_FILE = 'data/monkey.jpg';
 var MTL_FILE = 'data/monkey.mtl';

@@ -173,6 +173,8 @@ public class ChainXModel
 				}
 			}
 			else {
+				//Debug.Log (anObj.name);
+				//Debug.Log (anObj.transform.childCount);
 				operations.Add(new Operation (0, Operation.MOVE, "{\"posID\": \"" + anObj.name +
 					"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}")
 				);

@@ -97,7 +97,7 @@ public class ChainVoxel {
 				break;
 			case Operation.MOVE:
 				posID = op.getPosID ();
-				destPosID = op.getDestPosID ();
+				destPosID = op.getDestPosID(); //Here
 				if (this.stt.isGrouping (posID)) break;
 				if (this.stt.isGrouping (destPosID)) break;
 				if (this.getVoxel(posID) == null) break; //For protecting to an operate empty voxel.
@@ -289,14 +289,15 @@ public class ChainVoxel {
 	}
 
 	public long insertPolygon(Operation op) {
-		return this.insertPolygon(op, op.getTimestamp(), op.getGID(), op.getPosIDs(), op.getObjPath());
+		string[] posIDs = op.getPosIDs ();
+		return this.insertPolygon(op, op.getTimestamp(), op.getGID(),
+			posIDs, posIDs[posIDs.Length-1], op.getObjPath());
 	}
 			
 	public long insertPolygon(Operation op, long timestamp,
-		string gid, string[] posIDs, string objPath) {
-		int polyIndex = posIDs.Length - 1;
-		//Debug.Log ("insertPolygon: " + posIDs[polyIndex]);
-		this.insert(op, timestamp, posIDs[polyIndex], objPath);
+		string gid, string[] posIDs, string polygonPosID,  string objPath) {
+		//Debug.Log ("insertPolygon: " + Util.CreatePosID(posIDs));
+		this.insert(op, timestamp, polygonPosID, objPath);
 		//Debug.Log ("voxel: " + this.getVoxel(posIDs[polyIndex]));
 		timestamp++;
 		this.joinAll(op, timestamp, gid, posIDs);
@@ -368,7 +369,7 @@ public class ChainVoxel {
 		// ボクセル群の右上（posIDsの最後）座標のことであるが，下記のArrangePosIDsによる
 		// 座標移動により，polygonPosIDを一時格納しておく必要がある
 		//
-		string polygonPosID = posIDs [posIDs.Length - 1];
+		string polygonPosID = posIDs[posIDs.Length - 1];
 
 		//
 		// 動かす方向に従って，timestampをずらすためにposIDsを整理する．
@@ -377,33 +378,32 @@ public class ChainVoxel {
 		int polygonIndex = Array.IndexOf(posIDs, polygonPosID);
 		string[] destPosIDs = op.getDestPosIDs(posIDs);
 
-		Voxel aVoxel = this.getVoxel(polygonPosID);
-		//Debug.Log ("posID: " + polygonPosID);
-		//Debug.Log (aVoxel);
-		//Debug.Log ("destPosID: " + destPosIDs[polyIndex]);
-		//Debug.Log ("-------");
+		//this.stt.show();
+		//this.show();
+		//Debug.Log (polygonPosID);
 
 		//
 		//移動時の衝突回避
 		//
 		//移動前のVoxelが削除されていればreturn
-		//Debug.Log ("pos,destPos = " + posIDs[polyIndex] + " " + destPosIDs[polyIndex]);
-		if (this.getVoxel (polygonPosID) == null) {
+		if (this.getVoxel(polygonPosID) == null) {
+			//ここが動けない原因!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			Debug.Log ("first one: " + polygonPosID);
 			return;
 		}
 		for (int i = 0; i < destPosIDs.Length; ++i) {
             //
-			//posIDsはjoin操作によってグループに参加しているが，
-			//primary layerのChainVoxelの中には入ってないこと場合もあるためこのような条件となる
+			//join操作によってグループに参加しているが，
+			//チェインハッシュテーブルの中には入ってない場合もあるためこのような条件となる
             //つまり，移動先にvoxelがあるまたは，空だがグループposIDがある場合
             //
 			if (this.stt.isGrouping(destPosIDs[i]) ||
 				this.getVoxel(destPosIDs[i]) != null) {
                 //基本的には移動先Voxelに何かあれば処理せずreturnする
                 //＊ただし移動してるVoxel郡が移動先と被っている状態を除く
-                //Debug.Log(posIDs[i] + " " + destPosIDs[i]);
 				if (! posIDs.Contains(destPosIDs[i])) {
-					Debug.Log("Grouping check: " + destPosIDs[i] + this.stt.isGrouping(destPosIDs[i]));
+					//Debug.Log("Grouping check: " + destPosIDs[i] + " " + this.stt.isGrouping(destPosIDs[i]));
+					//this.stt.show();
 
                     return;
                 }
@@ -412,9 +412,12 @@ public class ChainVoxel {
 		string objPath = this.getVoxel(polygonPosID).getObjPath();
 		long timestamp = op.getTimestamp();
 
+		//Debug.Log ("current timestamp: " + timestamp);
 		timestamp = this.deletePolygon(op, timestamp, op.getGID(), posIDs, polygonPosID);
 		timestamp++;
-		timestamp = this.insertPolygon(op, timestamp, op.getGID(), destPosIDs, objPath);
+		//Debug.Log ("posIDs=" + Util.GetCommaLineFrom(posIDs) + ", destPosIDs=" + Util.GetCommaLineFrom(destPosIDs));
+		timestamp = this.insertPolygon(op, timestamp, op.getGID(), destPosIDs,
+			op.getDestPosID(polygonPosID), objPath);
 		timestamp++;
 
 		this.movedPosIDs[polygonPosID] = destPosIDs[polygonIndex];
@@ -472,7 +475,7 @@ public class ChainVoxel {
      */
 	public void joinAll(Operation op, long timestamp, string gid, string[] posIDs) {
 		this.stt.joinAll(timestamp, posIDs, gid);
-		if (op.getOpType() != Operation.MOVE_ALL) {
+		if (op.getOpType() != Operation.MOVE_ALL && op.getOpType() != Operation.MOVE_POLYGON) {
 			this.joinedGIDs.Add(gid);//最新のタイムスタンプのグループをとる
 		}
 	}
@@ -736,193 +739,5 @@ public class ChainVoxel {
 	}
 
 
-	public static void TestPolygonOperations(ChainVoxel cv)
-	{
-		//ChainVoxel cv = new ChainVoxel (new ChainXController ());
-		Operation o;
-		Vector3 transMatrix = Util.CreateRandomVector3 (-1, 2);
-		string gid = ChainXModel.PAINT_TOOL_GROUP_ID + Util.GetGUID ();
-		string objPath = Const.TEST_OBJ_PATH + "monkey.obj";
-		string[] posIDs = ObjLoadHelper.LoadOnlyObj(objPath, Util.CreateRandomVector3(-1000, 1000));
-		string[] destPosIDs = new string[posIDs.Length];
 
-		for (int p = 0; p < posIDs.Length; ++p) {
-			Vector3 v = Util.SplitPosID(posIDs[p]);
-			Vector3 destV = v + transMatrix;
-			destPosIDs[p] = Util.CreatePosID(destV);
-		}
-
-		o = new Operation (0, Operation.INSERT_POLYGON,
-			"{\"gid\": \"" + gid +
-			"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
-			"\", \"objPath\": \"" + objPath + "\"}");
-		cv.apply (o);
-		Debug.Assert (cv.getVoxel(posIDs[posIDs.Length - 1]) != null);
-		Debug.Assert (cv.stt.isGroupingAll(posIDs));
-
-		switch(UnityEngine.Random.Range(1, 3)) {
-			case 1:
-			{
-				o = new Operation (0, Operation.MOVE_POLYGON,
-					"{\"gid\": \"" + gid +
-					"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
-					"\", \"transMatrix\": \"" + Util.CreatePosID (transMatrix) + "\"}");
-				cv.apply (o);
-				Debug.Log (cv.getVoxel (destPosIDs [destPosIDs.Length - 1]));
-				Debug.Assert (cv.getVoxel(destPosIDs [destPosIDs.Length - 1]) != null); //Here
-				Debug.Assert (cv.stt.isGroupingAll (destPosIDs));
-				break;
-			}
-			case 2:
-			{
-				o = new Operation (0, Operation.DELETE_POLYGON,
-					"{\"gid\": \"" + gid +
-					"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) + "\"}");
-				cv.apply (o);
-				Debug.Assert (cv.getVoxel (destPosIDs [destPosIDs.Length - 1]) == null);
-				Debug.Assert (!cv.stt.isGroupingAll (destPosIDs));
-				break;
-			}
-		}
-
-	}
-
-	//
-	// Tests
-	//----------------------------------------------------
-	// TODO(Tasuku): gidからグループを辿り、それを移動、削除、グループ脱出を交互に実行するテストを追加
-	//
-	public static void TestGroupOperations(ChainVoxel cv)
-	{
-		//ChainVoxel cv = new ChainVoxel (new ChainXController ());
-		Operation o;
-		int numberOfPosIDs = UnityEngine.Random.Range (1, 3);
-		Vector3 transMatrix = Util.CreateRandomVector3 (-1, 2);
-		string[] posIDs = new string[numberOfPosIDs];
-		string[] destPosIDs = new string[numberOfPosIDs];
-		string textureTypes = "";
-		string gid = ChainXModel.PAINT_TOOL_GROUP_ID + Util.GetGUID ();
-
-		for (int p = 0; p < numberOfPosIDs; ++p) {
-			Vector3 v = Util.CreateRandomVector3 (-1000, 1000);
-			Vector3 destV = v + transMatrix;
-			posIDs [p] = Util.CreatePosID (v);
-			destPosIDs [p] = Util.CreatePosID (destV);
-			textureTypes += UnityEngine.Random.Range (0, 8).ToString () + Const.SPLIT_CHAR;
-		}
-		textureTypes = textureTypes.TrimEnd (Const.SPLIT_CHAR);
-
-		//複数Voxelをinsertした後、それらをjoinする
-		o = new Operation (0, Operation.CREATE,
-			"{\"gid\": \"" + gid + "\"}");
-		cv.apply (o);
-
-		o = new Operation (0, Operation.INSERT_ALL,
-			"{\"gid\": \"" + gid +
-			"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
-			"\", \"textureTypes\": \"" + textureTypes + "\"}");
-		cv.apply (o);
-		Debug.Assert (cv.isIncludingAll(posIDs) );
-		Debug.Assert (cv.stt.isGroupingAll(posIDs) );
-		//Debug.Log ("Inserted posIDs: " + Util.GetCommaLineFrom(posIDs));
-		//cv.show();
-		//cv.stt.show();
-
-		switch(UnityEngine.Random.Range(1, 3)) {
-			case 1:
-			{
-				o = new Operation (0, Operation.MOVE_ALL,
-					"{\"gid\": \"" + gid +
-					"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
-					"\", \"transMatrix\": \"" + Util.CreatePosID (transMatrix) + "\"}");
-				cv.apply (o);
-				Debug.Assert (cv.isIncludingAll (destPosIDs));
-				Debug.Assert (cv.stt.isGroupingAll (destPosIDs));
-				break;
-			}
-			case 2:
-			{
-				o = new Operation (0, Operation.DELETE_ALL,
-					"{\"gid\": \"" + gid +
-					"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) + "\"}");
-				cv.apply (o);
-				Debug.Assert (!cv.isIncludingAll (posIDs));
-				Debug.Assert (!cv.stt.isGroupingAll (posIDs)); //バグ
-				break;
-			}
-			case 3:
-			{
-				o = new Operation (0, Operation.LEAVE_ALL,
-					"{\"gid\": \"" + gid + "\"}");
-				cv.apply (o);
-				Debug.Assert (cv.isIncludingAll (posIDs));
-				Debug.Assert (!cv.stt.isGroupingAll (posIDs));
-				break;
-			}
-			default: break;
-		}
-	}
-
-	public static void UTestFunction()
-	{
-		ChainVoxel cv = new ChainVoxel (new ChainXController ());
-		//int numberOfPosIDs = UnityEngine.Random.Range (1, 3);
-		string[] posIDs = new string[3];
-		posIDs[0] = "1:1:2";
-		posIDs[1] = "1:1:3";
-		posIDs[2] = "1:1:1";
-		/*
-		foreach (string posID in Util.ArrangePosIDs(posIDs, "0:0:-1")) {
-			Debug.Log (posID);
-		}
-		*/
-		/*
-		for (int p = 0; p < posIDs.Length; ++p) {
-			Vector3 v = Util.CreateRandomVector3 (-1000, 1000);
-			posIDs[p] = Util.CreatePosID(v);
-		}
-		*/
-	}
-
-
-	/**
-	 * Test a ChainVoxel class.
-	 */
-	public static void Test ()
-	{
-		/*
-		//
-		// 単体Voxel操作（挿入、削除、移動）をテスト
-		//
-		string posID = "1:1:1";
-		string transMatrix = "0:0:1";
-		int textureType = 2;
-		Operation o;
-		//INSERT, MOVE
-		o = new Operation (0, Operation.INSERT, "{\"posID\": \"" + posID + "\", \"textureType\": \"" + textureType + "\"}");
-		cv.apply(o);
-		cv.show();
-		o = new Operation (0, Operation.MOVE, "{\"posID\": \"" + posID + "\", \"transMatrix\": \"" + transMatrix + "\"}");
-		cv.apply(o);
-		cv.show();
-
-		transMatrix = "1:0:0";
-		o = new Operation (0, Operation.MOVE, "{\"posID\": \"" + posID + "\", \"transMatrix\": \"" + transMatrix + "\"}");
-		cv.apply(o);
-		cv.show();
-		*/
-		ChainVoxel.UTestFunction();
-			
-		//
-		// グループVoxel（参加、離脱、移動）のテスト
-		//
-		int numberOfTest = Const.TEST_QUALITY;
-
-		ChainVoxel cv = new ChainVoxel(new ChainXController ());
-		for (int t = 0; t < numberOfTest; t++) {
-			//ChainVoxel.TestGroupOperations(cv);
-			ChainVoxel.TestPolygonOperations(cv);
-		}
-		Debug.Log("End a ChainXVoxel class test");
-	}
 }

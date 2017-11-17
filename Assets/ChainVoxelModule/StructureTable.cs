@@ -118,10 +118,16 @@ public class StructureTable {
 		if (!this.groupEntriesTable.ContainsKey(posID)) { return; }
 		HashSet<Group> groupEntriesSet = this.groupEntriesTable[posID];
 
+		//バグ
+		long latestTs = this.getTimestamp (posID, gid);
+		//Debug.Log ("second current timestamp: " + ts);
+		//Debug.Log("latest timestamp: " + latestTs); //tsは現在時刻なのでtsの方が大きくなるのが普通
+		//Debug.Log(Mathf.Abs(this.getTimestamp(posID, gid)) >= ts);
 		if (!groupEntriesSet.Contains(aGroup) || Mathf.Abs(this.getTimestamp(posID, gid)) >= ts) {
 			return;
 		} 
 		this.groupMembersTable[gid].Remove(posID);
+		//Debug.Log ("Removed!!!");
 
 		// タイムスタンプの更新 + tombstone化
 		long minTs = Util.Min(-1L * ts, this.getTimestamp(posID, gid));
@@ -212,11 +218,19 @@ public class StructureTable {
 		return false;
 	}
 
+	/*
 	public bool isGroupingAll(string[] posIDs) {
 		foreach(string posID in posIDs){
-			if (this.isGrouping (posID)) return true;
+			if (this.isGrouping(posID)) return true;
 		}
 		return false;
+	}
+	*/
+	public bool isGroupingAll(string[] posIDs) {
+		foreach(string posID in posIDs){
+			if (!this.isGrouping(posID)) return false;
+		}
+		return true; //When all voxels are grouped
 	}
 
 	/**

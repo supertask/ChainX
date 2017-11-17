@@ -235,12 +235,15 @@ public class Operation {
      * @return voxelの識別子
      */
 	public string getDestPosID() {
+		return this.getDestPosID(this.getPosID());
+	}
+
+	public string getDestPosID(string posID) {
 		string transMatrix = this.getTransMatrix();
 		if (transMatrix == string.Empty) return string.Empty;
-		string posID = this.getPosID();
 		if (posID == string.Empty) return string.Empty;
 
-		return Operation.CombinePosition(this.getPosID(), this.getTransMatrix());
+		return Operation.CombinePosition(posID, this.getTransMatrix());
 	}
 
 
@@ -456,7 +459,7 @@ public class Operation {
 		//
 		for (int t = 0; t < numberOfTest; ++t) {
 			Vector3 posIDVector = Util.CreateRandomVector3 (-10000, 10000); 
-			Vector3 transMatrixVector = Util.CreateRandomVector3 (-1, 2);
+			Vector3 transMatrixVector = Util.CreateRandomTransMatrix ();
 			Debug.Assert (
 				ChainXModel.CreatePosID(posIDVector + transMatrixVector)
 				== Operation.CombinePosition(

@@ -11,7 +11,7 @@ public class ObjLoadHelper
 	public static string[] LoadObj(string[] filepaths, Vector3 targetV, bool isTest=true)
 	{
 		GameObject target = OBJLoader.LoadOBJFile(filepaths[0]);
-		string[] emptyPosIDs = ObjLoadHelper.ArrangePosition(target, targetV);
+		string[] emptyPosIDs = ObjLoadHelper.ShiftPosition(target, targetV);
 
 		if (target.transform.childCount > 0) {
 			Texture2D texture = TextureLoader.LoadTexture(filepaths[2]);
@@ -26,12 +26,12 @@ public class ObjLoadHelper
 
 	public static string[] LoadOnlyObj(string filepath, Vector3 targetV) {
 		GameObject target = OBJLoader.LoadOBJFile(filepath);
-		string[] emptyPosIDs = ObjLoadHelper.ArrangePosition(target, targetV);
+		string[] emptyPosIDs = ObjLoadHelper.ShiftPosition(target, targetV);
 		Object.Destroy(target);
 		return emptyPosIDs;
 	}
 
-	public static string[] ArrangePosition(GameObject target, Vector3 targetV) {
+	private static string[] ShiftPosition(GameObject target, Vector3 targetV) {
 		//TODO(Tasuku): 位置をどう決めるかをそのうち決める必要がある
 		target.transform.position = targetV;
 

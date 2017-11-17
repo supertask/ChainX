@@ -28,7 +28,8 @@ public class Const {
 	public static Vector3 PAINT_TOOL_PLATE_POSITION = Camera.main.ScreenToWorldPoint (new Vector3(-5,-30,5));
 
 	public static string TEST_OBJ_PATH = Application.dataPath + "/ChainVoxelModule/test_objects/";
-	public static int TEST_QUALITY = 50; //テスト回数
+	public static int TEST_QUALITY = 60; //テスト回数
+	//public static int TEST_QUALITY = 1; //テスト回数
 }
 
 public class MessageType {

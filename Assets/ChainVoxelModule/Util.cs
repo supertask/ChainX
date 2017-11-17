@@ -46,13 +46,19 @@ public class Util{
     }
 	*/
 
-	public static string[] ArrangePosIDs(string[] posIDs, string transMatrix)
+
+	public static string[] ArrangePosIDs(string[] posIDs, string transPosID)
+	{
+		return Util.ArrangePosIDs(posIDs, Util.SplitPosID (transPosID));
+	}
+
+	public static string[] ArrangePosIDs(string[] posIDs, Vector3 transMatrix)
 	{
 		List<KeyValuePair<Vector3, GameObject>> pairs = new List<KeyValuePair<Vector3, GameObject>>();
 		foreach (string posID in posIDs) {
 			pairs.Add (new KeyValuePair<Vector3, GameObject>(Util.SplitPosID(posID), null));
 		}
-		Util._arrangeGameObjects (ref pairs, Util.SplitPosID(transMatrix));	
+		Util._arrangeGameObjects (ref pairs, transMatrix);	
 
 		int i = 0;
 		foreach (KeyValuePair<Vector3, GameObject> p in pairs) {
@@ -91,6 +97,13 @@ public class Util{
     }
 
 
+
+	public static Vector3 CreateRandomTransMatrix() {
+		int[] xs = {0,0,0};
+		int t = UnityEngine.Random.Range (0, 3);
+		xs[t] = 1;
+		return new Vector3(xs[0],xs[1],xs[2]);	
+	}
 
 	public static Vector3 CreateRandomVector3(int minValue, int maxValue) {
 		int x = UnityEngine.Random.Range (minValue, maxValue);
