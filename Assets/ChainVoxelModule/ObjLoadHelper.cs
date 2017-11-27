@@ -8,13 +8,14 @@ using UnityEngine;
  */
 public class ObjLoadHelper
 {
+
 	public static string[] LoadObj(string[] filepaths, Vector3 targetV, bool isTest=true)
 	{
 		GameObject target = OBJLoader.LoadOBJFile(filepaths[0]);
 		string[] emptyPosIDs = ObjLoadHelper.ShiftPosition(target, targetV);
 
 		if (target.transform.childCount > 0) {
-			Texture2D texture = TextureLoader.LoadTexture(filepaths[2]);
+			Texture2D texture = TextureLoader.LoadTexture(filepaths[1]);
 			foreach (Transform child in target.transform) {
 				child.gameObject.AddComponent<MeshCollider> ();
 				child.gameObject.GetComponent<Renderer> ().material = new Material (Const.DIFFUSE_SHADER);
@@ -22,6 +23,7 @@ public class ObjLoadHelper
 			}
 		}
 		return emptyPosIDs;
+		//return target;
 	}
 
 	public static string[] LoadOnlyObj(string filepath, Vector3 targetV) {
@@ -136,7 +138,7 @@ public class ObjLoadHelper
 		}
 		//Debug.Log ("num of posIDs: " + posIDList.Count);
 		//Debug.Log ("-----");
-		Debug.Assert (posIDList.Count == 12);
+		//Debug.Assert (posIDList.Count == 12);
 		return posIDList.ToArray();
 	}
 

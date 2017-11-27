@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿using System.IO;
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -81,6 +83,17 @@ public class Voxel {
      * @return テクスチャパス
      */
 	public string getObjPath() { return this.objPath; }
+
+	/*
+	 * 
+	 */
+	public string getTexturePath() {
+		string objPath = this.getObjPath();
+		string dir = Path.GetDirectoryName (objPath);
+		string filenameWithoutExt = Path.GetFileNameWithoutExtension (objPath);
+		string texturePath = dir + "/" + filenameWithoutExt + ".jpg";
+		return texturePath;
+	}
 
 	/**
      * Voxelのテクスチャパスを設定する．

@@ -11,8 +11,6 @@ public class EmulatedWebSocket
 	private	byte[] socketBuffer;
 	private ChainXController controller;
 	private WebSocket ws;
-	private string filepath = "";
-
 
 	public EmulatedWebSocket(ChainXController aController) {
 		this.controller = aController;
@@ -52,7 +50,7 @@ public class EmulatedWebSocket
 	public IEnumerator Listen() {
 		byte[] receivedBinary = null;
 
-		string[] filepaths = {"", "", ""};
+		string[] filepaths = {"", ""};
 
 		while (true) {
 			receivedBinary = this.ws.Recv();
@@ -78,19 +76,17 @@ public class EmulatedWebSocket
 					else if (Path.GetExtension (path) == ".obj") {
 						filepaths[0] = path;
 					}
-					else if (Path.GetExtension (path) == ".mtl") {
+					else if (Path.GetExtension (path) == ".jpg") {
 						filepaths[1] = path;
 					}
-					else if (Path.GetExtension (path) == ".jpg") {
-						filepaths[2] = path;
-					}
 
-					if (filepaths[0] != "" && filepaths[1] != "" && filepaths[2] != "") {
+					if (filepaths[0] != "" && filepaths[1] != "") {
 						//
 						// When all dependent files of a 3d obj have been collected, 
 						// Build the 3d obj.
 						//
 						string[] posIDs = ObjLoadHelper.LoadObj(filepaths, new Vector3 (0,5,0));
+						//string[] posIDs = ObjLoadHelper.LoadOnlyObj(filepaths[0], new Vector3 (0,5,0));
 						Operation op = new Operation (0, Operation.INSERT_POLYGON,
 							"{\"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) +
 							"\", \"gid\": \"" + ChainXModel.CreateGID() +
@@ -98,7 +94,7 @@ public class EmulatedWebSocket
 						//Debug.Log(Operation.ToJson(op));
 						this.controller.cv.apply (op);
 
-						filepaths = new string[]{"", "", ""}; //Clear for the next 3d objs 
+						filepaths = new string[]{"", ""}; //Clear for the next 3d objs 
 					}
 				}
 				else if (this.partEqual (ref receivedBinary, ref MessageHeader.EXIT)) {

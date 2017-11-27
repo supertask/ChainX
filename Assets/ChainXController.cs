@@ -6,7 +6,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEditor;
+//using UnityEditor;
+using SFB;
+
 
 struct ScreenSize {
     public int width, height;
@@ -144,23 +146,33 @@ public class ChainXController : MonoBehaviour
     }
 
 	void OnGUI() {
-		if (GUILayout.Button("Load obj..", GUILayout.Width(100))) {
-			string[] filePaths = new string[3];
-			filePaths[0] = EditorUtility.OpenFilePanel("Select an obj", "~/Downloads/", "obj");
-			if (filePaths[0].Length > 0) {
-				string dir = Path.GetDirectoryName(filePaths[0]);
-				string filenameWithoutExt = Path.GetFileNameWithoutExtension(filePaths[0]);
-				filePaths[1] = dir + "/" + filenameWithoutExt + ".mtl";
-				filePaths[2] = dir + "/" + filenameWithoutExt + ".jpg";
+		bool hasButton = GUILayout.Button ("Load obj..", GUILayout.Width (100));
+		var extensions = new [] {
+			new ExtensionFilter("Obj Files", "obj", "jpg"),
+		};
+		if (hasButton) {
+			//filePaths[0] = EditorUtility.OpenFilePanel("Select an obj", "~/Downloads/", "obj");
+			string[] filePaths = StandaloneFileBrowser.OpenFilePanel("Select an Obj", "~/Donwloads/", extensions, false);
+			if (filePaths.Length > 0 && filePaths [0].Length > 0) {
+				string dir = Path.GetDirectoryName (filePaths [0]);
+				string filenameWithoutExt = Path.GetFileNameWithoutExtension (filePaths [0]);
+				//dir = dir.Remove (0, 5);
+				string[] paths = new string[2];
+				paths[0] = dir + "/" + filenameWithoutExt + ".obj";
+				paths[1] = dir + "/" + filenameWithoutExt + ".jpg";
+				//GUILayout.TextField (paths[0], 100);
+				//GUILayout.TextField (paths[1], 100);
+
 				//
 				// JPG, MTL, OBJファイルを他のマシーンに転送
 				// メッセージ受信する際に、分割されたOBJファイルをローカル受け取り、
 				// その時点でオブジェクトが適用され、表示される
 				//
-				foreach(string path in filePaths) {
+				foreach (string path in paths) {
 					string filename = Path.GetFileName (path);
-					byte[] header = Encoding.UTF8.GetBytes(MessageHeader.SOME_FILE + filename + MessageHeader.SPLIT_CHAR);
-					this.socket.SendBinary(Util.CombineBytes(header, File.ReadAllBytes(path)) );
+					Debug.Log (path);
+					byte[] header = Encoding.UTF8.GetBytes (MessageHeader.SOME_FILE + filename + MessageHeader.SPLIT_CHAR);
+					this.socket.SendBinary (Util.CombineBytes (header, File.ReadAllBytes (path)));
 				}
 			}
 		}
@@ -476,7 +488,25 @@ public class ChainXController : MonoBehaviour
 			foreach (string posID in this.cv.insertedPosIDs) {
 				if (GameObject.Find (posID) == null) {
 					//Debug.Log ("insertedPosID:" + posID);
-					this.CreateVoxelFromPosID (this.cv.getVoxel (posID).getTextureType (), posID);
+					Voxel aVoxel = this.cv.getVoxel (posID);
+					string objPath = aVoxel.getObjPath ();
+					this.CreateVoxelFromPosID(aVoxel.getTextureType (), posID);
+					//Debug.Log(aVoxel.getObjPath()); // /Users/tasuku/Library/Application Support/supertask/ChainX/
+
+					//string[] filepaths = new string[]{ aVoxel.getObjPath(), aVoxel.getTexturePath()};
+					//GameObject target = ObjLoadHelper.LoadObj(filepaths, Util.SplitPosID(posID));
+					//Debug.Log ("target name: " + target.name);
+					/*
+					HashSet<Group> groups = this.cv.stt.getGroups(posID);
+					GameObject aGroupObj = null;
+					foreach (Group aGroup in groups) {
+						aGroupObj = GameObject.Find(aGroup.getGroupId());
+					}
+
+					if (aGroupObj != null) {
+						target.transform.SetParent(aGroupObj.transform);
+					}
+					*/
 				}
 				/*
 				else {
@@ -531,6 +561,7 @@ public class ChainXController : MonoBehaviour
 					GameObject aChild = GameObject.Find (posID);
 					//過去のバグ：NULLになってかつ、無限ループし、グループが無限に作られる
 					if (aChild != null) {
+						//Debug.Log ("ここ:" + aChild.name);
 						//Polygonの場合、一つだけ挿入されそれ以外（NULL）は挿入されず、グループのみ追加される
 						aChild.transform.SetParent (aParent.transform);
 						this.RemoveFromSelectedObjects (aChild);

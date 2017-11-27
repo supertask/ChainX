@@ -76,7 +76,6 @@ public class ChainVoxel {
 			string posID, destPosID;
 			string[] posIDs;
 
-			bool isGrouping;
 			switch (op.getOpType ()) {
 			case Operation.INSERT:
 				if (this.stt.isGrouping (op.getPosID())) break;

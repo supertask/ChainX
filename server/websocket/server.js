@@ -80,7 +80,7 @@ var Server = function()
         //socket.send(OPERATION_HEADER + "{\"sid\":\"2\", \"opType\":\"0\", \"ts\":\"1\", \"opParams\": {\"posID\":\"1:1:1\", \"textureType\":\"1\"} }");
         server.send_file(socket, SAVE_FILE);
 
-        var filepaths = ["", "", ""];
+        var filepaths = ["", ""];
         socket.on('message', function (message) {
 
             if (_partEqual(message, OPERATION_BINARY_HEADER)) {
@@ -97,12 +97,11 @@ var Server = function()
 
                 var ext = path.extname(filename);
                 if (ext == ".obj") { filepaths[0] = filepath; }
-                else if(ext == ".mtl") { filepaths[1] = filepath; }
-                else if(ext == ".jpg") { filepaths[2] = filepath; }
+                else if(ext == ".jpg") { filepaths[1] = filepath; }
                 fs.writeFile(filepath, new Buffer(file_binary), function (err) { });
                 console.log("Wrote data into \"" + filepath + "\".");
 
-                if (filepaths[0] != "" && filepaths[1] != "" && filepaths[2] != "") {
+                if (filepaths[0] != "" && filepaths[1] != "") {
                     //objファイルをブーリアン演算し、data/tmp/に保存！
                     /*
                     exec_line = boolean_calc + " \"" + filepaths[0]  + "\"";
@@ -118,7 +117,7 @@ var Server = function()
                         console.log("Send \"" + filepaths[i] + "\" to clients.");
                         server.send_file(socket, filepaths[i]);
                     }
-                    filepaths = ["", "", ""];
+                    filepaths = ["", ""];
                 }
 
             }
