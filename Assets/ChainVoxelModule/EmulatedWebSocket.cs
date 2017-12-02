@@ -71,6 +71,7 @@ public class EmulatedWebSocket
 					fs.Close ();
 
 					if (Path.GetExtension (path) == ".txt") {
+						//Debug.Log (path);
 						this.controller.cv.LoadSavedData (path);
 					}
 					else if (Path.GetExtension (path) == ".obj") {

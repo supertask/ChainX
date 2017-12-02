@@ -6,12 +6,11 @@ const execSync = require('child_process').execSync;
 
 var server;
 
-var TMP_DIR = "data/tmp/";
-var SAVE_FILE = 'data/worked3D_1.txt';
-//var SAVE_FILE = 'data/worked3D.txt';
-var OBJ_FILE = 'data/monkey.obj';
-var IMG_FILE = 'data/monkey.jpg';
-var MTL_FILE = 'data/monkey.mtl';
+var TMP_DIR = "data/";
+var SAVE_FILE = 'data/worked3D.txt';
+//var SAVE_FILE = 'data/workedEmpty.txt';
+//var OBJ_FILE = 'data/monkey.obj';
+//var IMG_FILE = 'data/monkey.jpg';
 
 var SPLIT_CHAR = '@';
 var SOME_FILE_HEADER = "SOME_FILE" + SPLIT_CHAR;
@@ -76,7 +75,6 @@ var Server = function()
 
     function _connect(socket) {
         console.log('connected!');
-
         //socket.send(OPERATION_HEADER + "{\"sid\":\"2\", \"opType\":\"0\", \"ts\":\"1\", \"opParams\": {\"posID\":\"1:1:1\", \"textureType\":\"1\"} }");
         server.send_file(socket, SAVE_FILE);
 
@@ -102,16 +100,6 @@ var Server = function()
                 console.log("Wrote data into \"" + filepath + "\".");
 
                 if (filepaths[0] != "" && filepaths[1] != "") {
-                    //objファイルをブーリアン演算し、data/tmp/に保存！
-                    /*
-                    exec_line = boolean_calc + " \"" + filepaths[0]  + "\"";
-                    console.log("Exec \'" + exec_line + "\'.");
-
-                    execSync(exec_line, function(err, stdout) {
-                        //console.log(stdout);
-                    });
-                    */
-
                     //全てのファイル情報送信
                     for(var i = 0; i < filepaths.length; i++) {
                         console.log("Send \"" + filepaths[i] + "\" to clients.");

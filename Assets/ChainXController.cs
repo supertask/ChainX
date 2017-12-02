@@ -635,10 +635,14 @@ public class ChainXController : MonoBehaviour
     }
 
     private void OnApplicationQuit() {
-        this.socket.Close();
+		string path = Const.SAVED_FILE;
+		string filename = Path.GetFileName(path);
 		this.cv.SaveData(Const.SAVED_FILE);
-		byte[] savedDataBinary = File.ReadAllBytes (Const.SAVED_FILE);
-		this.socket.SendBinary(Util.CombineBytes (MessageHeader.SOME_FILE_BINARY, savedDataBinary));
+		string headerStr = MessageHeader.SOME_FILE + filename + MessageHeader.SPLIT_CHAR;
+		Debug.Log(headerStr);
+		byte[] header = Encoding.UTF8.GetBytes (headerStr);
+		this.socket.SendBinary (Util.CombineBytes (header, File.ReadAllBytes (path)) );
+        this.socket.Close();
         //TODO(Tasuku): SaveしましたのWindowを表示して終わる!!
     }
 

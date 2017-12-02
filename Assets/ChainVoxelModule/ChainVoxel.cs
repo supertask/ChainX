@@ -653,42 +653,47 @@ public class ChainVoxel {
 
 				string line =reader.ReadLine();
 				string gid = "";
-				List<string> posIDs = new List<string>();
-				Operation op;
+				List<string> posIDs = null;
+				List<string> textureTypes = null; 
 
 				while(line != null) {
-					if (line[0] == 'o') {
+					if (line[0] == 'g') {
 						string[] entries = line.Split(' ');
-						string group_name = entries[1];
-						if (posIDs.Count > 0 ) {
-							//Here
-							/*
-							op = new Operation(0, Operation.JOIN,
-								"{\"posID\": \"" + posID +
-								"\", \"gid\":\"" + group_name + "\"}"
-							);
-							this.apply(op);
-							*/
-						}
+						gid = entries[1];
 						posIDs = new List<string>();
-
-						op = new Operation(0, Operation.INSERT,
-							"{\"gid\": \"" + group_name + "\"}"
-						);
+						textureTypes = new List<string>();
+						//Debug.Log(gid);
 					}
 					else if (line[0] == 'v') {
 						string[] entries = line.Split(' ');
 						int textureType = int.Parse(entries[1]);
 						string posID = entries[2];
-						posIDs.Add(posID);
-						op = new Operation(0, Operation.INSERT,
-							"{\"posID\": \"" + posID +
-							"\", \"textureType\":\"" + textureType.ToString() + "\"}"
-						);
-						this.apply(op);
+						if (posIDs == null) {
+							Operation op = new Operation(0, Operation.INSERT,
+								"{\"posID\": \"" + posID +
+								"\", \"textureType\":\"" + textureType.ToString() + "\"}"
+							);
+							this.apply(op);
+						}
+						else {
+							posIDs.Add(posID);
+							textureTypes.Add(textureType.ToString());
+						}
 					}
 					else if (line[0] == 'e') {
-						if (posIDs.Count > 0 ) { }
+						Operation op = new Operation(0, Operation.INSERT_ALL,
+							"{\"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) +
+							"\", \"gid\": \"" + gid +
+							"\", \"textureTypes\":\"" + Util.GetCommaLineFrom(textureTypes) + "\"}"
+						);
+						this.apply(op);
+							
+						gid = "";
+						posIDs = null;
+						textureTypes = null;
+					}
+					else if (line[0] == '#') {
+						//pass
 					}
 					line = reader.ReadLine();
 				}
@@ -704,14 +709,32 @@ public class ChainVoxel {
 	/*
 	 * 
 	 */
-
 	public string SaveData(string saving_path)
 	{
 		try {
 			//using (StringWriter writer = new StringWriter()) {
 			using (StreamWriter writer = new StreamWriter(saving_path)) {
+
+				List<string> saved_posIDs = new List<string>();
+				foreach (KeyValuePair<string, HashSet<string>> p in this.stt.getGroupMembersTable()) {
+					string gid = p.Key;
+					HashSet<string> posIDs = p.Value;
+					string line = String.Format("g {0}", gid);
+					writer.WriteLine(line);
+					foreach (string posID in posIDs) {
+						Voxel aVoxel = this.getVoxel(posID);
+						line = String.Format("v {0} {1}", aVoxel.getTextureType(), posID);
+						writer.WriteLine(line);
+						saved_posIDs.Add(posID);
+					}
+					writer.WriteLine("e");
+					writer.Flush();
+				}
+
 				foreach (KeyValuePair<string, List<Voxel>> p in this.atoms) {
 					string posID = p.Key;
+					if (saved_posIDs.Contains(posID)) { continue; }
+				
 					Voxel aVoxel = this.getVoxel(posID);
 					if (aVoxel == null) { continue; }
 
@@ -721,7 +744,6 @@ public class ChainVoxel {
 					writer.WriteLine(line);
 					writer.Flush();
 				}
-				writer.WriteLine("e");
 				writer.Flush();
 				writer.Close();
 				return writer.ToString();

@@ -29,6 +29,10 @@ public class StructureTable {
 		this.groupEntriesTable = new SortedDictionary<string, HashSet<Group>>();
 	}
 
+	public SortedDictionary<string, HashSet<string>> getGroupMembersTable() {
+		return this.groupMembersTable;
+	}
+
 	/**
      * Structure Table にグループ(gid)を作成する．
      * 既に作成されたグループのgidの場合は実行されない．
