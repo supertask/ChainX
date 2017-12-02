@@ -156,6 +156,9 @@ public class ChainXController : MonoBehaviour
 			if (filePaths.Length > 0 && filePaths [0].Length > 0) {
 				string dir = Path.GetDirectoryName (filePaths [0]);
 				string filenameWithoutExt = Path.GetFileNameWithoutExtension (filePaths [0]);
+				dir = dir.Replace(@"file:", "");
+				dir = dir.Replace(@"///", "/");
+				dir = dir.Replace(@"//", "/");
 				//dir = dir.Remove (0, 5);
 				string[] paths = new string[2];
 				paths[0] = dir + "/" + filenameWithoutExt + ".obj";
