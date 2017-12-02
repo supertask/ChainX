@@ -23,9 +23,6 @@ var OPERATION_BINARY_HEADER = new Buffer(OPERATION_HEADER);
 var EXIT_BINARY_HEADER = new Buffer(EXIT_HEADER);
 var ERROR_BINARY_HEADER = new Buffer(ERROR_HEADER);
 
-var boolean_calc = "./run_blender.sh"
-var boolean_id = "_boolean"
-
 var Server = function()
 {
     var PORT_NUMBER = 18080;
@@ -80,6 +77,8 @@ var Server = function()
 
         var filepaths = ["", ""];
         socket.on('message', function (message) {
+            //console.log(message);
+            //console.log(OPERATION_BINARY_HEADER);
 
             if (_partEqual(message, OPERATION_BINARY_HEADER)) {
                 console.log(message.toString());

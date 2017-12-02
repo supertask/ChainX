@@ -1,14 +1,11 @@
-TARGET_EMU=EmulatedServer
-TARGET_REAL=EmulatedServer
+TARGET=VSite
 SRC=\
 	Operation.java \
-	EmulatedServer.java
+	VSite.java
 MODULES=\
-	.:modules/gson-2.6.2.jar:modules/java_websocket.jar
+	.:java_modules/gson-2.6.2.jar:java_modules/tyrus-standalone-client-1.9.jar
 all:
 	javac -cp ${MODULES} ${SRC}
 test: all
-	java -cp ${MODULES} ${TARGET_EMU}
+	java -cp ${MODULES} ${TARGET}
 
-real: all
-	java -cp ${MODULES} ${TARGET_REAL}
