@@ -5,7 +5,9 @@ SRC=\
 MODULES=\
 	.:java_modules/gson-2.6.2.jar:java_modules/tyrus-standalone-client-1.9.jar
 all:
+	python modifier.py
 	javac -cp ${MODULES} ${SRC}
 test: all
 	java -cp ${MODULES} ${TARGET}
-
+clean:
+	rm *.class

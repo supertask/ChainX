@@ -1,0 +1,10 @@
+OPERATION@{"sid":"0","ts":"636480024236610790","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"-2:6:1,-2:5:1,-2:4:1","transMatrix":"1:0:0"}}
+OPERATION@{"sid":"0","ts":"636480024237371110","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"-1:6:1,-1:5:1,-1:4:1","transMatrix":"1:0:0"}}
+OPERATION@{"sid":"0","ts":"636480024240524860","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"0:6:1,0:5:1,0:4:1","transMatrix":"-1:0:0"}}
+OPERATION@{"sid":"0","ts":"636480024241913130","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"-1:6:1,-1:5:1,-1:4:1","transMatrix":"-1:0:0"}}
+OPERATION@{"sid":"0","ts":"636480024243067190","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"-2:6:1,-2:5:1,-2:4:1","transMatrix":"-1:0:0"}}
+OPERATION@{"sid":"0","ts":"636480024247540710","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"-3:6:1,-3:5:1,-3:4:1","transMatrix":"1:0:0"}}
+OPERATION@{"sid":"0","ts":"636480024280738590","opType":"5","opParams":{"posID":"-2:2:-1","transMatrix":"-1:0:0"}}
+OPERATION@{"sid":"0","ts":"636480024280739730","opType":"5","opParams":{"posID":"-1:2:-1","transMatrix":"-1:0:0"}}
+OPERATION@{"sid":"0","ts":"636480024280740370","opType":"5","opParams":{"posID":"0:2:-1","transMatrix":"-1:0:0"}}
+OPERATION@{"sid":"0","ts":"636480024301222440","opType":"5","opParams":{"posID":"-1:1:-2","transMatrix":"0:1:0"}}
