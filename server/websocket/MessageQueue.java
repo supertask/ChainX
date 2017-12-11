@@ -3,7 +3,7 @@ import java.util.*;
 
 public class MessageQueue extends HashMap<String, List<String>>
 {
-    public void enqueue(String msgType, String msg)
+    public synchronized void enqueue(String msgType, String msg)
     {
         if (this.containsKey(msgType)) {
             List<String> msges = this.get(msgType);
@@ -17,7 +17,7 @@ public class MessageQueue extends HashMap<String, List<String>>
         }
     }
 
-    public String dequeue(String msgType)
+    public synchronized String dequeue(String msgType)
     {
         if (this.containsKey(msgType)) {
             return this.get(msgType).remove(0); //dequeue!
@@ -35,7 +35,7 @@ public class MessageQueue extends HashMap<String, List<String>>
         return this.get(msg);
     }
 
-    public void clearQueue(String msg) {
+    public synchronized void clearQueue(String msg) {
         this.get(msg).clear();
     }
 }

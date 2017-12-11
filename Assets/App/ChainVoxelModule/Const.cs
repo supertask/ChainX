@@ -27,27 +27,33 @@ public class Const {
 	public static int NUMBER_OF_TEXTURE = 8;
 	public static Vector3 PAINT_TOOL_PLATE_POSITION = Camera.main.ScreenToWorldPoint (new Vector3(-5,-30,5));
 
-	public static string TEST_OBJ_PATH = Application.dataPath + "/ChainVoxelModule/test_objects/";
+	public static string TEST_OBJ_PATH = Application.dataPath + "/App/ChainVoxelModule/TestObjects/";
 	public static int TEST_QUALITY = 60; //テスト回数
 	//public static int TEST_QUALITY = 1; //テスト回数
+
+	public static char MSG_SPLIT_CHAR = '@';
+	public static string OPERATION_HEADER = "OPERATION" + Const.MSG_SPLIT_CHAR;
+	public static string SOME_FILE_HEADER = "SOME_FILE" + Const.MSG_SPLIT_CHAR;
+	public static string START_HEADER = "START" + Const.MSG_SPLIT_CHAR;
+	public static string EXIT_HEADER = "EXIT" + Const.MSG_SPLIT_CHAR;
+	public static string ID_LIST_HEADER = "ID_LIST" + Const.MSG_SPLIT_CHAR;
+
+	public static byte[] OPERATION_BINARY_HEADER = Encoding.UTF8.GetBytes(Const.OPERATION_HEADER);
+	public static byte[] SOME_FILE_BINARY_HEADER = Encoding.UTF8.GetBytes(Const.SOME_FILE_HEADER);
+
+	public static byte[] START_BINARY_HEADER = Encoding.UTF8.GetBytes(Const.START_HEADER);
+	public static byte[] EXIT_BINARY_HEADER = Encoding.UTF8.GetBytes(Const.EXIT_HEADER);
+	public static byte[] ID_LIST_BINARY_HEADER = Encoding.UTF8.GetBytes(Const.ID_LIST_HEADER);
 }
 
 public class MessageType {
 	public static string OPERATION = "OPERATION";
 	public static string SOME_FILE = "SOME_FILE";
-
+	public static string START = "START";
 	public static string EXIT = "EXIT";
-	public static string ERROR = "ERROR"; //no used
+	public static string ID_LIST = "ID_LIST";
 }
 
 public class MessageHeader {
-	public static char SPLIT_CHAR = '@';
-	public static string OPERATION = MessageType.OPERATION + MessageHeader.SPLIT_CHAR;
-	public static string SOME_FILE = MessageType.SOME_FILE + MessageHeader.SPLIT_CHAR;
 
-	public static byte[] OPERATION_BINARY = Encoding.UTF8.GetBytes(MessageType.OPERATION + MessageHeader.SPLIT_CHAR);
-	public static byte[] SOME_FILE_BINARY = Encoding.UTF8.GetBytes(MessageType.SOME_FILE + MessageHeader.SPLIT_CHAR);
-
-	public static byte[] EXIT = Encoding.UTF8.GetBytes(MessageType.EXIT); //no used
-	public static byte[] ERROR = Encoding.UTF8.GetBytes(MessageType.ERROR + MessageHeader.SPLIT_CHAR); //no used
 }

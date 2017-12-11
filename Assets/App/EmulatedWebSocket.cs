@@ -30,8 +30,8 @@ public class EmulatedWebSocket
 		return false;
 	}
 
-	private string getStringUntilAt(ref byte[] all) {
-		byte part = Convert.ToByte(MessageHeader.SPLIT_CHAR);	
+	public string getPathUntilAt(ref byte[] all) {
+		byte part = Convert.ToByte(Const.MSG_SPLIT_CHAR);	
 		int i = 0;
 		while(i < all.Length && (all[i] != part)) { i++; }
 		i++;
@@ -47,6 +47,37 @@ public class EmulatedWebSocket
 		return Encoding.UTF8.GetString (filepathByte);
 	}
 
+	public int getAtFromEnd(ref byte[] all) {
+		byte part = Convert.ToByte(Const.MSG_SPLIT_CHAR);	
+		int  i = all.Length - 1;
+		while(i >= 0 && (all[i] != part)) { i--; }
+		return i;
+	}
+
+	public byte[] getIdFromEndUntilAt(ref byte[] all) {
+		int indexAt = this.getAtFromEnd(ref all);
+		int start_i = indexAt + 1; //@の後のindex
+		int end_i = all.Length - 1;
+		int idLength = end_i + 1 - start_i;
+
+		byte[] idBinary = new byte[idLength];
+		Array.Copy (all, start_i, idBinary, 0, idLength);
+		//Debug.Log(System.Text.Encoding.GetEncoding("UTF-8").GetString(idBinary));
+		return idBinary;
+	}
+
+	public byte[] getOperationFromEndUntilAt(ref byte[] all) {
+		int indexAt = this.getAtFromEnd(ref all);
+		int start_i = indexAt + 1; //@の後のindex
+
+		int messageLength = start_i - 1;
+		byte[] messageBinary = new byte[messageLength];
+		Array.Copy (all, 0, messageBinary, 0, messageLength);
+		//Debug.Log(System.Text.Encoding.GetEncoding("UTF-8").GetString(messageBinary));
+		return messageBinary;
+	}
+
+
 	public IEnumerator Listen() {
 		byte[] receivedBinary = null;
 
@@ -56,18 +87,29 @@ public class EmulatedWebSocket
 			receivedBinary = this.ws.Recv();
 			if (receivedBinary != null) {
 				//Debug.Log (receivedBinary);
-				if (this.partEqual (ref receivedBinary, ref MessageHeader.OPERATION_BINARY)) {
-					string line = Encoding.UTF8.GetString (receivedBinary);
-					line = line.Remove (0, MessageHeader.OPERATION.Length).Trim ();
+				byte[] idBinary = this.getIdFromEndUntilAt(ref receivedBinary);
+				int destID = System.BitConverter.ToInt32(idBinary, 0); //送り先!!
+				byte[] msgBinary = this.getOperationFromEndUntilAt(ref receivedBinary);
+
+				if (this.partEqual (ref msgBinary, ref Const.OPERATION_BINARY_HEADER)) {
+					string line = Encoding.UTF8.GetString (msgBinary);
+					line = line.Remove (0, Const.OPERATION_HEADER.Length).Trim ();
 					Operation op = Operation.FromJson (line);
 					this.controller.cv.apply (op);
 				}
-				else if (this.partEqual (ref receivedBinary, ref MessageHeader.SOME_FILE_BINARY)) {
-					string filepath = this.getStringUntilAt(ref receivedBinary);
-					int start_i = MessageHeader.SOME_FILE.Length + filepath.Length + 1; //1='@'
+				else if (this.partEqual (ref msgBinary, ref Const.START_BINARY_HEADER)) {
+
+				}
+				else if (this.partEqual (ref msgBinary, ref Const.EXIT_BINARY_HEADER)) {
+				}
+				else if (this.partEqual (ref msgBinary, ref Const.ID_LIST_BINARY_HEADER)) {
+				}
+				else if (this.partEqual (ref msgBinary, ref Const.SOME_FILE_BINARY_HEADER)) {
+					string filepath = this.getPathUntilAt(ref msgBinary);
+					int start_i = Const.SOME_FILE_HEADER.Length + filepath.Length + 1; //1='@'
 					string path = Application.persistentDataPath + "/" + filepath;
 					FileStream fs = new FileStream(path, FileMode.Create, FileAccess.Write);
-					fs.Write (receivedBinary, start_i, receivedBinary.Length - start_i);
+					fs.Write (msgBinary, start_i, msgBinary.Length - start_i);
 					fs.Close ();
 
 					if (Path.GetExtension (path) == ".txt") {
@@ -98,13 +140,6 @@ public class EmulatedWebSocket
 						filepaths = new string[]{"", ""}; //Clear for the next 3d objs 
 					}
 				}
-				else if (this.partEqual (ref receivedBinary, ref MessageHeader.EXIT)) {
-					Debug.Log ("EXIT");
-				}
-				else if (this.partEqual (ref receivedBinary, ref MessageHeader.ERROR)) {
-					Array.Clear (receivedBinary, 0, MessageHeader.ERROR.Length);
-					Debug.Log ("ERROR");
-				}
 			}
 
 			if (this.ws.error != null) {
@@ -134,17 +169,20 @@ public class EmulatedWebSocket
 	}
 
 	public void SendBinary(byte[] message) {
-		ws.Send(message);
+		byte[] destIdBinary = System.Text.Encoding.ASCII.GetBytes("-1");
+		ws.Send(Util.CombineBytes(message, destIdBinary));
 	}
 
 	public void Close() {
 		//ws.SendString(MessageHeader.EXIT);
-		ws.Send(MessageHeader.EXIT);
+		this.SendBinary(Const.EXIT_BINARY_HEADER);
 		ws.Close();
 	}
 
 	public static void Test()
 	{
 		//EmuratedWebSocketをここに書くと、new connectionができ、2重に送ってしまう。これはバグの元になるので、テストを書かない！！
+
+		
 	}
 }

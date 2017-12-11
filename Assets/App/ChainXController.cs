@@ -174,7 +174,7 @@ public class ChainXController : MonoBehaviour
 				foreach (string path in paths) {
 					string filename = Path.GetFileName (path);
 					Debug.Log (path);
-					byte[] header = Encoding.UTF8.GetBytes (MessageHeader.SOME_FILE + filename + MessageHeader.SPLIT_CHAR);
+					byte[] header = Encoding.UTF8.GetBytes (Const.SOME_FILE_HEADER + filename + Const.MSG_SPLIT_CHAR);
 					this.socket.SendBinary (Util.CombineBytes (header, File.ReadAllBytes (path)));
 				}
 			}
@@ -201,7 +201,7 @@ public class ChainXController : MonoBehaviour
 
     public void ApplyChainVoxel(Operation o) {
         this.cv.apply(o);
-        this.socket.Send (MessageHeader.OPERATION + Operation.ToJson (o) + "\n");
+        this.socket.Send (Const.OPERATION_HEADER + Operation.ToJson (o) + "\n");
     }
 
     /*
@@ -638,10 +638,10 @@ public class ChainXController : MonoBehaviour
 		string path = Const.SAVED_FILE;
 		string filename = Path.GetFileName(path);
 		this.cv.SaveData(Const.SAVED_FILE);
-		string headerStr = MessageHeader.SOME_FILE + filename + MessageHeader.SPLIT_CHAR;
+		string headerStr = Const.SOME_FILE_HEADER + filename + Const.MSG_SPLIT_CHAR;
 		Debug.Log(headerStr);
 		byte[] header = Encoding.UTF8.GetBytes (headerStr);
-		this.socket.SendBinary (Util.CombineBytes (header, File.ReadAllBytes (path)) );
+		this.socket.SendBinary(Util.CombineBytes (header, File.ReadAllBytes (path)) );
         this.socket.Close();
         //TODO(Tasuku): SaveしましたのWindowを表示して終わる!!
     }

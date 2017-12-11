@@ -2,6 +2,7 @@ import java.net.URI;
 
 import java.util.*;
 import java.io.*;
+import java.util.regex.*;
 import javax.websocket.ClientEndpoint;
 import javax.websocket.ContainerProvider;
 import javax.websocket.OnClose;
@@ -39,6 +40,11 @@ public class VSite extends Thread
     //双方向
     public static final String OPERATION_HEADER = "OPERATION" + MSG_SPLIT_CHAR;
 
+    public static byte CHAIN_VOXEL = 0;
+    public static byte RAFT = 1;
+    public static byte TWO_PHASE_COMMIT = 2;
+    public static byte algorithm = VSite.RAFT;
+
     private int leaderID = -1;
     private int id = -1;
     private List<Integer> siteIDs = new ArrayList<Integer>();
@@ -58,21 +64,14 @@ public class VSite extends Thread
      * ネットワーク層とアプリケーション層の２つの共有変数
      */
     private MessageQueue messageQueue = new MessageQueue();
+    private static WaitingTimer waitingTimer = new WaitingTimer(); //スレッド同士の共有資源
 
     private BufferedReader reader;
 
-    public synchronized void increaseNumberOfSteps() { this.numberOfSteps++; }
-    public synchronized void increaseNumberOfMessages(int num) { this.numberOfMessages+=num; }
-    public synchronized void increaseNumberOfMessages() { this.increaseNumberOfMessages(1); }
-    //public synchronized void increaseNumberOfOperations(int num) { this.numberOfOperations+=num; }
-
-    public VSite() {
-        File[] op_files = new File("./modified_recorded_operations/").listFiles();
-        try {
-            this.reader = new BufferedReader(new FileReader(op_files[0]));
-        }
-        catch(FileNotFoundException e) { e.printStackTrace(); }
+    public VSite(BufferedReader reader) {
+        this.reader = reader;
     }
+
 
     // ネットワーク側（メッセージ受信）
     //----------------------------------------
@@ -117,6 +116,7 @@ public class VSite extends Thread
             if (! this.siteIDs.contains(intID)) { this.siteIDs.add(intID); }
         }
         else if (msg.startsWith(VSite.REQUEST_VOTE_HEADER) ||
+                 msg.startsWith(VSite.OPERATION_HEADER) ||
                  msg.startsWith(VSite.VOTE_HEADER)) {
             String msgType = msg.substring(0, msg.indexOf(VSite.MSG_SPLIT_CHAR));
             //System.out.println(msgType + ": " + msg);
@@ -129,24 +129,39 @@ public class VSite extends Thread
             //何かする(APPEND_ENTRIES)
             messageQueue.enqueue(msgType, msg); //受信したメッセージを1つ貯める
         }
-        System.out.println("[受信(on " + this.id + ")]:" + msg);
+
+        System.out.println("\u001b[00;33m" + "[受信(on " + this.id + ")]:" + msg + " \u001b[00m");
     }
 
 
     // アプリケーション側（キーボード入力）
     //----------------------------------------
+    public synchronized void increaseNumberOfSteps() { this.numberOfSteps++; }
+    public synchronized void increaseNumberOfMessages(int num) { this.numberOfMessages+=num; }
+    public synchronized void increaseNumberOfMessages() { this.increaseNumberOfMessages(1); }
+
     /**
      * メッセージを送信する
      */
     private void send(int destId, String msg) {
         try {
             msg = msg + VSite.MSG_SPLIT_CHAR + destId;
-            System.out.println("[送信(" + this.id + " to " + destId + ")]: " + msg);
+            System.out.println("\u001b[00;32m" + "[送信(" + this.id + " to " + destId + ")]: " + msg + " \u001b[00m");
             this.serverSession.getBasicRemote().sendBinary(
                 ByteBuffer.wrap(msg.getBytes(Charset.forName("US-ASCII") ))
             );
         }
         catch(Exception e) { e.printStackTrace(); }
+    }
+
+    /**
+     * メッセージを送信する
+     * 基本的にはリーダーのみが使う
+     */
+    private void sendInLocal(String msg) {
+        String msgType = msg.substring(0, msg.indexOf(VSite.MSG_SPLIT_CHAR));
+        System.out.println("\u001b[00;32m" +  "[ローカル送信(" + this.id + " to " + this.id + ")]: " + msg + " \u001b[00m");
+        messageQueue.enqueue(msgType, msg); //受信したメッセージを1つ貯める
     }
 
     /**
@@ -176,7 +191,7 @@ public class VSite extends Thread
         if (this.messageQueue.queueSize(msgType) > 0) {
             return this.messageQueue.dequeue(msgType); //溜まったメッセージをdequeue
         }
-        else { return null; }
+        else { return ""; }
     }
 
     /**
@@ -202,6 +217,49 @@ public class VSite extends Thread
     }
 
 
+    private String[] getSIDandTS(String msg)
+    {
+        Matcher m = null;
+        Pattern sidP = Pattern.compile("\"sid\":\"(\\d+)\"");
+        Pattern tsP = Pattern.compile("\"ts\":\"(\\d+)\"");
+        m = sidP.matcher(msg);
+        String[] res = new String[2];
+        if (m.find()) {
+            res[0] = m.group(1);
+        }
+        m = tsP.matcher(msg);
+        if (m.find()) {
+            res[1] = m.group(1);
+        }
+        assert(res[0] != null);
+        assert(res[1] != null);
+        return res;
+    }
+
+    private String replaceSIDandTS(String msg, int sid, long ts) {
+        msg = msg.replaceFirst("\"sid\":\"(\\d+)\"", "\"sid\":" + "\"" + sid + "\"");
+        msg = msg.replaceFirst("\"ts\":\"(\\d+)\"", "\"ts\":" + "\"" + ts + "\"");
+        return msg;
+    }
+
+    private String[] nextRecord() {
+        String line = "";
+        try {
+            line = this.reader.readLine();
+            if (line == null) return null;
+        }
+        catch(IOException e) { e.printStackTrace(); }
+        String[] opRecord = line.split("#");
+
+        return opRecord;
+    }
+
+    public float getSecondTime(long nanoTime) {
+        return nanoTime / (float)1000000000;
+    }
+
+
+
     /**
      * Raft 時のsiteの振る舞いを実行する<br>
      * <br>
@@ -219,7 +277,8 @@ public class VSite extends Thread
         if (this.id == this.leaderID) { 
             // idが0の人がCandidateになる
             // step1: FollowerにrequestVoteを送信する
-            this.send(this.leaderID, VSite.VOTE_HEADER);
+            //this.send(this.leaderID, VSite.VOTE_HEADER);
+            this.sendInLocal(VSite.VOTE_HEADER);
             this.broadcast(VSite.REQUEST_VOTE_HEADER);
             this.increaseNumberOfSteps();
             this.increaseNumberOfMessages(this.siteIDs.size());
@@ -230,8 +289,9 @@ public class VSite extends Thread
             this.increaseNumberOfSteps();
             this.increaseNumberOfMessages(this.siteIDs.size()); //(Leaderになるためには過半数の合意が必要)
 
-            // step3: FollowerにLeaderになったことを報告
-            this.send(this.id, VSite.APPEND_ENTRIES_HEADER);
+            // step3: Followerに対してLeaderになったことを報告
+            //this.send(this.leaderID, VSite.APPEND_ENTRIES_HEADER);
+            this.sendInLocal(VSite.APPEND_ENTRIES_HEADER);
             this.broadcast(VSite.APPEND_ENTRIES_HEADER);
             this.increaseNumberOfSteps();
             this.increaseNumberOfMessages(this.siteIDs.size() - 1);
@@ -254,6 +314,7 @@ public class VSite extends Thread
         }
         System.out.println("Join!: " + this.id);
 
+
         //操作の実行を行う（ユーザ入力レコードを実行する）
         String[] recordLine = this.nextRecord();
         long opDiffTime = Long.parseLong(recordLine[0]);
@@ -261,19 +322,32 @@ public class VSite extends Thread
 
         long startTime = System.nanoTime();
         long exCurrentTime = 0L;
-        long waitingTime = 0L; //後で編集
-        long execTime = opDiffTime + waitingTime;
+        long execTime = opDiffTime;
         while(true) {
             if (recordLine == null) { break; }
             long currentTime = System.nanoTime() - startTime;
+            long diffTime = currentTime - exCurrentTime;
 
             if (exCurrentTime <= execTime) {
                 while(execTime <= currentTime) {
+                    // step0: 操作をLeaderに送信する
+                    //（レコードされた操作を実行し，送信！）
                     //System.out.println(this.id + ": currentTime = " + this.getSecondTime(currentTime));
                     //System.out.println(this.id + ": execTime = " + this.getSecondTime(execTime));
-                    //ここでレコードされた操作を実行し，送信！
-                    System.out.println(opLine);
-                    //this.send(this.leaderID, opLine);
+                    opLine = this.replaceSIDandTS(opLine, this.id, execTime);
+                    //System.out.println(opLine);
+                    //waiting開始
+                    String key = "";
+                    key = VSite.waitingTimer.startWaitingTime(this.id, execTime, execTime); //タグ付け引数
+                    if (this.id == this.leaderID) {
+                        this.sendInLocal(opLine);
+                    }
+                    else {
+                        this.send(this.leaderID, opLine);
+                    }
+                    System.out.println("StartWait! " + key);
+                    this.increaseNumberOfSteps();
+                    this.increaseNumberOfMessages(this.siteIDs.size() - 1);
 
                     recordLine = this.nextRecord();
                     if (recordLine == null) { break; }
@@ -283,57 +357,108 @@ public class VSite extends Thread
                 }
             }
             
-            /*
             // メッセージ受信
-            //ここで受信確認し，次のステップへ進める
             if (this.id == this.leaderID) { // Leaderの動作
+                //自分と他のユーザの操作を受け取る
                 String opMsg = this.waitOperation(VSite.OPERATION_HEADER);
                 if (opMsg != "") {
                     // step1: 送信された操作を受け取る
+                    //waiting終了
+                    //msgからtsとsidを取り出す
+                    String[] res = getSIDandTS(opMsg);
+                    int sid = Integer.parseInt(res[0]);
+                    long ts = Long.parseLong(res[1]);
+                    long waitedTime = VSite.waitingTimer.endWaitingTime(sid, ts, currentTime);
+                    System.out.println("EndWait! key="+ WaitingTimer.getOpStr(sid,ts) + ": waitedTime=" + waitedTime);
+                    if (waitedTime == -1) {
+                        VSite.waitingTimer.show();
+                    }
+
+                    //execTime += waitedTime;
                     this.increaseNumberOfSteps();
                     this.increaseNumberOfMessages();
 
                     // step2: 操作をFollowerに共有する
-                    //this.send(this.leaderID, opMsg); // local operation は省略
+                    // local operation は省略
                     this.broadcast(opMsg); 
                     this.increaseNumberOfSteps();
                     this.increaseNumberOfMessages(this.siteIDs.size());
                 }
             }
             else { // Followerの動作
+                //リーダーから他のユーザの操作を受け取る
                 String opMsg = this.waitOperation(VSite.OPERATION_HEADER);
                 if (opMsg != "") {
-                    // local operation は省略
+                    //waiting終了
+                    String[] res = getSIDandTS(opMsg);
+                    int sid = Integer.parseInt(res[0]);
+                    long ts = Long.parseLong(res[1]);
+                    long waitedTime = VSite.waitingTimer.endWaitingTime(sid, ts, currentTime);
+                    System.out.println("EndWait! key="+ WaitingTimer.getOpStr(sid,ts) + ": waitedTime=" + waitedTime);
+                    if (waitedTime == -1) {
+                        VSite.waitingTimer.show();
+                    }
+
                     this.increaseNumberOfSteps();
                     this.increaseNumberOfMessages();
                 }
             }
-            */
 
             exCurrentTime = currentTime;
-            try {
-                Thread.sleep(10); //10ミリ秒
-            }
+            try { Thread.sleep(10); } //10ミリ秒
             catch (InterruptedException e) { e.printStackTrace(); }
         }
     }
 
-    private String[] nextRecord() {
-        String line = "";
-        try {
-            line = this.reader.readLine();
-            if (line == null) return null;
+
+    /**
+     * ChainVoxel時のSiteの振る舞いを実行する．<br>
+     * <br>
+     * シミュレーション実行中のメッセージ総数は，「site毎のメッセージ総数 * site数」で求める
+     */
+    public void runChainVoxel()
+    {
+        //操作の実行を行う（ユーザ入力レコードを実行する）
+        String[] recordLine = this.nextRecord();
+        long opDiffTime = Long.parseLong(recordLine[0]);
+        String opLine = recordLine[1];
+
+        long startTime = System.nanoTime();
+        long exCurrentTime = 0L;
+        long execTime = opDiffTime;
+        while(true) {
+            if (recordLine == null) { break; }
+            long currentTime = System.nanoTime() - startTime;
+            long diffTime = currentTime - exCurrentTime;
+
+            if (exCurrentTime <= execTime) {
+                while(execTime <= currentTime) {
+                    //System.out.println(this.id + ": currentTime = " + this.getSecondTime(currentTime));
+                    //System.out.println(this.id + ": execTime = " + this.getSecondTime(execTime));
+                    //ここでレコードされた操作を実行し，送信！
+                    opLine = this.replaceSIDandTS(opLine, this.id, execTime);
+                    System.out.println(opLine);
+                    this.broadcast(opLine);
+                    this.increaseNumberOfSteps();
+                    this.increaseNumberOfMessages(this.siteIDs.size() - 1);
+
+                    recordLine = this.nextRecord();
+                    if (recordLine == null) { break; }
+                    opDiffTime = Long.parseLong(recordLine[0]);
+                    opLine = recordLine[1];
+                    execTime += opDiffTime;
+                }
+            }
+            
+            exCurrentTime = currentTime;
+            try { Thread.sleep(10); } //10ミリ秒
+            catch (InterruptedException e) { e.printStackTrace(); }
         }
-        catch(IOException e) { e.printStackTrace(); }
-        String[] opRecord = line.split("#");
-
-        return opRecord;
+        return;
     }
 
 
-    public float getSecondTime(long nanoTime) {
-        return nanoTime / (float)1000000000;
-    }
+
 
     /*
      * UnityのUpdate関数を再現したもの
@@ -344,7 +469,12 @@ public class VSite extends Thread
      * 
      */
     public void run() {
-        this.runRaft();
+        if (this.algorithm == VSite.CHAIN_VOXEL) {
+            this.runChainVoxel();
+        }
+        else if (this.algorithm == VSite.RAFT) {
+            this.runRaft();
+        }
     }
 
 
@@ -362,24 +492,64 @@ public class VSite extends Thread
         this.send(-1, msg);
     }
 
-
-    static public void main(String[] args) throws Exception
+    public static void main(String[] args) throws Exception
     {
+        File[] recordedFiles = new File("./modified_recorded_operations/").listFiles();
+        List<File> opFiles = new ArrayList<File>();
+        int x = 0; //ファイル名は1オリジン
+        for(File aFile: recordedFiles) {
+            if (aFile.getName().equals(x + ".txt")) { opFiles.add(aFile); }
+            x++;
+        }
+        //System.out.println(opFiles.size());
+
         int numOfSites = 2;
+        if (opFiles.size() < numOfSites) {
+            System.err.println("エラー: レコード数が足りません!");
+            System.exit(1);
+        }
         Session[] sessions = new Session[numOfSites];
         VSite[] sites = new VSite[numOfSites];
         for(int i = 0; i < numOfSites; i++) {
             WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-            sites[i] = new VSite();
+            File aFile = opFiles.get(i);
+            BufferedReader reader = null;
+            try {
+                reader = new BufferedReader(new FileReader(aFile));
+            }
+            catch(FileNotFoundException e) { e.printStackTrace(); }
+
+            sites[i] = new VSite(reader);
             sessions[i] = container.connectToServer(sites[i], URI.create("ws://localhost:18080"));
             //System.out.println(sites[i].id);
         }
         Thread.sleep(3000); 
 
-        for(int i = 0; i < numOfSites; i++) {
-            sites[i].start();
+        for(VSite aSite : sites) {
+            aSite.start();
         }
-        Thread.sleep(30000); 
+        for(VSite aSite : sites) {
+            aSite.join();
+        }
+
+        /*
+        //性能評価結果
+        if (VSite.algorithm == VSite.CHAIN_VOXEL) {
+            System.out.println(
+                this.numberOfOperations * this.numberOfSites + " " + 
+                sites.get(0).getNumberOfSteps() + " " + 
+                sites.get(0).getNumberOfMessages() * this.numberOfSites
+            );
+        }
+        else if (VSite.algorithm == VSite.RAFT) {
+            System.out.println(
+                this.numberOfOperations * this.numberOfSites + " " +
+                sites.get(0).getNumberOfSteps() + " " +
+                sites.get(0).getNumberOfMessages()
+            );
+        }
+        */
+
 
         for(int i = 0; i < numOfSites; i++) {
             if (sessions[i].isOpen()) {
