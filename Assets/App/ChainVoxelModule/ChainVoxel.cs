@@ -716,6 +716,8 @@ public class ChainVoxel {
 			using (StreamWriter writer = new StreamWriter(saving_path)) {
 
 				List<string> saved_posIDs = new List<string>();
+				//Here!!
+
 				foreach (KeyValuePair<string, HashSet<string>> p in this.stt.getGroupMembersTable()) {
 					string gid = p.Key;
 					HashSet<string> posIDs = p.Value;

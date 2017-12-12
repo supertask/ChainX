@@ -22,7 +22,7 @@ var ID_LIST_HEADER = "ID_LIST" + MSG_SPLIT_CHAR;
 var REQUEST_VOTE_HEADER = "REQUEST_VOTE" + MSG_SPLIT_CHAR;
 var APPEND_ENTRIES_HEADER = "APPEND_ENTRIES" + MSG_SPLIT_CHAR;
 var VOTE_HEADER = "VOTE" + MSG_SPLIT_CHAR;
-var JOINED_HEADER = "JOINED" + MSG_SPLIT_CHAR;
+var JOIN_HEADER = "JOIN" + MSG_SPLIT_CHAR;
 
 var SOME_FILE_BINARY_HEADER = new Buffer(SOME_FILE_HEADER);
 var OPERATION_BINARY_HEADER = new Buffer(OPERATION_HEADER);
@@ -44,61 +44,52 @@ var Server = function()
 
     function _connect(socket) {
         console.log('connected!');
-        server.send_file(socket, SAVE_FILE);
+        server.sendFile(socket, SAVE_FILE);
+        _joinNewClient(socket);
 
         var filepaths = ["", ""];
-        socket.on('message', function (msg) {
+        socket.on('message', function (msgBinary) {
             //
             // destIdを取り出す
             //
-            var msges = _getIdFromEndUntilAt(msg); //メッセージとIDに切り分ける
-            msg = msges[0];
-            var destId = parseInt(msges[1].toString());
-            //console.log(msg.toString());
+            var msgBinaries = _getIdFromEndUntilAt(msgBinary); //メッセージとIDに切り分ける
+            msgBinary = msgBinaries[0];
+            var destId = parseInt(msgBinaries[1].toString());
+            //console.log(msgBinary.toString());
             
-            if (_partEqual(msg, OPERATION_BINARY_HEADER)) {
-                console.log(msg.toString());
-                server.send(destId, msg); //指定されたIDへ送る
+            if (_partEqual(msgBinary, OPERATION_BINARY_HEADER)) {
+                console.log(msgBinary.toString());
+                server.send(destId, msgBinary); //指定されたIDへ送る
             }
-            else if (_partEqual(msg, REQUEST_VOTE_BINARY_HEADER) ||
-                     _partEqual(msg, VOTE_BINARY_HEADER) ||
-                     _partEqual(msg, APPEND_ENTRIES_BINARY_HEADER)) {
-                console.log(msg.toString());
-                server.send(destId, msg); //指定されたIDへ送る
+            else if (_partEqual(msgBinary, REQUEST_VOTE_BINARY_HEADER) ||
+                     _partEqual(msgBinary, VOTE_BINARY_HEADER) ||
+                     _partEqual(msgBinary, APPEND_ENTRIES_BINARY_HEADER)) {
+                console.log(msgBinary.toString());
+                server.send(destId, msgBinary); //指定されたIDへ送る
             }
-            else if (_partEqual(msg, START_BINARY_HEADER)) {
-                //console.log(msg);
-                latestNodesID++;
-                nodeIDs.push(latestNodesID);
-                socket.id = latestNodesID;
-                console.log("Joined: " + latestNodesID);
-                var b = new Buffer(ID_LIST_HEADER + nodeIDs.join(SPLIT_CHAR));
-                socket.send(b); //送信者に返信
-                b = new Buffer(JOINED_HEADER + latestNodesID);
-                server.broadcast(socket, b); //送信者以外にブロードキャスト
-                //console.log("my socket:" + socket.id);
+            else if (_partEqual(msgBinary, START_BINARY_HEADER)) {
+                //_joinNewClient(socket);
             }
-            else if (_partEqual(msg, EXIT_BINARY_HEADER)) {
-                slice_index = EXIT_BINARY_HEADER.length;
-                msg = msg.slice(slice_index);
+            else if (_partEqual(msgBinary, EXIT_BINARY_HEADER)) {
+                var msg = msgBinary.toString();
+                msg = msg.replace(EXIT_HEADER, "");
                 if (msg.length > 0) {
-                    msg.slice(slice_index);
                     var siteId = Number(msg);
-                    if(index != -1) {
+                    if(siteId >= 0) {
                         var index = nodeIDs.indexOf(siteId);
                         nodeIDs.splice(index, 1);
                         console.log("Removed: " + siteId);
                     }
                 }
             }
-            else if (_partEqual(msg, ID_LIST_BINARY_HEADER)) {
+            else if (_partEqual(msgBinary, ID_LIST_BINARY_HEADER)) {
                 //pass
             }
-            else if (_partEqual(msg, SOME_FILE_BINARY_HEADER)) {
-                var filename = _getPathUntilAt(msg);
+            else if (_partEqual(msgBinary, SOME_FILE_BINARY_HEADER)) {
+                var filename = _getPathUntilAt(msgBinary);
                 var filepath = TMP_DIR + filename;
                 var exif_len = SOME_FILE_HEADER.length + filename.length + 1;
-                file_binary = msg.slice(exif_len, msg.length);
+                file_binary = msgBinary.slice(exif_len, msgBinary.length);
 
                 var ext = path.extname(filename);
                 if (ext == ".obj") { filepaths[0] = filepath; }
@@ -110,17 +101,29 @@ var Server = function()
                     //全てのファイル情報送信
                     for(var i = 0; i < filepaths.length; i++) {
                         console.log("Send \"" + filepaths[i] + "\" to clients.");
-                        server.send_file(socket, filepaths[i]);
+                        server.sendFile(socket, filepaths[i]);
                     }
                     filepaths = ["", ""];
                 }
 
             }
-            //server.broadcast(socket, msg); //送信者以外にBroadcast
         });
         socket.on('close', function _onClose(msg) {
             console.log('disconnected...');
         });
+    }
+
+    function _joinNewClient(socket) {
+        latestNodesID++;
+        nodeIDs.push(latestNodesID);
+        socket.id = latestNodesID;
+        console.log("Joined: " + latestNodesID);
+        var b;
+        b = new Buffer(ID_LIST_HEADER + nodeIDs.join(SPLIT_CHAR));
+        socket.send(b); //送信者に返信
+        b = new Buffer(JOIN_HEADER + latestNodesID);
+        server.broadcast(socket, b); //送信者以外にブロードキャスト
+        //console.log("my socket:" + socket.id);
     }
 
 
@@ -160,7 +163,7 @@ var Server = function()
 		return [messageBinary, idBinary];
 	}
 
-    function _send_file(socket, filepath) {
+    function _sendFile(socket, filepath) {
         var header = new Buffer(SOME_FILE_HEADER + path.basename(filepath) + MSG_SPLIT_CHAR);
 
         fs.readFile(filepath, function (err, data) {
@@ -171,19 +174,19 @@ var Server = function()
         });
     }
 
-    function _send(destId, msg) {
+    function _send(destId, msgBinary) {
         this.clients.forEach(function(socket, index) {
             if (socket.id == destId) {
-                socket.send(msg);
+                socket.send(msgBinary);
             }
         });
     }
 
-    function _broadcast(this_socket, msg) {
+    function _broadcast(this_socket, msgBinary) {
         this.clients.forEach(function(socket, index) {
             if (this_socket != socket) {
-                console.log("socket id: " + socket.id);
-                socket.send(msg);
+                //console.log("socket id: " + socket.id);
+                socket.send(msgBinary);
             }
         });
     }
@@ -193,7 +196,7 @@ var Server = function()
         server = new WebSocket({ port: PORT_NUMBER });
         server.send = _send;
         server.broadcast = _broadcast;
-        server.send_file = _send_file;
+        server.sendFile = _sendFile;
         server.on('connection', _connect);
         console.log("Start a server for WebSocket.");
     }

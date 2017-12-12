@@ -9,7 +9,7 @@ public class EchoTest : MonoBehaviour {
 		//WebSocket w = new WebSocket(new Uri("ws://localhost:18080"));
 		WebSocket w = new WebSocket(new Uri("ws://127.0.0.1:18080"));
 		yield return StartCoroutine(w.Connect());
-		w.SendString("{\"sid\":\"52\",\"ts\":\"636314339710432260\",\"opType\":\"5\",\"opParams\":{\"posID\":\"4:0:3\",\"destPosID\":\"5:0:3\"}}");
+		w.SendString("OPERATION@{\"sid\":\"52\",\"ts\":\"636314339710432260\",\"opType\":\"5\",\"opParams\":{\"posID\":\"4:0:3\",\"destPosID\":\"5:0:3\"}}");
 		int i=0;
 		while (true)
 		{

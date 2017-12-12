@@ -16,7 +16,7 @@ struct ScreenSize {
 
 public class ChainXController : MonoBehaviour
 {
-    private EmulatedWebSocket socket;
+    public EmulatedWebSocket socket;
     private ChainXModel model;
     public ChainVoxel cv;
     private GameObject paintTool;
@@ -29,6 +29,7 @@ public class ChainXController : MonoBehaviour
 
     IEnumerator Start() {
         this.model = new ChainXModel();
+		this.model.SetController(this);
         GameObject anObj = this.CreateVoxel(0, Const.UI_SELECTING_VOXEL_NAME, Vector3.zero);
         anObj.transform.SetParent(GameObject.Find(Const.PAINT_TOOL_PATH).transform);
         anObj.GetComponent<Renderer>().enabled = false;
@@ -45,6 +46,7 @@ public class ChainXController : MonoBehaviour
 		//this.removedSelectedGIDs = new List<string> ();
         this.socket = new EmulatedWebSocket (this);
         StartCoroutine(this.socket.Connect());
+		Util.START_NANO_TIME = System.DateTime.Now.Ticks; //タイムスタンプ開始
         yield return this.socket.Listen();
     }
 
@@ -122,7 +124,7 @@ public class ChainXController : MonoBehaviour
 							if (this.selectedObjects [0].transform.childCount > 0) {
 								//選択したオブジェクトが一つで、それがグループである場合、グループを解除
 								gid = this.selectedObjects [0].transform.root.name;
-								o = new Operation (0, Operation.LEAVE_ALL, "{\"posIDs\": \"" +
+								o = new Operation (this.socket.getID(), Operation.LEAVE_ALL, "{\"posIDs\": \"" +
 									this.model.getPosIDsFrom (this.selectedObjects) + "\", \"gid\": \"" + gid +
 									"\"}");
 								this.ApplyChainVoxel (o);
@@ -130,7 +132,7 @@ public class ChainXController : MonoBehaviour
 
 						} else {
 							gid = ChainXModel.CreateGID();
-							o = new Operation (0, Operation.JOIN_ALL, "{\"posIDs\": \"" +
+							o = new Operation (this.socket.getID(), Operation.JOIN_ALL, "{\"posIDs\": \"" +
 								this.model.getPosIDsFrom (this.selectedObjects) + "\", \"gid\": \"" + gid +
 							"\"}");
 							this.ApplyChainVoxel(o);
@@ -175,7 +177,7 @@ public class ChainXController : MonoBehaviour
 					string filename = Path.GetFileName (path);
 					Debug.Log (path);
 					byte[] header = Encoding.UTF8.GetBytes (Const.SOME_FILE_HEADER + filename + Const.MSG_SPLIT_CHAR);
-					this.socket.SendBinary (Util.CombineBytes (header, File.ReadAllBytes (path)));
+					this.socket.SendBinary(-1, Util.CombineBytes (header, File.ReadAllBytes (path)));
 				}
 			}
 		}
@@ -201,7 +203,8 @@ public class ChainXController : MonoBehaviour
 
     public void ApplyChainVoxel(Operation o) {
         this.cv.apply(o);
-        this.socket.Send (Const.OPERATION_HEADER + Operation.ToJson (o) + "\n");
+		string op = Const.OPERATION_HEADER + Operation.ToJson (o);
+		this.socket.SendBinary(-1, Encoding.ASCII.GetBytes(op));
     }
 
     /*
@@ -224,7 +227,7 @@ public class ChainXController : MonoBehaviour
 	            float distance = hit.distance - 0.5f; //ヒットしたRayより少し手前のPointをたどる
 				Vector3 hitPointShort = ChainXModel.GetRoundIntPoint(ray.GetPoint(distance));
 	            int textureType = int.Parse(this.paintTool.GetComponent<Text>().text);
-	            o = new Operation(0, Operation.INSERT,
+				o = new Operation(this.socket.getID(), Operation.INSERT,
 					"{\"posID\": \"" + ChainXModel.CreatePosID(hitPointShort) +
 	                "\", \"textureType\":\"" + textureType + "\"}"
 	            );
@@ -276,7 +279,7 @@ public class ChainXController : MonoBehaviour
 				this.selectedObjects.Remove(groupObj);
 
 				string gid = ChainXModel.CreateGID ();
-				o = new Operation (0, Operation.INSERT_ALL,
+				o = new Operation (this.socket.getID(), Operation.INSERT_ALL,
 					"{\"posIDs\": \"" + posIDs +
 					"\", \"gid\": \"" + gid +
 					"\", \"textureTypes\":\"" + textureTypes + "\"}");
@@ -639,10 +642,10 @@ public class ChainXController : MonoBehaviour
 		string filename = Path.GetFileName(path);
 		this.cv.SaveData(Const.SAVED_FILE);
 		string headerStr = Const.SOME_FILE_HEADER + filename + Const.MSG_SPLIT_CHAR;
-		Debug.Log(headerStr);
+		//Debug.Log(headerStr);
 		byte[] header = Encoding.UTF8.GetBytes (headerStr);
-		this.socket.SendBinary(Util.CombineBytes (header, File.ReadAllBytes (path)) );
-        this.socket.Close();
+		this.socket.SendBinary(-1, Util.CombineBytes (header, File.ReadAllBytes (path)) );
+        this.socket.Close(); //It sends EXIT_HEADER
         //TODO(Tasuku): SaveしましたのWindowを表示して終わる!!
     }
 

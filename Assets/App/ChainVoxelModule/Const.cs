@@ -37,6 +37,7 @@ public class Const {
 	public static string START_HEADER = "START" + Const.MSG_SPLIT_CHAR;
 	public static string EXIT_HEADER = "EXIT" + Const.MSG_SPLIT_CHAR;
 	public static string ID_LIST_HEADER = "ID_LIST" + Const.MSG_SPLIT_CHAR;
+	public static string JOIN_HEADER = "JOIN" + Const.MSG_SPLIT_CHAR;
 
 	public static byte[] OPERATION_BINARY_HEADER = Encoding.UTF8.GetBytes(Const.OPERATION_HEADER);
 	public static byte[] SOME_FILE_BINARY_HEADER = Encoding.UTF8.GetBytes(Const.SOME_FILE_HEADER);
@@ -44,6 +45,7 @@ public class Const {
 	public static byte[] START_BINARY_HEADER = Encoding.UTF8.GetBytes(Const.START_HEADER);
 	public static byte[] EXIT_BINARY_HEADER = Encoding.UTF8.GetBytes(Const.EXIT_HEADER);
 	public static byte[] ID_LIST_BINARY_HEADER = Encoding.UTF8.GetBytes(Const.ID_LIST_HEADER);
+	public static byte[] JOIN_BINARY_HEADER = Encoding.UTF8.GetBytes(Const.JOIN_HEADER);
 }
 
 public class MessageType {

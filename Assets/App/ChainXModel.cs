@@ -31,6 +31,10 @@ public class ChainXModel
 		this.objLoadHelper = new ObjLoadHelper();
 	}
 
+	public void SetController(ChainXController controller) {
+		this.controller = controller;
+	}
+
 	/*
 	 * 比率を出す
 	 * diameter=円の直径
@@ -154,7 +158,7 @@ public class ChainXModel
 						//Here!!!!!!!!!!!!!
 						string[] posIDs = ObjLoadHelper.GetEmptyVoxels(child.gameObject);
 						//Debug.Log ("posID(emptyVoxel)" + posIDs [posIDs.Length-1]);
-						operations.Add (new Operation (0, Operation.MOVE_POLYGON, "{\"gid\": \"" + anObj.name +
+						operations.Add (new Operation (this.controller.socket.getID(), Operation.MOVE_POLYGON, "{\"gid\": \"" + anObj.name +
 							"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
 							"\", \"transMatrix\": \"" + ChainXModel.CreatePosID (transMatrix) + "\"}")
 						);
@@ -166,7 +170,7 @@ public class ChainXModel
 					foreach (Transform child in anObj.transform) {
 						posIDs.Add(child.name);
 					}
-					operations.Add (new Operation (0, Operation.MOVE_ALL, "{\"gid\": \"" + anObj.name +
+					operations.Add (new Operation (this.controller.socket.getID(), Operation.MOVE_ALL, "{\"gid\": \"" + anObj.name +
 						"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
 						"\", \"transMatrix\": \"" + ChainXModel.CreatePosID (transMatrix) + "\"}")
 					);
@@ -175,7 +179,7 @@ public class ChainXModel
 			else {
 				//Debug.Log (anObj.name);
 				//Debug.Log (anObj.transform.childCount);
-				operations.Add(new Operation (0, Operation.MOVE, "{\"posID\": \"" + anObj.name +
+				operations.Add(new Operation (this.controller.socket.getID(), Operation.MOVE, "{\"posID\": \"" + anObj.name +
 					"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}")
 				);
 			}
@@ -187,10 +191,10 @@ public class ChainXModel
 		if (anObj.transform.childCount > 0) {
 			List<string> posIDs = new List<string> ();	
 			foreach (Transform child in anObj.transform) { posIDs.Add (child.name); }
-			return new Operation (0, Operation.DELETE_ALL, "{\"gid\": \"" + anObj.name +
+			return new Operation (this.controller.socket.getID(), Operation.DELETE_ALL, "{\"gid\": \"" + anObj.name +
 				"\", \"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) + "\"}");
 		}
-		else { return new Operation (0, Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}"); }
+		else { return new Operation (this.controller.socket.getID(), Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}"); }
 	}
 
 

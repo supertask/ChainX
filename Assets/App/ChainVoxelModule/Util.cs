@@ -6,6 +6,8 @@ using UnityEngine;
 
 public class Util{
 
+	public static long START_NANO_TIME;
+
 	/*
 	 public static List<GameObject> ArrangeGameObjects(List<GameObject> gameobjects,
 		string transMatrix)
@@ -158,18 +160,17 @@ public class Util{
 		return res.TrimEnd(Const.SPLIT_CHAR);
 	}
 
-		
-
-
 
 	public static long currentTimeNanos() {
-		return System.DateTime.Now.Ticks; //Nano second
+		return System.DateTime.Now.Ticks - Util.START_NANO_TIME; //Nano second
 	}
 
+	/*
 	public static long currentTimeMillis() {
 		//return System.DateTime.Now.Millisecond;
 		return System.DateTime.Now.Ticks / 10000; //Milli second
 	}	
+	*/
 
 	public static long Max(long left, long right) {
 		if (left > right) { return left; }

@@ -35,7 +35,7 @@ public class VSite extends Thread
     //サーバからクライアントへ
     public static final String SOME_FILE_HEADER = "SOME_FILE" + MSG_SPLIT_CHAR;
     public static final String ID_LIST_HEADER = "ID_LIST" + MSG_SPLIT_CHAR;
-    public static final String JOINED_HEADER = "JOINED" + MSG_SPLIT_CHAR;
+    public static final String JOIN_HEADER = "JOIN" + MSG_SPLIT_CHAR;
 
     //双方向
     public static final String OPERATION_HEADER = "OPERATION" + MSG_SPLIT_CHAR;
@@ -43,7 +43,8 @@ public class VSite extends Thread
     public static byte CHAIN_VOXEL = 0;
     public static byte RAFT = 1;
     public static byte TWO_PHASE_COMMIT = 2;
-    public static byte algorithm = VSite.RAFT;
+    //public static byte algorithm = VSite.RAFT;
+    public static byte algorithm = VSite.CHAIN_VOXEL;
 
     private int leaderID = -1;
     private int id = -1;
@@ -64,7 +65,7 @@ public class VSite extends Thread
      * ネットワーク層とアプリケーション層の２つの共有変数
      */
     private MessageQueue messageQueue = new MessageQueue();
-    private static WaitingTimer waitingTimer = new WaitingTimer(); //スレッド同士の共有資源
+    //private static WaitingTimer waitingTimer = new WaitingTimer(); //スレッド同士の共有資源
 
     private BufferedReader reader;
 
@@ -110,7 +111,7 @@ public class VSite extends Thread
         else if (msg.startsWith(VSite.SOME_FILE_HEADER)) {
             //pass
         }
-        else if (msg.startsWith(VSite.JOINED_HEADER)) {
+        else if (msg.startsWith(VSite.JOIN_HEADER)) {
             String strID = msg.substring(msg.indexOf(VSite.MSG_SPLIT_CHAR)+1, msg.length());
             int intID = Integer.parseInt(strID);
             if (! this.siteIDs.contains(intID)) { this.siteIDs.add(intID); }
@@ -269,6 +270,7 @@ public class VSite extends Thread
      * <br>
      * シミュレーション実行中のメッセージ総数は，「Leaderのメッセージ総数」で求めることができる (id=0のsite)．
      */
+     /*
     public void runRaft()
     {
         //
@@ -409,6 +411,7 @@ public class VSite extends Thread
             catch (InterruptedException e) { e.printStackTrace(); }
         }
     }
+    */
 
 
     /**
@@ -473,7 +476,7 @@ public class VSite extends Thread
             this.runChainVoxel();
         }
         else if (this.algorithm == VSite.RAFT) {
-            this.runRaft();
+            //this.runRaft();
         }
     }
 
