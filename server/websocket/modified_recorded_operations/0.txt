@@ -1,3 +1,4 @@
-0#OPERATION@{"sid":"0","ts":"636480024236610790","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"-2:6:1,-2:5:1,-2:4:1","transMatrix":"1:0:0"}}
-76032000#OPERATION@{"sid":"0","ts":"636480024237371110","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"-1:6:1,-1:5:1,-1:4:1","transMatrix":"1:0:0"}}
-315375000#OPERATION@{"sid":"0","ts":"636480024240524860","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"0:6:1,0:5:1,0:4:1","transMatrix":"-1:0:0"}}
+0#OPERATION@{"sid":"0","ts":"103989780","opType":"7","opParams":{"gid":"group58295829gehioghew2","posIDs":"-2:4:0,-2:5:0,-2:6:0"}}
+100#OPERATION@{"sid":"0","ts":"103989781","opType":"6","opParams":{"gid":"group58295829gehioghew2","textureTypes":"2,2,2","posIDs":"-1:4:0,-1:5:0,-1:6:0"}}
+380978900#OPERATION@{"sid":"0","ts":"107799570","opType":"7","opParams":{"gid":"group58295829gehioghew2","posIDs":"-1:6:0,-1:5:0,-1:4:0"}}
+100#OPERATION@{"sid":"0","ts":"107799571","opType":"6","opParams":{"gid":"group58295829gehioghew2","textureTypes":"2,2,2","posIDs":"0:6:0,0:5:0,0:4:0"}}

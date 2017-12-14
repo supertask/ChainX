@@ -76,13 +76,13 @@ public class StructureTable {
      * @param gid グループ識別子
      * @see Operation
      */
-	public void join(long ts, string posID, string gid)
+	public bool join(long ts, string posID, string gid)
 	{
 		this.create(gid);
 		Group aGroup = new Group(gid, ts);
-		if (!this.groupMembersTable.ContainsKey(gid)) { return; }
+		if (!this.groupMembersTable.ContainsKey(gid)) { return false; }
 
-		if (Mathf.Abs(this.getTimestamp(posID, gid)) >= ts) { return; }
+		if (Mathf.Abs(this.getTimestamp(posID, gid)) >= ts) { return false; }
 
 		// groupEntriesTable に Group(gid, ts) を追加
 		if (!this.groupEntriesTable.ContainsKey(posID)) {
@@ -96,6 +96,7 @@ public class StructureTable {
 		// タイムスタンプの値を最新の値に更新する
 		long maxTs = Util.Max(ts, this.getTimestamp(posID, gid));
 		this.setTimestamp(maxTs, posID, gid);
+		return true;
 	}
 
 	/**
@@ -105,8 +106,12 @@ public class StructureTable {
      * @param gid グループ識別子
      * @see Operation
      */
-	public void joinAll(long ts, string[] posIDs, string gid) {
-		foreach (string posID in posIDs) this.join(ts, posID, gid);
+	public bool joinAll(long ts, string[] posIDs, string gid) {
+		foreach (string posID in posIDs) {
+			bool isJoined = this.join(ts, posID, gid);
+			if (!isJoined) {return false; }
+		}
+		return true;
 	}
 
 	/**
@@ -117,9 +122,9 @@ public class StructureTable {
      * @param gid グループ識別子
      * @see Operation
      */
-	public void leave(int sid, long ts, string posID, string gid) {
+	public bool leave(int sid, long ts, string posID, string gid) {
 		Group aGroup = new Group(gid, ts);
-		if (!this.groupEntriesTable.ContainsKey(posID)) { return; }
+		if (!this.groupEntriesTable.ContainsKey(posID)) { return false; }
 		HashSet<Group> groupEntriesSet = this.groupEntriesTable[posID];
 
 		//バグ
@@ -128,7 +133,7 @@ public class StructureTable {
 		//Debug.Log("latest timestamp: " + latestTs); //tsは現在時刻なのでtsの方が大きくなるのが普通
 		//Debug.Log(Mathf.Abs(this.getTimestamp(posID, gid)) >= ts);
 		if (!groupEntriesSet.Contains(aGroup) || Mathf.Abs(this.getTimestamp(posID, gid)) >= ts) {
-			return;
+			return false;
 		} 
 		this.groupMembersTable[gid].Remove(posID);
 		//Debug.Log ("Removed!!!");
@@ -136,6 +141,7 @@ public class StructureTable {
 		// タイムスタンプの更新 + tombstone化
 		long minTs = Util.Min(-1L * ts, this.getTimestamp(posID, gid));
 		this.setTimestamp(minTs, posID, gid);
+		return true;
 	}
 
 	/**
@@ -146,11 +152,12 @@ public class StructureTable {
      * @param gid グループ識別子
      * @see Operation
      */
-	public void leaveAll(int sid, long ts, string gid) {
+	public bool leaveAll(int sid, long ts, string gid) {
 		string[] posIDs = this.getPosIDs (gid);
 		foreach (string posID in posIDs) {
-			this.leave (sid, ts, posID, gid);
+			if (!this.leave(sid, ts, posID, gid)) { return false; }
 		}
+		return true;
 	}
 
 	/**

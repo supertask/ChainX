@@ -167,19 +167,44 @@ public class ChainXModel
 				else {
 					//When selecting multiple voxels
 					List<string> posIDs = new List<string> ();	
-					foreach (Transform child in anObj.transform) {
+					List<string> destPosIDs = new List<string> ();	
+					List<string> destTextureTypes = new List<string> ();	
+					foreach (Transform child in anObj.transform)
+					{
+						Debug.Assert (Util.CreatePosID (child.position) == child.name);
+						Vector3 destPosition = child.position + transMatrix;
 						posIDs.Add(child.name);
+						destPosIDs.Add(Util.CreatePosID(destPosition));
+						Voxel aVoxel = this.controller.cv.getVoxel (child.name);
+						destTextureTypes.Add(aVoxel.getTextureType().ToString());
 					}
-					operations.Add (new Operation (this.controller.socket.getID(), Operation.MOVE_ALL, "{\"gid\": \"" + anObj.name +
-						"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
-						"\", \"transMatrix\": \"" + ChainXModel.CreatePosID (transMatrix) + "\"}")
+
+					Operation op1, op2;
+					op1 = new Operation(
+		               this.controller.socket.getID (),
+		               Operation.DELETE_ALL,
+		               "{\"gid\": \"" + anObj.name +
+		               "\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) + "\"}"
 					);
+					operations.Add(op1);
+					op2 = new Operation (
+						this.controller.socket.getID(),
+						Operation.INSERT_ALL,
+						"{\"gid\": \"" + anObj.name +
+						"\", \"textureTypes\": \"" + Util.GetCommaLineFrom (destTextureTypes) +
+						"\", \"posIDs\": \"" + Util.GetCommaLineFrom (destPosIDs) + "\"}"
+					);
+					op2.setTimestamp(op1.getTimestamp() + 1); //できる限り1に近づけないと間に入り込まれる
+					operations.Add(op2);
 				}
 			}
 			else {
 				//Debug.Log (anObj.name);
 				//Debug.Log (anObj.transform.childCount);
-				operations.Add(new Operation (this.controller.socket.getID(), Operation.MOVE, "{\"posID\": \"" + anObj.name +
+				operations.Add(new Operation(
+					this.controller.socket.getID(),
+					Operation.MOVE,
+					"{\"posID\": \"" + anObj.name +
 					"\", \"transMatrix\": \"" + ChainXModel.CreatePosID(transMatrix) + "\"}")
 				);
 			}

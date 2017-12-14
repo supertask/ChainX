@@ -506,7 +506,7 @@ public class VSite extends Thread
         }
         //System.out.println(opFiles.size());
 
-        int numOfSites = 2;
+        int numOfSites = 1;
         if (opFiles.size() < numOfSites) {
             System.err.println("エラー: レコード数が足りません!");
             System.exit(1);

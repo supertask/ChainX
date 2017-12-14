@@ -132,14 +132,12 @@ public class ChainVoxel {
 				this.leaveAll (op, op.getTimestamp(), op.getGID(), op.getPosIDs());
 				break;
 			case Operation.MOVE_ALL:
-				posIDs = op.getPosIDs();
-				if (this.isGroupingAll(posIDs)) this.moveAll (op);
-				//foreach (GameObject anObj in this.controller.selectedObjects) { Debug.Log ("xxx" + anObj); }
+				//posIDs = op.getPosIDs();
+				//if (this.isGroupingAll(posIDs)) this.moveAll (op);
 				break;
 			case Operation.MOVE_POLYGON:
-				posIDs = op.getPosIDs();
-				if (this.isGroupingAll(posIDs)) this.movePolygon(op);
-				//foreach (GameObject anObj in this.controller.selectedObjects) { Debug.Log ("xxx" + anObj); }
+				//posIDs = op.getPosIDs();
+				//if (this.isGroupingAll(posIDs)) this.movePolygon(op);
 				break;
 			default:
 				Debug.Assert (false);
@@ -203,7 +201,7 @@ public class ChainVoxel {
 		voxelList.Add(insertVoxel);
 		voxelList.Sort(Voxel.Compare);
 		//Hereバグ: ここが原因！！！
-		if (this.getVoxel (posID) != null) {
+		if (this.getVoxel(posID) != null) {
 			if (  !(op.getOpType() == Operation.MOVE_ALL ||
 					op.getOpType() == Operation.MOVE_POLYGON ||
 					op.getOpType() == Operation.MOVE)) {
@@ -216,8 +214,8 @@ public class ChainVoxel {
 	}
 
 
-	public void delete(Operation op) {
-		this.delete(op, op.getTimestamp(), op.getPosID());
+	public bool delete(Operation op) {
+		return this.delete(op, op.getTimestamp(), op.getPosID());
 	}
 
 	/**
@@ -226,7 +224,7 @@ public class ChainVoxel {
      * @return textureType 削除するVoxelのテクスチャ番号
      * @see Operation
      */
-	public void delete(Operation op, long timestamp, string posID) {
+	public bool delete(Operation op, long timestamp, string posID) {
 		// step1: 負のvoxelをnegativeVoxelsに追加・更新
 		if (!this.negativeVoxels.ContainsKey(posID) || this.negativeVoxels[posID].getTimestamp() < timestamp) {
 			this.negativeVoxels[posID] = new Voxel(timestamp);
@@ -243,8 +241,8 @@ public class ChainVoxel {
 				voxelList.RemoveAt(i); 
 			}
 		}
-
 		voxelList.Sort(Voxel.Compare);
+
 		if (this.getVoxel (posID) == null) {
 			//
 			// MOVE系Operation以外の時，deleteを実行する
@@ -255,64 +253,63 @@ public class ChainVoxel {
 				this.deletedPosIDs.Add (posID);
 			}
 		}
-		return;
+		return true;
 	}
 
 	//!!moveは，polygon（1つのvoxelに収まるpolygon）を移動させないこと前提!!
 	public void move(Operation op, long timestamp, string posID, string destPosID) {
 		Voxel aVoxel = this.getVoxel(posID);
 		this.delete(op, timestamp, posID);
-		timestamp++;
+		//timestamp++;
 		this.insert(op, timestamp, destPosID, aVoxel.getTextureType());
+
+		//if()  deleteとinsertが本当にtimestampがらみで実行されていたならこれを実行！！！！！
 		this.movedPosIDs[posID] = destPosID;
 	}
 
 
 
-	public long insertAll(Operation op) {
+	public bool insertAll(Operation op) {
 		return this.insertAll(op, op.getTimestamp(), op.getGID(), op.getPosIDs(), op.getTextureTypes() );
 	}
 
 	//編集の必要がある
-	public long insertAll(Operation op, long timestamp,
+	public bool insertAll(Operation op, long timestamp,
 		string gid, string[] posIDs, int[] textureTypes) {
 		//insertAll時にtextureoTypesをInputする必要がある
 		for (int i = 0; i < posIDs.Length; ++i) {
 			this.insert(op, timestamp, posIDs [i], textureTypes[i]);
-			timestamp++;
 		}
-        this.joinAll(op, timestamp, gid, posIDs);
-		timestamp++;
+        bool isJoined = this.joinAll(op, timestamp, gid, posIDs);
+		if (!isJoined) { return false; }
 
-		return timestamp;
+		return true;
 	}
 
-	public long insertPolygon(Operation op) {
+	public bool insertPolygon(Operation op) {
 		string[] posIDs = op.getPosIDs ();
 		return this.insertPolygon(op, op.getTimestamp(), op.getGID(),
 			posIDs, posIDs[posIDs.Length-1], op.getObjPath());
 	}
 			
-	public long insertPolygon(Operation op, long timestamp,
+	public bool insertPolygon(Operation op, long timestamp,
 		string gid, string[] posIDs, string polygonPosID,  string objPath) {
 		//Debug.Log ("insertPolygon: " + Util.CreatePosID(posIDs));
 		this.insert(op, timestamp, polygonPosID, objPath);
 		//Debug.Log ("voxel: " + this.getVoxel(posIDs[polyIndex]));
-		timestamp++;
-		this.joinAll(op, timestamp, gid, posIDs);
-		timestamp++;
+		bool isJoined = this.joinAll(op, timestamp, gid, posIDs);
+		if (!isJoined) { return false; }
 
-		return timestamp;
+		return true;
 	}
 
-	public long deleteAll(Operation op, long timestamp, string gid, string[] posIDs) {
-		timestamp = this.leaveAll(op, timestamp, gid, posIDs);
-		timestamp++;
+	public bool deleteAll(Operation op, long timestamp, string gid, string[] posIDs) {
+		bool isLeft = this.leaveAll(op, timestamp, gid, posIDs);
+		if (!isLeft) { return false; }
 		foreach(string posID in posIDs) {
 			this.delete(op, timestamp, posID);
-			timestamp++;
 		}
-		return timestamp;
+		return true;
 	}
 
 	public long deletePolygon(Operation op) {
@@ -322,20 +319,20 @@ public class ChainVoxel {
 	}
 	public long deletePolygon(Operation op, long timestamp, string gid,
 			string[] posIDs, string polygonPosID) {
-		timestamp = this.leavePolygon(op, timestamp, gid, posIDs, polygonPosID);
-		timestamp++;
+		this.leavePolygon(op, timestamp, gid, posIDs, polygonPosID);
 		this.delete(op, timestamp, polygonPosID);
-		timestamp++;
 		return timestamp;
 	}
 
+	/*
 	public void moveAll(Operation op) {
 		string[] posIDs = op.getPosIDs();
 		posIDs = Util.ArrangePosIDs(posIDs, op.getTransMatrix());
 		string[] destPosIDs = op.getDestPosIDs(posIDs);
 
 		//移動時の衝突回避
-		for (int i = 0; i < posIDs.Length; ++i) { if (this.getVoxel(posIDs [i]) == null) return; //移動前のVoxelが削除されていればreturn
+		for (int i = 0; i < posIDs.Length; ++i) {
+			if (this.getVoxel(posIDs [i]) == null) return; //移動前のVoxelが削除されていればreturn
 		}
 		for (int i = 0; i < posIDs.Length; ++i) {
 			Voxel aDestVoxel = this.getVoxel(destPosIDs[i]);
@@ -359,8 +356,9 @@ public class ChainVoxel {
 			this.movedPosIDs[posIDs[i]] = destPosIDs[i];
 		}
 	}
+	*/
 
-
+	/*
 	public void movePolygon(Operation op) {
 		string[] posIDs = op.getPosIDs();
 		//
@@ -421,6 +419,7 @@ public class ChainVoxel {
 
 		this.movedPosIDs[polygonPosID] = destPosIDs[polygonIndex];
 	}
+	*/
 
 	/*
 	public void moveAll (Operation op)
@@ -472,11 +471,13 @@ public class ChainVoxel {
      * @param op 操作オブジェクト
      * @see Operation
      */
-	public void joinAll(Operation op, long timestamp, string gid, string[] posIDs) {
-		this.stt.joinAll(timestamp, posIDs, gid);
+	public bool joinAll(Operation op, long timestamp, string gid, string[] posIDs) {
+		bool isJoined = this.stt.joinAll(timestamp, posIDs, gid);
+		if (!isJoined) { return false; }
 		if (op.getOpType() != Operation.MOVE_ALL && op.getOpType() != Operation.MOVE_POLYGON) {
 			this.joinedGIDs.Add(gid);//最新のタイムスタンプのグループをとる
 		}
+		return true;
 	}
 
 	/**
@@ -495,38 +496,36 @@ public class ChainVoxel {
      * @param op 操作オブジェクト
      * @see Operation
      */
-	public long leaveAll(Operation op, long timestamp, string gid, string[] posIDs) {
+	public bool leaveAll(Operation op, long timestamp, string gid, string[] posIDs) {
 		//座標を与えよう！！！！
 		//移動する前のGIDまで汲み取ってしまうため、NULL Exceptionが発生する
 		Voxel[] voxels = this.getVoxelBlock(posIDs);
-		this.stt.leaveAll(op.getSID(), timestamp, gid); 
+		bool isLeft = this.stt.leaveAll(op.getSID(), timestamp, gid); 
+		if (!isLeft) { return false; }
 
-		timestamp++;
 		for(int i = 0; i < voxels.Length; ++i) {
 			this.insert(op, timestamp, posIDs[i], voxels[i].getTextureType());
-			timestamp++;
 		}
 		if (op.getOpType() != Operation.MOVE_ALL) {
 			this.leftGIDs.Add(gid);//最新のタイムスタンプのグループをとる
 		}
 
-		return timestamp;
+		return true;
 	}
 
-	private long leavePolygon(Operation op, long timestamp, string gid,
+	private bool leavePolygon(Operation op, long timestamp, string gid,
 			string[] posIDs, string polygonPosID) {
+		bool isLeave = this.stt.leaveAll(op.getSID(), timestamp, gid); 
+		if (!isLeave) { return false; }
 		Voxel[] voxels = this.getVoxelBlock(posIDs);
-		this.stt.leaveAll(op.getSID(), timestamp, gid); 
-		timestamp++;
 		int polygonIndex = Array.IndexOf(posIDs, polygonPosID);
 
 		this.insert(op, timestamp, polygonPosID, voxels[polygonIndex].getObjPath());
-		timestamp++;
 
 		if (op.getOpType() != Operation.MOVE_POLYGON) {
 			this.leftGIDs.Add(gid);//最新のタイムスタンプのグループをとる
 		}
-		return timestamp;
+		return true;
 	}
 
 	/**
@@ -669,10 +668,13 @@ public class ChainVoxel {
 						int textureType = int.Parse(entries[1]);
 						string posID = entries[2];
 						if (posIDs == null) {
-							Operation op = new Operation(0, Operation.INSERT,
+							Operation op = new Operation(
+								this.controller.socket.getID(),
+								Operation.INSERT,
 								"{\"posID\": \"" + posID +
 								"\", \"textureType\":\"" + textureType.ToString() + "\"}"
 							);
+							op.setTimestamp(0L);
 							this.apply(op);
 						}
 						else {
@@ -681,11 +683,14 @@ public class ChainVoxel {
 						}
 					}
 					else if (line[0] == 'e') {
-						Operation op = new Operation(0, Operation.INSERT_ALL,
+						Operation op = new Operation(
+							this.controller.socket.getID(),
+							Operation.INSERT_ALL,
 							"{\"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) +
 							"\", \"gid\": \"" + gid +
 							"\", \"textureTypes\":\"" + Util.GetCommaLineFrom(textureTypes) + "\"}"
 						);
+						op.setTimestamp(1L); //0LだとStrucutureTableの条件分岐でバグる
 						this.apply(op);
 							
 						gid = "";
@@ -711,12 +716,12 @@ public class ChainVoxel {
 	 */
 	public string SaveData(string saving_path)
 	{
+		this.show();
 		try {
 			//using (StringWriter writer = new StringWriter()) {
 			using (StreamWriter writer = new StreamWriter(saving_path)) {
 
 				List<string> saved_posIDs = new List<string>();
-				//Here!!
 
 				foreach (KeyValuePair<string, HashSet<string>> p in this.stt.getGroupMembersTable()) {
 					string gid = p.Key;
@@ -725,6 +730,9 @@ public class ChainVoxel {
 					writer.WriteLine(line);
 					foreach (string posID in posIDs) {
 						Voxel aVoxel = this.getVoxel(posID);
+						//Debug.Log("timestamp1: " + aVoxel.getTimestamp());
+						//Debug.Log("posID1: " + posID);
+
 						line = String.Format("v {0} {1}", aVoxel.getTextureType(), posID);
 						writer.WriteLine(line);
 						saved_posIDs.Add(posID);
@@ -739,6 +747,7 @@ public class ChainVoxel {
 				
 					Voxel aVoxel = this.getVoxel(posID);
 					if (aVoxel == null) { continue; }
+					//Debug.Log("posID2: " + posID);
 
 					int textureType = this.getVoxel(posID).getTextureType();
 					string line = String.Format("v {0} {1}", textureType, posID);
