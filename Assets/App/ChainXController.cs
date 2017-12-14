@@ -46,12 +46,13 @@ public class ChainXController : MonoBehaviour
 		//this.removedSelectedGIDs = new List<string> ();
         this.socket = new EmulatedWebSocket (this);
         StartCoroutine(this.socket.Connect());
-		Util.START_NANO_TIME = System.DateTime.Now.Ticks; //タイムスタンプ開始
+		//Util.START_NANO_TIME = System.DateTime.Now.Ticks; //タイムスタンプ開始
         yield return this.socket.Listen();
     }
 
     void Update ()
 	{
+		//Debug.Log (System.DateTime.Now.Ticks);
 		lock (ChainXController.thisLock) {
 			this.UpdateVoxels ();
 			this.SetUpGUICompornets ();

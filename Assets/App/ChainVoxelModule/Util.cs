@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class Util{
 
-	public static long START_NANO_TIME;
+	//public static long START_NANO_TIME;
 
 	/*
 	 public static List<GameObject> ArrangeGameObjects(List<GameObject> gameobjects,
@@ -162,7 +162,8 @@ public class Util{
 
 
 	public static long currentTimeNanos() {
-		return System.DateTime.Now.Ticks - Util.START_NANO_TIME; //Nano second
+		return System.DateTime.Now.Ticks; //100 nano seconds
+		//return System.DateTime.Now.Ticks - Util.START_NANO_TIME;
 	}
 
 	/*

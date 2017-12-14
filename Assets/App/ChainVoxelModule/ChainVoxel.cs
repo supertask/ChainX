@@ -499,9 +499,9 @@ public class ChainVoxel {
 	public bool leaveAll(Operation op, long timestamp, string gid, string[] posIDs) {
 		//座標を与えよう！！！！
 		//移動する前のGIDまで汲み取ってしまうため、NULL Exceptionが発生する
-		Voxel[] voxels = this.getVoxelBlock(posIDs);
 		bool isLeft = this.stt.leaveAll(op.getSID(), timestamp, gid); 
 		if (!isLeft) { return false; }
+		Voxel[] voxels = this.getVoxelBlock(posIDs);
 
 		for(int i = 0; i < voxels.Length; ++i) {
 			this.insert(op, timestamp, posIDs[i], voxels[i].getTextureType());

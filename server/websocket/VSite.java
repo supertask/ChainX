@@ -322,19 +322,20 @@ public class VSite extends Thread
         long opDiffTime = Long.parseLong(recordLine[0]);
         String opLine = recordLine[1];
 
-        long startTime = System.nanoTime();
-        long exCurrentTime = 0L;
+        long startSystemTime = Util.currentTime100Nanos(); //System.nanoTime();
+        long exCurrentVirtualTime = 0L;
         long execTime = opDiffTime;
         while(true) {
             if (recordLine == null) { break; }
-            long currentTime = System.nanoTime() - startTime;
-            long diffTime = currentTime - exCurrentTime;
+            long currentSystemTime = Util.currentTime100Nanos(); //System.nanoTime();
+            long currentVirtualTime = currentSystemTime - startSystemTime;
+            long diffTime = currentVirtualTime - exCurrentVirtualTime;
 
-            if (exCurrentTime <= execTime) {
-                while(execTime <= currentTime) {
+            if (exCurrentVirtualTime <= execTime) {
+                while(execTime <= currentVirtualTime) {
                     // step0: 操作をLeaderに送信する
                     //（レコードされた操作を実行し，送信！）
-                    //System.out.println(this.id + ": currentTime = " + this.getSecondTime(currentTime));
+                    //System.out.println(this.id + ": currentVirtualTime = " + this.getSecondTime(currentVirtualTime));
                     //System.out.println(this.id + ": execTime = " + this.getSecondTime(execTime));
                     opLine = this.replaceSIDandTS(opLine, this.id, execTime);
                     //System.out.println(opLine);
@@ -370,7 +371,7 @@ public class VSite extends Thread
                     String[] res = getSIDandTS(opMsg);
                     int sid = Integer.parseInt(res[0]);
                     long ts = Long.parseLong(res[1]);
-                    long waitedTime = VSite.waitingTimer.endWaitingTime(sid, ts, currentTime);
+                    long waitedTime = VSite.waitingTimer.endWaitingTime(sid, ts, currentVirtualTime);
                     System.out.println("EndWait! key="+ WaitingTimer.getOpStr(sid,ts) + ": waitedTime=" + waitedTime);
                     if (waitedTime == -1) {
                         VSite.waitingTimer.show();
@@ -395,7 +396,7 @@ public class VSite extends Thread
                     String[] res = getSIDandTS(opMsg);
                     int sid = Integer.parseInt(res[0]);
                     long ts = Long.parseLong(res[1]);
-                    long waitedTime = VSite.waitingTimer.endWaitingTime(sid, ts, currentTime);
+                    long waitedTime = VSite.waitingTimer.endWaitingTime(sid, ts, currentVirtualTime);
                     System.out.println("EndWait! key="+ WaitingTimer.getOpStr(sid,ts) + ": waitedTime=" + waitedTime);
                     if (waitedTime == -1) {
                         VSite.waitingTimer.show();
@@ -406,7 +407,7 @@ public class VSite extends Thread
                 }
             }
 
-            exCurrentTime = currentTime;
+            exCurrentVirtualTime = currentVirtualTime;
             try { Thread.sleep(10); } //10ミリ秒
             catch (InterruptedException e) { e.printStackTrace(); }
         }
@@ -426,20 +427,21 @@ public class VSite extends Thread
         long opDiffTime = Long.parseLong(recordLine[0]);
         String opLine = recordLine[1];
 
-        long startTime = System.nanoTime();
-        long exCurrentTime = 0L;
+        long startSystemTime = Util.currentTime100Nanos(); //System.nanoTime();
+        long exCurrentVirtualTime = 0L;
         long execTime = opDiffTime;
         while(true) {
             if (recordLine == null) { break; }
-            long currentTime = System.nanoTime() - startTime;
-            long diffTime = currentTime - exCurrentTime;
+            long currentSystemTime = Util.currentTime100Nanos(); //System.nanoTime();
+            long currentVirtualTime = currentSystemTime - startSystemTime;
+            long diffTime = currentVirtualTime - exCurrentVirtualTime;
 
-            if (exCurrentTime <= execTime) {
-                while(execTime <= currentTime) {
-                    //System.out.println(this.id + ": currentTime = " + this.getSecondTime(currentTime));
+            if (exCurrentVirtualTime <= execTime) {
+                while(execTime <= currentVirtualTime) {
+                    //System.out.println(this.id + ": currentVirtualTime = " + this.getSecondTime(currentVirtualTime));
                     //System.out.println(this.id + ": execTime = " + this.getSecondTime(execTime));
                     //ここでレコードされた操作を実行し，送信！
-                    opLine = this.replaceSIDandTS(opLine, this.id, execTime);
+                    opLine = this.replaceSIDandTS(opLine, this.id, Util.currentTime100Nanos());
                     System.out.println(opLine);
                     this.broadcast(opLine);
                     this.increaseNumberOfSteps();
@@ -453,7 +455,7 @@ public class VSite extends Thread
                 }
             }
             
-            exCurrentTime = currentTime;
+            exCurrentVirtualTime = currentVirtualTime;
             try { Thread.sleep(10); } //10ミリ秒
             catch (InterruptedException e) { e.printStackTrace(); }
         }
