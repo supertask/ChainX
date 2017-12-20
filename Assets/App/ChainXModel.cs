@@ -154,8 +154,8 @@ public class ChainXModel
 				//
 				if (anObj.transform.childCount == 1) {
 					//When selecting polygon
+					/*
 					foreach (Transform child in anObj.transform) {
-						//Here!!!!!!!!!!!!!
 						string[] posIDs = ObjLoadHelper.GetEmptyVoxels(child.gameObject);
 						//Debug.Log ("posID(emptyVoxel)" + posIDs [posIDs.Length-1]);
 						operations.Add (new Operation (this.controller.socket.getID(), Operation.MOVE_POLYGON, "{\"gid\": \"" + anObj.name +
@@ -163,6 +163,7 @@ public class ChainXModel
 							"\", \"transMatrix\": \"" + ChainXModel.CreatePosID (transMatrix) + "\"}")
 						);
 					}
+					*/
 				}
 				else {
 					//When selecting multiple voxels
@@ -179,23 +180,32 @@ public class ChainXModel
 						destTextureTypes.Add(aVoxel.getTextureType().ToString());
 					}
 
-					Operation op1, op2;
-					op1 = new Operation(
-		               this.controller.socket.getID (),
-		               Operation.DELETE_ALL,
-		               "{\"gid\": \"" + anObj.name +
-		               "\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) + "\"}"
+					string posIDsLine = Util.GetCommaLineFrom (posIDs);
+					string destPosIDsLine = Util.GetCommaLineFrom (destPosIDs);
+					Operation[] ops = new Operation[4];
+					ops[0] = new Operation(
+		               this.controller.socket.getID (), Operation.LEAVE_ALL,
+		               "{\"gid\": \"" + anObj.name + "\", \"posIDs\": \"" + posIDsLine + "\"}"
 					);
-					operations.Add(op1);
-					op2 = new Operation (
-						this.controller.socket.getID(),
-						Operation.INSERT_ALL,
+					ops[1] = new Operation(
+		               this.controller.socket.getID (), Operation.DELETE_ALL,
+		               "{\"gid\": \"" + anObj.name + "\", \"posIDs\": \"" + posIDsLine + "\"}"
+					);
+					ops[2] = new Operation (
+						this.controller.socket.getID(), Operation.INSERT_ALL,
 						"{\"gid\": \"" + anObj.name +
 						"\", \"textureTypes\": \"" + Util.GetCommaLineFrom (destTextureTypes) +
-						"\", \"posIDs\": \"" + Util.GetCommaLineFrom (destPosIDs) + "\"}"
+						"\", \"posIDs\": \"" + destPosIDsLine + "\"}"
 					);
-					op2.setTimestamp(op1.getTimestamp() + 1); //できる限り1に近づけないと間に入り込まれる
-					operations.Add(op2);
+					ops[3] = new Operation (
+						this.controller.socket.getID(), Operation.JOIN_ALL,
+						"{\"gid\": \"" + anObj.name + "\", \"posIDs\": \"" + destPosIDsLine + "\"}"
+					);
+					long ts = ops[0].getTimestamp ();
+					for(int i = 0; i < ops.Length; i++) {
+						ops[i].setTimestamp(ts + i); //できる限り1に近づけないと間に入り込まれる
+						operations.Add(ops[i]);
+					}
 				}
 			}
 			else {
@@ -212,14 +222,49 @@ public class ChainXModel
 		return operations;
     }
 
-	public Operation CreateDeleteOperation(GameObject anObj) {
-		if (anObj.transform.childCount > 0) {
-			List<string> posIDs = new List<string> ();	
-			foreach (Transform child in anObj.transform) { posIDs.Add (child.name); }
-			return new Operation (this.controller.socket.getID(), Operation.DELETE_ALL, "{\"gid\": \"" + anObj.name +
-				"\", \"posIDs\": \"" + Util.GetCommaLineFrom(posIDs) + "\"}");
+	public List<Operation> CreateDeleteOperation(List<GameObject> objects) {
+		List<Operation> operations = new List<Operation>();
+		foreach (GameObject anObj in objects) {
+			if (anObj.transform.childCount > 0) {
+				if (anObj.transform.childCount == 1) {
+					//For polygon
+				}
+				else {
+					List<string> posIDs = new List<string> ();	
+					foreach (Transform child in anObj.transform)
+					{
+						Debug.Assert (Util.CreatePosID (child.position) == child.name);
+						posIDs.Add(child.name);
+					}
+
+					string posIDsLine = Util.GetCommaLineFrom (posIDs);
+					Operation[] ops = new Operation[2];
+					ops[0] = new Operation (
+						this.controller.socket.getID (), Operation.LEAVE_ALL,
+						"{\"gid\": \"" + anObj.name + "\", \"posIDs\": \"" + posIDsLine + "\"}"
+					);
+
+					ops[1] = new Operation (
+						this.controller.socket.getID (), Operation.DELETE_ALL,
+						"{\"gid\": \"" + anObj.name + "\", \"posIDs\": \"" + posIDsLine + "\"}"
+					);
+					long ts = ops[0].getTimestamp ();
+					for (int i = 0; i < ops.Length; i++) {
+						ops[i].setTimestamp(ts + i); //できる限り1に近づけないと間に入り込まれる
+						operations.Add(ops[i]);
+					}
+				}
+			}
+			else {
+				Operation op = new Operation (
+					this.controller.socket.getID (),
+					Operation.DELETE,
+					"{\"posID\": \"" + anObj.name + "\"}"
+				);
+				operations.Add(op);
+			}
 		}
-		else { return new Operation (this.controller.socket.getID(), Operation.DELETE, "{\"posID\": \"" + anObj.name + "\"}"); }
+		return operations;
 	}
 
 

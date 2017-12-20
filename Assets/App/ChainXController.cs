@@ -89,7 +89,12 @@ public class ChainXController : MonoBehaviour
 				else if (Input.GetKeyUp (KeyCode.RightArrow)) arrowV = new Vector3 (0, 0, -1);
 				else if (Input.GetKeyUp (KeyCode.LeftArrow)) arrowV = new Vector3 (0, 0, 1);
 				else if (Input.GetKeyUp (KeyCode.U)) arrowV = new Vector3 (0, 1, 0);
-				else if (Input.GetKeyUp (KeyCode.D)) arrowV = new Vector3 (0, -1, 0);
+				else if (Input.GetKeyUp (KeyCode.D)) {
+					if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.LeftCommand) ||
+					    Input.GetKey (KeyCode.RightControl) || Input.GetKey (KeyCode.RightCommand)) {
+						arrowV = new Vector3 (0, -1, 0);
+					}
+				}
 
 				if (arrowV != Vector3.zero) {
 					/*
@@ -97,6 +102,7 @@ public class ChainXController : MonoBehaviour
 						Debug.Log (anObj.name);
 					}
 					*/
+					//Debug.Log("MOVE");
 					this.selectedObjects = Util.ArrangeGameObjects (this.selectedObjects, arrowV);
 
 					List<Operation> moveOps = this.model.CreateMoveOperations(this.selectedObjects, arrowV);
@@ -104,15 +110,15 @@ public class ChainXController : MonoBehaviour
 						this.ApplyChainVoxel (moveOp);
 					}
 				}
-				else if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.LeftCommand) ||
-				         Input.GetKey (KeyCode.RightControl) || Input.GetKey (KeyCode.RightCommand)) {
+				else {
 					if (Input.GetKeyDown (KeyCode.D)) {
 						//
 						// VoxelまたはGroupVoxelを削除する
 						//
-						foreach (GameObject anObj in this.selectedObjects) {
-							o = this.model.CreateDeleteOperation(anObj);
-							this.ApplyChainVoxel (o);
+						Debug.Log("DELETE");
+						List<Operation> deleteOps = this.model.CreateDeleteOperation(this.selectedObjects);
+						foreach (Operation op in deleteOps) {
+							this.ApplyChainVoxel (op);
 						}
 					}
 					else if (Input.GetKeyDown (KeyCode.G)) {
@@ -140,6 +146,7 @@ public class ChainXController : MonoBehaviour
 						}
                     }
                 }
+
             }
             if (o != null) {
 	            //this.cv.show();
@@ -285,6 +292,14 @@ public class ChainXController : MonoBehaviour
 					"\", \"gid\": \"" + gid +
 					"\", \"textureTypes\":\"" + textureTypes + "\"}");
 			}
+
+			/*
+			long ts = ops[0].getTimestamp ();
+			for(int i = 0; i < ops.Length; i++) {
+				ops[i].setTimestamp(ts + i); //できる限り1に近づけないと間に入り込まれる
+				operations.Add(ops[i]);
+			}
+			*/
             this.ApplyChainVoxel(o);
             //Debug.DrawLine(ray.origin, hitPointShort, Color.red, 60.0f, true); //レーザービーム
         }
@@ -488,16 +503,39 @@ public class ChainXController : MonoBehaviour
      * 
      */
     public void UpdateVoxels() {
+		/*
+         * For DELETE operations.
+         */
+		if (this.cv.deletedPosIDs.Count > 0) {
+			foreach (string posID in this.cv.deletedPosIDs) {
+				GameObject deletingObj = GameObject.Find(posID);
+				if (deletingObj != null) {
+              		// Remove following a ChainVoxel.
+					this.selectedObjects.Remove(deletingObj);
+					GameObject.DestroyImmediate(deletingObj);
+					//Debug.Log ("deletedGUI:" + posID);
+
+				}
+			}
+			cv.deletedPosIDs.Clear ();
+		}
+
         /*
          * For INSERT operations.
          */
 		if (this.cv.insertedPosIDs.Count > 0) {
 			foreach (string posID in this.cv.insertedPosIDs) {
-				if (GameObject.Find (posID) == null) {
-					//Debug.Log ("insertedPosID:" + posID);
+				//Debug.Log ("候補，insertGUI:" + posID);
+				GameObject foundObj = GameObject.Find(posID);
+
+				if (foundObj == null) {
 					Voxel aVoxel = this.cv.getVoxel (posID);
-					string objPath = aVoxel.getObjPath ();
-					this.CreateVoxelFromPosID(aVoxel.getTextureType (), posID);
+					if (aVoxel != null) {
+						//Debug.Log ("insertedPosID:" + posID);
+						this.CreateVoxelFromPosID(aVoxel.getTextureType (), posID);
+					}
+
+
 					//Debug.Log(aVoxel.getObjPath()); // /Users/tasuku/Library/Application Support/supertask/ChainX/
 
 					//string[] filepaths = new string[]{ aVoxel.getObjPath(), aVoxel.getTexturePath()};
@@ -515,29 +553,11 @@ public class ChainXController : MonoBehaviour
 					}
 					*/
 				}
-				/*
-				else {
-					Debug.Log ("else insertedPosID:" + posID);
-				}
-				*/
 			}
 			cv.insertedPosIDs.Clear ();
 		}
 
-        /*
-         * For DELETE operations.
-         */
-		if (this.cv.deletedPosIDs.Count > 0) {
-			foreach (string posID in this.cv.deletedPosIDs) {
-				GameObject deletingObj = GameObject.Find (posID);
-				if (deletingObj != null) {
-              		// Remove following a ChainVoxel.
-					this.selectedObjects.Remove(deletingObj);
-					GameObject.Destroy (deletingObj);
-				}
-			}
-			cv.deletedPosIDs.Clear ();
-		}
+
 
         /*
          * For MOVE operations.
@@ -548,6 +568,7 @@ public class ChainXController : MonoBehaviour
 				string destPosID = aPair.Value;
 				GameObject anObj = GameObject.Find (posID);
 				if (anObj != null) {
+
 					Vector3 v = Util.SplitPosID (destPosID);	
 					anObj.name = destPosID;
 					anObj.transform.position = v;

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 using UnityEngine;
@@ -82,7 +83,7 @@ public class StructureTable {
 		Group aGroup = new Group(gid, ts);
 		if (!this.groupMembersTable.ContainsKey(gid)) { return false; }
 
-		if (Mathf.Abs(this.getTimestamp(posID, gid)) >= ts) { return false; }
+		if (Math.Abs(this.getTimestamp(posID, gid)) >= ts) { return false; }
 
 		// groupEntriesTable に Group(gid, ts) を追加
 		if (!this.groupEntriesTable.ContainsKey(posID)) {
@@ -109,6 +110,7 @@ public class StructureTable {
 	public bool joinAll(long ts, string[] posIDs, string gid) {
 		foreach (string posID in posIDs) {
 			bool isJoined = this.join(ts, posID, gid);
+			Debug.Log (isJoined);
 			if (!isJoined) {return false; }
 		}
 		return true;
@@ -127,12 +129,11 @@ public class StructureTable {
 		if (!this.groupEntriesTable.ContainsKey(posID)) { return false; }
 		HashSet<Group> groupEntriesSet = this.groupEntriesTable[posID];
 
-		//バグ
 		long latestTs = this.getTimestamp (posID, gid);
 		//Debug.Log ("second current timestamp: " + ts);
 		//Debug.Log("latest timestamp: " + latestTs); //tsは現在時刻なのでtsの方が大きくなるのが普通
-		//Debug.Log(Mathf.Abs(this.getTimestamp(posID, gid)) >= ts);
-		if (!groupEntriesSet.Contains(aGroup) || Mathf.Abs(this.getTimestamp(posID, gid)) >= ts) {
+		//Debug.Log(Math.Abs(this.getTimestamp(posID, gid)) >= ts);
+		if (!groupEntriesSet.Contains(aGroup) || Math.Abs(this.getTimestamp(posID, gid)) >= ts) {
 			return false;
 		} 
 		this.groupMembersTable[gid].Remove(posID);
@@ -152,8 +153,7 @@ public class StructureTable {
      * @param gid グループ識別子
      * @see Operation
      */
-	public bool leaveAll(int sid, long ts, string gid) {
-		string[] posIDs = this.getPosIDs (gid);
+	public bool leaveAll(int sid, long ts, string gid, string[] posIDs) {
 		foreach (string posID in posIDs) {
 			if (!this.leave(sid, ts, posID, gid)) { return false; }
 		}
@@ -372,17 +372,6 @@ public class StructureTable {
 		*/
 
 
-		foreach (string gid in gids) {
-			stt.create(gid);
-			stt.joinAll(1L, posIDs.ToArray(), gid);
-		}
-		stt.show("同時にjoin");
-
-
-		foreach (string gid in gids) {
-			stt.leaveAll(1, 12L, gid);
-		}
-		stt.show("同時にleave");
 	}
 
 }
