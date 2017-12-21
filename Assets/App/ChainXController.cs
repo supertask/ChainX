@@ -23,6 +23,8 @@ public class ChainXController : MonoBehaviour
     public string log;
     public static object thisLock = new object();
     private ScreenSize screenSize;
+	private GameObject debuggerObj;
+
 
     public List<GameObject> selectedObjects;
 	//public List<string> removedSelectedGIDs;
@@ -40,6 +42,7 @@ public class ChainXController : MonoBehaviour
         this.screenSize.width = Screen.width;
         this.screenSize.height = Screen.height;
         this.SetPositionOfPaintTool();
+		this.debuggerObj = GameObject.Find ("DebugLog/Viewport/Content");
 
         this.cv = new ChainVoxel(this);
         this.selectedObjects = new List<GameObject> ();
@@ -66,16 +69,16 @@ public class ChainXController : MonoBehaviour
 			}
 
 			//マウスクリックの際の処理
-			if (Input.GetMouseButtonDown (Const.MOUSE_LEFT_CLICK)) {
+			if (Input.GetMouseButtonDown(Const.MOUSE_LEFT_CLICK)) {
 				if (Input.GetKey (KeyCode.LeftAlt)) {
 					//Do nothing for Orbit, Zoom, etc..
-				} else if (this.clickUI ()) {
-					this.cleanSelectedObjects (); //Voxelの選択解除
+				} else if (this.clickUI()) {
+					this.cleanSelectedObjects(); //Voxelの選択解除
 				} else if (this.paintTool.name == Const.UI_SELECTING_POINTER_NAME) {
 					this.clickVoxel(); //マウスクリックしてオブジェクトを選択する
 				} else {
 					//VoxelまたはVoxelsが選択中のとき
-					this.paintVoxels (); //VoxelまたはVoxelsをペイントする
+					this.paintVoxels(); //VoxelまたはVoxelsをペイントする
 				}
 			}
 
@@ -88,37 +91,20 @@ public class ChainXController : MonoBehaviour
 				else if (Input.GetKeyUp (KeyCode.DownArrow)) arrowV = new Vector3 (-1, 0, 0);
 				else if (Input.GetKeyUp (KeyCode.RightArrow)) arrowV = new Vector3 (0, 0, -1);
 				else if (Input.GetKeyUp (KeyCode.LeftArrow)) arrowV = new Vector3 (0, 0, 1);
-				else if (Input.GetKeyUp (KeyCode.U)) arrowV = new Vector3 (0, 1, 0);
-				else if (Input.GetKeyUp (KeyCode.D)) {
-					if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.LeftCommand) ||
-					    Input.GetKey (KeyCode.RightControl) || Input.GetKey (KeyCode.RightCommand)) {
-						arrowV = new Vector3 (0, -1, 0);
-					}
-				}
+				else if (Input.GetKeyUp (KeyCode.K)) arrowV = new Vector3 (0, 1, 0);
+				else if (Input.GetKeyUp (KeyCode.J)) { arrowV = new Vector3 (0, -1, 0); }
 
-				if (arrowV != Vector3.zero) {
-					/*
-					foreach (GameObject anObj in this.selectedObjects) {
-						Debug.Log (anObj.name);
-					}
-					*/
-					//Debug.Log("MOVE");
-					this.selectedObjects = Util.ArrangeGameObjects (this.selectedObjects, arrowV);
-
-					List<Operation> moveOps = this.model.CreateMoveOperations(this.selectedObjects, arrowV);
-					foreach (Operation moveOp in moveOps) {
-						this.ApplyChainVoxel (moveOp);
-					}
-				}
-				else {
-					if (Input.GetKeyDown (KeyCode.D)) {
+				if(arrowV == Vector3.zero){
+					if (Input.GetKeyUp(KeyCode.D)) {
 						//
 						// VoxelまたはGroupVoxelを削除する
 						//
-						Debug.Log("DELETE");
-						List<Operation> deleteOps = this.model.CreateDeleteOperation(this.selectedObjects);
-						foreach (Operation op in deleteOps) {
-							this.ApplyChainVoxel (op);
+						if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.LeftCommand) ||
+						    Input.GetKey (KeyCode.RightControl) || Input.GetKey (KeyCode.RightCommand)) {
+							List<Operation> deleteOps = this.model.CreateDeleteOperation (this.selectedObjects);
+							foreach (Operation op in deleteOps) {
+								this.ApplyChainVoxel (op);
+							}
 						}
 					}
 					else if (Input.GetKeyDown (KeyCode.G)) {
@@ -132,20 +118,36 @@ public class ChainXController : MonoBehaviour
 								//選択したオブジェクトが一つで、それがグループである場合、グループを解除
 								gid = this.selectedObjects [0].transform.root.name;
 								o = new Operation (this.socket.getID(), Operation.LEAVE_ALL, "{\"posIDs\": \"" +
-									this.model.getPosIDsFrom (this.selectedObjects) + "\", \"gid\": \"" + gid +
+									this.model.getPosIDsFromObj(this.selectedObjects[0]) + "\", \"gid\": \"" + gid +
 									"\"}");
-								this.ApplyChainVoxel (o);
+								this.ApplyChainVoxel(o);
 							} else { } //何もしない
 
 						} else {
 							gid = ChainXModel.CreateGID();
 							o = new Operation (this.socket.getID(), Operation.JOIN_ALL, "{\"posIDs\": \"" +
-								this.model.getPosIDsFrom (this.selectedObjects) + "\", \"gid\": \"" + gid +
+								this.model.getPosIDsFromObjects(this.selectedObjects) + "\", \"gid\": \"" + gid +
 							"\"}");
 							this.ApplyChainVoxel(o);
 						}
                     }
                 }
+
+				else  {
+					/*
+					foreach (GameObject anObj in this.selectedObjects) {
+						Debug.Log (anObj.name);
+					}
+					*/
+					//Debug.Log("MOVE");
+					this.selectedObjects = Util.ArrangeGameObjects (this.selectedObjects, arrowV);
+
+					List<Operation> moveOps = this.model.CreateMoveOperations(this.selectedObjects, arrowV);
+					foreach (Operation moveOp in moveOps) {
+						this.ApplyChainVoxel (moveOp);
+					}
+				}
+
 
             }
             if (o != null) {
@@ -221,13 +223,13 @@ public class ChainXController : MonoBehaviour
      * 「後ろ側から手前に」辿っていき、Voxelを挿入する。
      */
     private void paintVoxels() {
-		string paintToolName = this.model.getCurrentPaintTool ();
+		string paintToolName = this.model.getCurrentPaintTool();
 
+		List<Operation> ops = new List<Operation>();
         Ray ray = Camera.main.ScreenPointToRay (Input.mousePosition);
         RaycastHit hit = new RaycastHit ();
         if (Physics.Raycast (ray, out hit)) {
 
-			Operation o = null;
 			if (paintToolName.IndexOf(ChainXModel.PAINT_TOOL_VOXEL_ID) > -1) {
 				//
 				//単位Voxelをペイントする
@@ -235,10 +237,10 @@ public class ChainXController : MonoBehaviour
 	            float distance = hit.distance - 0.5f; //ヒットしたRayより少し手前のPointをたどる
 				Vector3 hitPointShort = ChainXModel.GetRoundIntPoint(ray.GetPoint(distance));
 	            int textureType = int.Parse(this.paintTool.GetComponent<Text>().text);
-				o = new Operation(this.socket.getID(), Operation.INSERT,
+				ops.Add(new Operation(this.socket.getID(), Operation.INSERT,
 					"{\"posID\": \"" + ChainXModel.CreatePosID(hitPointShort) +
 	                "\", \"textureType\":\"" + textureType + "\"}"
-	            );
+				));
 			}
 			else if (paintToolName.IndexOf (ChainXModel.PAINT_TOOL_GROUP_ID) > -1) {
 				//
@@ -287,20 +289,22 @@ public class ChainXController : MonoBehaviour
 				this.selectedObjects.Remove(groupObj);
 
 				string gid = ChainXModel.CreateGID ();
-				o = new Operation (this.socket.getID(), Operation.INSERT_ALL,
+				ops.Add(new Operation(this.socket.getID(), Operation.INSERT_ALL,
 					"{\"posIDs\": \"" + posIDs +
 					"\", \"gid\": \"" + gid +
-					"\", \"textureTypes\":\"" + textureTypes + "\"}");
+					"\", \"textureTypes\":\"" + textureTypes + "\"}")
+				);
+				ops.Add(new Operation(this.socket.getID(), Operation.JOIN_ALL,
+					"{\"posIDs\": \"" + posIDs +
+					"\", \"gid\": \"" + gid + "\"}")
+				);
 			}
 
-			/*
-			long ts = ops[0].getTimestamp ();
-			for(int i = 0; i < ops.Length; i++) {
+			long ts = ops[0].getTimestamp();
+			for(int i = 0; i < ops.Count; i++) {
 				ops[i].setTimestamp(ts + i); //できる限り1に近づけないと間に入り込まれる
-				operations.Add(ops[i]);
+				this.ApplyChainVoxel(ops[i]);
 			}
-			*/
-            this.ApplyChainVoxel(o);
             //Debug.DrawLine(ray.origin, hitPointShort, Color.red, 60.0f, true); //レーザービーム
         }
     }
@@ -388,6 +392,9 @@ public class ChainXController : MonoBehaviour
     }
 
 
+	/*
+	 * 左方向キー，右方向キー，下方向キーをタッチした時のペイントツールを表示する．
+	 */
     private void SetPaintToolObj(string paintToolStr)
     {
         GameObject aPaintToolObj = null;
@@ -397,6 +404,9 @@ public class ChainXController : MonoBehaviour
             this.paintTool = aPaintToolObj;
         }
         else if (paintToolStr.IndexOf(ChainXModel.PAINT_TOOL_VOXEL_ID) > -1) {
+			//
+			//単一Voxelをペイントツールに表示する
+			//
             //TODO(Tasuku): Texture作成の部分をメソッド化する!!!!
             int textureType = int.Parse(paintToolStr.Remove(0, ChainXModel.PAINT_TOOL_VOXEL_ID.Length));
             aPaintToolObj = GameObject.Find(Const.PAINT_TOOL_PATH + Const.UI_SELECTING_VOXEL_NAME);
@@ -409,6 +419,9 @@ public class ChainXController : MonoBehaviour
             this.paintTool = aPaintToolObj;
         }
         else if (paintToolStr.IndexOf(ChainXModel.PAINT_TOOL_GROUP_ID) > -1) {
+			//
+			//複数Voxelをペイントツールに表示する
+			//
             string gid = paintToolStr;
             aPaintToolObj = GameObject.Find(Const.PAINT_TOOL_PATH + gid);
 
@@ -421,6 +434,7 @@ public class ChainXController : MonoBehaviour
                     aPaintToolObj = Instantiate(aGroupObj) as GameObject;
                     aPaintToolObj.transform.SetParent(aParent.transform);
                     aPaintToolObj.name = gid;
+					Debug.Log("paint: " + aPaintToolObj);
 
 					float scale = this.model.GetScale(aPaintToolObj, this.model.VOXEL_PLATE_DIAMETER);
                     float y_margin = 0.5f;
@@ -534,8 +548,6 @@ public class ChainXController : MonoBehaviour
 						//Debug.Log ("insertedPosID:" + posID);
 						this.CreateVoxelFromPosID(aVoxel.getTextureType (), posID);
 					}
-
-
 					//Debug.Log(aVoxel.getObjPath()); // /Users/tasuku/Library/Application Support/supertask/ChainX/
 
 					//string[] filepaths = new string[]{ aVoxel.getObjPath(), aVoxel.getTexturePath()};
@@ -557,8 +569,6 @@ public class ChainXController : MonoBehaviour
 			cv.insertedPosIDs.Clear ();
 		}
 
-
-
         /*
          * For MOVE operations.
          */
@@ -577,6 +587,27 @@ public class ChainXController : MonoBehaviour
 			this.cv.movedPosIDs.Clear ();
 		}
 
+
+        /*
+         * For LEAVE ALL operations.
+         */
+		if (this.cv.leftGIDs.Count > 0) {
+			foreach (string gid in this.cv.leftGIDs) {
+				this.model.RemoveGroupFromUI (gid);
+				GameObject aParent = GameObject.Find (gid);
+				if (aParent != null) {
+					//Debug.Log("LEAVE");
+					if (aParent.transform.childCount > 0) {
+						this.RemoveFromSelectedObjects(aParent);
+					}
+					this.selectedObjects.Remove (aParent);
+					aParent.transform.DetachChildren ();
+					GameObject.DestroyImmediate(aParent);
+				}
+			}
+			cv.leftGIDs.Clear ();
+		}
+
         /*
          * For JOIN ALL operations.
          */
@@ -591,8 +622,8 @@ public class ChainXController : MonoBehaviour
 					if (aChild != null) {
 						//Debug.Log ("ここ:" + aChild.name);
 						//Polygonの場合、一つだけ挿入されそれ以外（NULL）は挿入されず、グループのみ追加される
-						aChild.transform.SetParent (aParent.transform);
-						this.RemoveFromSelectedObjects (aChild);
+						aChild.transform.SetParent(aParent.transform);
+						this.RemoveFromSelectedObjects(aChild);
 					}
 				}
 				//UIにこのグループオブジェクトを登録
@@ -603,22 +634,6 @@ public class ChainXController : MonoBehaviour
 			cv.joinedGIDs.Clear ();
 		}
 
-        /*
-         * For LEAVE ALL operations.
-         */
-		if (this.cv.leftGIDs.Count > 0) {
-			foreach (string gid in this.cv.leftGIDs) {
-				this.model.RemoveGroupFromUI (gid);
-				GameObject aParent = GameObject.Find (gid);
-				if (aParent != null) {
-					//if (this.selectedObjects.Contains (aParent)) { this.removedSelectedGIDs.Add(gid); }
-					this.selectedObjects.Remove (aParent);
-					aParent.transform.DetachChildren ();
-					GameObject.Destroy (aParent);
-				}
-			}
-			cv.leftGIDs.Clear ();
-		}
     }
 
     /*
@@ -653,8 +668,7 @@ public class ChainXController : MonoBehaviour
 
     public void SetUpGUICompornets() {
         lock(ChainXController.thisLock) {
-            GameObject anObject = GameObject.Find("DebugLog/Viewport/Content");
-            Text log = anObject.GetComponent<Text>();
+			Text log = this.debuggerObj.GetComponent<Text>();
             log.text = this.log; //this.showStructureTable();
         }
     }

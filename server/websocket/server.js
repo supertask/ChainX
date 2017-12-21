@@ -8,6 +8,7 @@ var server;
 
 var TMP_DIR = "data/";
 var SAVE_FILE = 'data/worked3D.txt';
+var BACKUP_FILE = 'data/worked3D_backup.txt';
 //var SAVE_FILE = 'data/workedEmpty.txt';
 //var OBJ_FILE = 'data/monkey.obj';
 //var IMG_FILE = 'data/monkey.jpg';
@@ -44,6 +45,8 @@ var Server = function()
 
     function _connect(socket) {
         console.log('connected!');
+        //fs.createReadStream(SAVE_FILE).pipe(fs.createWriteStream(BACKUP_FILE));
+
         server.sendFile(socket, SAVE_FILE);
         _joinNewClient(socket);
 

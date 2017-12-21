@@ -147,7 +147,7 @@ public class ChainVoxel {
 			}
 			this.controller.log = this.getStatusString ();
 		}
-		this.show();
+		//this.show();
 		//this.stt.show();
 
 
@@ -206,8 +206,9 @@ public class ChainVoxel {
 		// step2: insertVoxelを挿入する
 		voxelList.Add(insertVoxel);
 		voxelList.Sort(Voxel.Compare);
-		//Hereバグ: ここが原因！！！
-		if (this.getVoxel(posID) != null) {
+
+		Voxel aVoxel = this.getVoxel (posID);
+		if (aVoxel != null) {
 			if (  !(op.getOpType() == Operation.MOVE_ALL ||
 					op.getOpType() == Operation.MOVE_POLYGON ||
 					op.getOpType() == Operation.MOVE)) {
@@ -486,7 +487,7 @@ public class ChainVoxel {
 		bool isJoined = this.stt.joinAll(timestamp, posIDs, gid);
 		if (!isJoined) { return false; }
 		if (op.getOpType() != Operation.MOVE_ALL && op.getOpType() != Operation.MOVE_POLYGON) {
-			Debug.Log ("gid: " + gid);
+			//Debug.Log ("gid: " + gid);
 			this.joinedGIDs.Add(gid);//最新のタイムスタンプのグループをとる
 		}
 		return true;
@@ -747,19 +748,22 @@ public class ChainVoxel {
 				foreach (KeyValuePair<string, HashSet<string>> p in this.stt.getGroupMembersTable()) {
 					string gid = p.Key;
 					HashSet<string> posIDs = p.Value;
-					string line = String.Format("g {0}", gid);
-					writer.WriteLine(line);
-					foreach (string posID in posIDs) {
-						Voxel aVoxel = this.getVoxel(posID);
-						//Debug.Log("timestamp1: " + aVoxel.getTimestamp());
-						//Debug.Log("posID1: " + posID);
 
-						line = String.Format("v {0} {1}", aVoxel.getTextureType(), posID);
+					if (posIDs.Count > 0) {
+						string line = String.Format("g {0}", gid);
 						writer.WriteLine(line);
-						saved_posIDs.Add(posID);
+						foreach (string posID in posIDs) {
+							Voxel aVoxel = this.getVoxel(posID);
+							//Debug.Log("timestamp1: " + aVoxel.getTimestamp());
+							//Debug.Log("posID1: " + posID);
+
+							line = String.Format("v {0} {1}", aVoxel.getTextureType(), posID);
+							writer.WriteLine(line);
+							saved_posIDs.Add(posID);
+						}
+						writer.WriteLine("e");
+						writer.Flush();
 					}
-					writer.WriteLine("e");
-					writer.Flush();
 				}
 
 				foreach (KeyValuePair<string, List<Voxel>> p in this.atoms) {
@@ -790,7 +794,4 @@ public class ChainVoxel {
 	public byte[] GetBinaryFromFile(string filepath) {
 		return File.ReadAllBytes (filepath);	
 	}
-
-
-
 }

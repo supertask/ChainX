@@ -6,7 +6,8 @@ SRC_DIR = "recorded_operations/"
 DEST_DIR = "modified_recorded_operations/"
 SPLIT_CHAR = '#'
 MSG_SPLIT_CHAR = '@'
-UNIT = 100 #100ナノ秒単位 -> 1ナノ秒単位で扱う
+#UNIT = 100 #100ナノ秒単位 -> 1ナノ秒単位で扱う
+UNIT = 1 #100ナノ秒単位 -> 100ナノ秒単位で扱う
 
 for filename in os.listdir(SRC_DIR):
     if filename == ".DS_Store":

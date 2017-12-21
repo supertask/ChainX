@@ -442,7 +442,7 @@ public class VSite extends Thread
                     //System.out.println(this.id + ": execTime = " + this.getSecondTime(execTime));
                     //ここでレコードされた操作を実行し，送信！
                     opLine = this.replaceSIDandTS(opLine, this.id, Util.currentTime100Nanos());
-                    System.out.println(opLine);
+                    //System.out.println(opLine);
                     this.broadcast(opLine);
                     this.increaseNumberOfSteps();
                     this.increaseNumberOfMessages(this.siteIDs.size() - 1);

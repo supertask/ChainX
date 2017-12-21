@@ -110,7 +110,7 @@ public class StructureTable {
 	public bool joinAll(long ts, string[] posIDs, string gid) {
 		foreach (string posID in posIDs) {
 			bool isJoined = this.join(ts, posID, gid);
-			Debug.Log (isJoined);
+			//Debug.Log (isJoined);
 			if (!isJoined) {return false; }
 		}
 		return true;

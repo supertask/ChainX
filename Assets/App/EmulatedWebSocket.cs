@@ -102,7 +102,7 @@ public class EmulatedWebSocket
 							"\", \"gid\": \"" + ChainXModel.CreateGID() +
 							"\", \"objPath\":\"" + filepaths[0] + "\"}");
 						//Debug.Log(Operation.ToJson(op));
-						this.controller.cv.apply (op);
+						this.controller.cv.apply(op);
 
 						filepaths = new string[]{"", ""}; //Clear for the next 3d objs 
 					}

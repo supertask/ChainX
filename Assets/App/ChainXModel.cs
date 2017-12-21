@@ -270,7 +270,15 @@ public class ChainXModel
 
     public static string CreatePosID(Vector3 pos) { return pos.x + ":" + pos.y + ":" + pos.z; }
 
-	public string getPosIDsFrom(List<GameObject> selectedObjects) {
+	public string getPosIDsFromObj(GameObject anObj) {
+		string res = "";
+		foreach (Transform child in anObj.transform) {
+			res += child.name + Const.SPLIT_CHAR;
+		}
+		return res.TrimEnd(Const.SPLIT_CHAR);
+	}
+
+	public string getPosIDsFromObjects(List<GameObject> selectedObjects) {
         string res = "";
         foreach (GameObject anObj in selectedObjects) {
 			res += anObj.name + Const.SPLIT_CHAR;

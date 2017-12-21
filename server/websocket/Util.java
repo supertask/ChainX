@@ -5,8 +5,8 @@ public class Util
 {
     public static long currentTime100Nanos() {
         long currentTimeMillis = new Date(System.currentTimeMillis()).getTime(); //milliseconds(10^-3)
-        long nano100T = (System.nanoTime()/100);
-        return (currentTimeMillis * 10000) + (nano100T % 10000) + 621355968000000000L;
+        long nano100T = (System.nanoTime()/100L);
+        return (currentTimeMillis * 10000L) + (nano100T % 10000) + 621355968000000000L;
     }
 
     public static void test() {
