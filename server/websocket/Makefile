@@ -7,7 +7,9 @@ MODULES=\
 all:
 	python modifier.py
 	javac -cp ${MODULES} ${SRC}
-test: all
-	java -cp ${MODULES} ${TARGET}
+raft: all
+	java -cp ${MODULES} ${TARGET} RAFT
+voxel: all
+	java -cp ${MODULES} ${TARGET} CHAINVOXEL
 clean:
 	rm *.class

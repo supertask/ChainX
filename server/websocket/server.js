@@ -42,10 +42,10 @@ var nodeIDs = [];
 var Server = function()
 {
     var PORT_NUMBER = 18080;
+    fs.createReadStream(SAVE_FILE).pipe(fs.createWriteStream(BACKUP_FILE));
 
     function _connect(socket) {
         console.log('connected!');
-        //fs.createReadStream(SAVE_FILE).pipe(fs.createWriteStream(BACKUP_FILE));
 
         server.sendFile(socket, SAVE_FILE);
         _joinNewClient(socket);

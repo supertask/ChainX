@@ -24,7 +24,7 @@ public class Const {
 	public static int UI_LAYER = 8;
 	public static Regex REGEX_POSID = new Regex(@"[-]?[\d]+:[-]?[\d]+:[-]?[\d]+");
 	public static Regex REGEX_GROUP = new Regex(@"group.+");
-	public static int NUMBER_OF_TEXTURE = 8;
+	public static int NUMBER_OF_TEXTURE = 9;
 	public static Vector3 PAINT_TOOL_PLATE_POSITION = Camera.main.ScreenToWorldPoint (new Vector3(-5,-30,5));
 
 	public static string TEST_OBJ_PATH = Application.dataPath + "/App/ChainVoxelModule/TestObjects/";

@@ -40,11 +40,7 @@ public class VSite extends Thread
     //双方向
     public static final String OPERATION_HEADER = "OPERATION" + MSG_SPLIT_CHAR;
 
-    public static byte CHAIN_VOXEL = 0;
-    public static byte RAFT = 1;
-    public static byte TWO_PHASE_COMMIT = 2;
-    //public static byte algorithm = VSite.RAFT;
-    public static byte algorithm = VSite.CHAIN_VOXEL;
+    public static String algorithm;
 
     private int leaderID = -1;
     private int id = -1;
@@ -65,7 +61,7 @@ public class VSite extends Thread
      * ネットワーク層とアプリケーション層の２つの共有変数
      */
     private MessageQueue messageQueue = new MessageQueue();
-    //private static WaitingTimer waitingTimer = new WaitingTimer(); //スレッド同士の共有資源
+    public static WaitingTimer waitingTimer; //外部から設定, スレッド同士の共有資源
 
     private BufferedReader reader;
 
@@ -270,7 +266,6 @@ public class VSite extends Thread
      * <br>
      * シミュレーション実行中のメッセージ総数は，「Leaderのメッセージ総数」で求めることができる (id=0のsite)．
      */
-     /*
     public void runRaft()
     {
         //
@@ -325,39 +320,43 @@ public class VSite extends Thread
         long startSystemTime = Util.currentTime100Nanos(); //System.nanoTime();
         long exCurrentVirtualTime = 0L;
         long execTime = opDiffTime;
+        List<Long> waitedTimes = new ArrayList<Long>();
+        long totalWaitedTime = 0L;
+        waitedTimes.add(0L);
         while(true) {
             if (recordLine == null) { break; }
             long currentSystemTime = Util.currentTime100Nanos(); //System.nanoTime();
             long currentVirtualTime = currentSystemTime - startSystemTime;
             long diffTime = currentVirtualTime - exCurrentVirtualTime;
 
-            if (exCurrentVirtualTime <= execTime) {
-                while(execTime <= currentVirtualTime) {
-                    // step0: 操作をLeaderに送信する
-                    //（レコードされた操作を実行し，送信！）
-                    //System.out.println(this.id + ": currentVirtualTime = " + this.getSecondTime(currentVirtualTime));
-                    //System.out.println(this.id + ": execTime = " + this.getSecondTime(execTime));
-                    opLine = this.replaceSIDandTS(opLine, this.id, execTime);
-                    //System.out.println(opLine);
-                    //waiting開始
-                    String key = "";
-                    key = VSite.waitingTimer.startWaitingTime(this.id, execTime, execTime); //タグ付け引数
-                    if (this.id == this.leaderID) {
-                        this.sendInLocal(opLine);
-                    }
-                    else {
-                        this.send(this.leaderID, opLine);
-                    }
-                    System.out.println("StartWait! " + key);
-                    this.increaseNumberOfSteps();
-                    this.increaseNumberOfMessages(this.siteIDs.size() - 1);
+            while(execTime <= currentVirtualTime) {
+                if (waitedTimes.isEmpty()) { break; }
+                execTime += Util.sumFrom(waitedTimes);
+                waitedTimes.clear();
 
-                    recordLine = this.nextRecord();
-                    if (recordLine == null) { break; }
-                    opDiffTime = Long.parseLong(recordLine[0]);
-                    opLine = recordLine[1];
-                    execTime += opDiffTime;
+                // step0: 操作をLeaderに送信する
+                //（レコードされた操作を実行し，送信！）
+                //System.out.println(this.id + ": currentVirtualTime = " + this.getSecondTime(currentVirtualTime));
+                //System.out.println(this.id + ": execTime = " + this.getSecondTime(execTime));
+                long ts = Util.currentTime100Nanos();
+                opLine = this.replaceSIDandTS(opLine, this.id, ts);
+                System.out.println(opLine);
+                String key = VSite.waitingTimer.startWaitingTime(this.id, ts, ts); //タグ付け引数
+                System.out.println("StartWait! " + key);
+                if (this.id == this.leaderID) {
+                    this.sendInLocal(opLine);
                 }
+                else {
+                    this.send(this.leaderID, opLine);
+                }
+                this.increaseNumberOfSteps();
+                this.increaseNumberOfMessages(this.siteIDs.size() - 1);
+
+                recordLine = this.nextRecord();
+                if (recordLine == null) { break; }
+                opDiffTime = Long.parseLong(recordLine[0]); //操作前後の差分の時間（ユーザのPause時間）
+                opLine = recordLine[1]; 
+                execTime += opDiffTime;
             }
             
             // メッセージ受信
@@ -366,16 +365,10 @@ public class VSite extends Thread
                 String opMsg = this.waitOperation(VSite.OPERATION_HEADER);
                 if (opMsg != "") {
                     // step1: 送信された操作を受け取る
-                    //waiting終了
-                    //msgからtsとsidを取り出す
-                    String[] res = getSIDandTS(opMsg);
-                    int sid = Integer.parseInt(res[0]);
-                    long ts = Long.parseLong(res[1]);
-                    long waitedTime = VSite.waitingTimer.endWaitingTime(sid, ts, currentVirtualTime);
-                    System.out.println("EndWait! key="+ WaitingTimer.getOpStr(sid,ts) + ": waitedTime=" + waitedTime);
-                    if (waitedTime == -1) {
-                        VSite.waitingTimer.show();
-                    }
+                    //waiting終了，自分の操作が自分に返ってくるまでの時間
+                    long waitedTime = this.showWaitingTime(opMsg);
+                    waitedTimes.add(waitedTime);
+                    totalWaitedTime += waitedTime;
 
                     //execTime += waitedTime;
                     this.increaseNumberOfSteps();
@@ -392,27 +385,22 @@ public class VSite extends Thread
                 //リーダーから他のユーザの操作を受け取る
                 String opMsg = this.waitOperation(VSite.OPERATION_HEADER);
                 if (opMsg != "") {
-                    //waiting終了
-                    String[] res = getSIDandTS(opMsg);
-                    int sid = Integer.parseInt(res[0]);
-                    long ts = Long.parseLong(res[1]);
-                    long waitedTime = VSite.waitingTimer.endWaitingTime(sid, ts, currentVirtualTime);
-                    System.out.println("EndWait! key="+ WaitingTimer.getOpStr(sid,ts) + ": waitedTime=" + waitedTime);
-                    if (waitedTime == -1) {
-                        VSite.waitingTimer.show();
-                    }
+                    //waiting終了，自分の操作が自分に返ってくるまでの時間
+                    long waitedTime = this.showWaitingTime(opMsg);
+                    waitedTimes.add(waitedTime);
+                    totalWaitedTime += waitedTime;
 
                     this.increaseNumberOfSteps();
                     this.increaseNumberOfMessages();
                 }
             }
-
             exCurrentVirtualTime = currentVirtualTime;
             try { Thread.sleep(10); } //10ミリ秒
             catch (InterruptedException e) { e.printStackTrace(); }
         }
+
+        System.out.println("site id:" + this.id + ", totalWaitedTime:" + totalWaitedTime);
     }
-    */
 
 
     /**
@@ -430,29 +418,30 @@ public class VSite extends Thread
         long startSystemTime = Util.currentTime100Nanos(); //System.nanoTime();
         long exCurrentVirtualTime = 0L;
         long execTime = opDiffTime;
+        //currentVirtualTimeは0から始まる
         while(true) {
             if (recordLine == null) { break; }
             long currentSystemTime = Util.currentTime100Nanos(); //System.nanoTime();
             long currentVirtualTime = currentSystemTime - startSystemTime;
             long diffTime = currentVirtualTime - exCurrentVirtualTime;
 
-            if (exCurrentVirtualTime <= execTime) {
-                while(execTime <= currentVirtualTime) {
-                    //System.out.println(this.id + ": currentVirtualTime = " + this.getSecondTime(currentVirtualTime));
-                    //System.out.println(this.id + ": execTime = " + this.getSecondTime(execTime));
-                    //ここでレコードされた操作を実行し，送信！
-                    opLine = this.replaceSIDandTS(opLine, this.id, Util.currentTime100Nanos());
-                    //System.out.println(opLine);
-                    this.broadcast(opLine);
-                    this.increaseNumberOfSteps();
-                    this.increaseNumberOfMessages(this.siteIDs.size() - 1);
+            while(execTime <= currentVirtualTime) {
+                //System.out.println(this.id + ": currentVirtualTime = " + this.getSecondTime(currentVirtualTime));
+                //System.out.println(this.id + ": execTime = " + this.getSecondTime(execTime));
+                //ここでレコードされた操作を実行し，送信！
+                long ts = Util.currentTime100Nanos();
+                opLine = this.replaceSIDandTS(opLine, this.id, ts);
+                //System.out.println(opLine);
 
-                    recordLine = this.nextRecord();
-                    if (recordLine == null) { break; }
-                    opDiffTime = Long.parseLong(recordLine[0]);
-                    opLine = recordLine[1];
-                    execTime += opDiffTime;
-                }
+                this.broadcast(opLine);
+                this.increaseNumberOfSteps();
+                this.increaseNumberOfMessages(this.siteIDs.size() - 1);
+
+                recordLine = this.nextRecord();
+                if (recordLine == null) { break; }
+                opDiffTime = Long.parseLong(recordLine[0]); //操作前後の差分の時間（ユーザのPause時間）
+                opLine = recordLine[1];
+                execTime += opDiffTime;
             }
             
             exCurrentVirtualTime = currentVirtualTime;
@@ -462,8 +451,20 @@ public class VSite extends Thread
         return;
     }
 
-
-
+    private long showWaitingTime(String opMsg) {
+        String[] res = getSIDandTS(opMsg);
+        int sid = Integer.parseInt(res[0]);
+        long ts = Long.parseLong(res[1]);
+        long current_ts = Util.currentTime100Nanos();
+        long waitedTime = VSite.waitingTimer.endWaitingTime(sid, ts, current_ts);
+        if (waitedTime > 0 && sid == this.id) {
+            //自分自身が送信したメッセージが帰ってきたら
+            //本来はtsがちゃんと設定されるべきだが自作tsなのでマイナスが出たりする．
+            System.out.println("EndWait! key="+ WaitingTimer.getOpStr(sid,ts) + ": waitedTime=" + waitedTime);
+            return waitedTime;
+        }
+        else { return 0L; }
+    }
 
     /*
      * UnityのUpdate関数を再現したもの
@@ -474,11 +475,11 @@ public class VSite extends Thread
      * 
      */
     public void run() {
-        if (this.algorithm == VSite.CHAIN_VOXEL) {
-            this.runChainVoxel();
+        if (this.algorithm.equals("RAFT")) {
+            this.runRaft();
         }
-        else if (this.algorithm == VSite.RAFT) {
-            //this.runRaft();
+        else if (this.algorithm.equals("CHAINVOXEL")) {
+            this.runChainVoxel();
         }
     }
 
@@ -501,20 +502,22 @@ public class VSite extends Thread
     {
         File[] recordedFiles = new File("./modified_recorded_operations/").listFiles();
         List<File> opFiles = new ArrayList<File>();
-        int x = 0; //ファイル名は1オリジン
+        int x = 0; //ファイル名は0オリジン
         for(File aFile: recordedFiles) {
             if (aFile.getName().equals(x + ".txt")) { opFiles.add(aFile); }
             x++;
         }
-        //System.out.println(opFiles.size());
 
-        int numOfSites = 1;
+        int numOfSites = 2;
         if (opFiles.size() < numOfSites) {
             System.err.println("エラー: レコード数が足りません!");
             System.exit(1);
         }
         Session[] sessions = new Session[numOfSites];
         VSite[] sites = new VSite[numOfSites];
+        VSite.algorithm = args[0];
+        VSite.waitingTimer = new WaitingTimer();
+
         for(int i = 0; i < numOfSites; i++) {
             WebSocketContainer container = ContainerProvider.getWebSocketContainer();
             File aFile = opFiles.get(i);

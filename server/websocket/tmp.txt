@@ -1,48 +1,8 @@
-[ローカル送信(4 to 4)]: OPERATION@{"sid":"4","ts":"0","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"-2:6:1,-2:5:1,-2:4:1","transMatrix":"1:0:0"}}
-EndWait! sid=4, ts=0: waitedTime=600
-Broadcast from 4 to 5 .
-[送信(4 to 5)]: OPERATION@{"sid":"4","ts":"0","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"-2:6:1,-2:5:1,-2:4:1","transMatrix":"1:0:0"}}@5
-[受信(on 5)]:OPERATION@{"sid":"4","ts":"0","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"-2:6:1,-2:5:1,-2:4:1","transMatrix":"1:0:0"}}
-Join!: 5
-StartWait! sid=5, ts=0
-[送信(5 to 4)]: OPERATION@{"sid":"5","ts":"0","opType":"5","opParams":{"posID":"-2:2:-1","transMatrix":"-1:0:0"}}@4
-EndWait! sid = 4, ts = 0: waitedTime = -1
-sid5ts0
-[受信(on 4)]:OPERATION@{"sid":"5","ts":"0","opType":"5","opParams":{"posID":"-2:2:-1","transMatrix":"-1:0:0"}}
-EndWait! sid=5, ts=0: waitedTime=15128383
-Broadcast from 4 to 5 .
-[送信(4 to 5)]: OPERATION@{"sid":"5","ts":"0","opType":"5","opParams":{"posID":"-2:2:-1","transMatrix":"-1:0:0"}}@5
-[受信(on 5)]:OPERATION@{"sid":"5","ts":"0","opType":"5","opParams":{"posID":"-2:2:-1","transMatrix":"-1:0:0"}}
-StartWait! sid=5, ts=114000
-[送信(5 to 4)]: OPERATION@{"sid":"5","ts":"114000","opType":"5","opParams":{"posID":"-1:2:-1","transMatrix":"-1:0:0"}}@4
-StartWait! sid=5, ts=178000
-[送信(5 to 4)]: OPERATION@{"sid":"5","ts":"178000","opType":"5","opParams":{"posID":"0:2:-1","transMatrix":"-1:0:0"}}@4
-EndWait! sid = 5, ts = 0: waitedTime = -1
-sid5ts114000
-sid5ts178000
-[受信(on 4)]:OPERATION@{"sid":"5","ts":"114000","opType":"5","opParams":{"posID":"-1:2:-1","transMatrix":"-1:0:0"}}
-[受信(on 4)]:OPERATION@{"sid":"5","ts":"178000","opType":"5","opParams":{"posID":"0:2:-1","transMatrix":"-1:0:0"}}
-EndWait! sid=5, ts=114000: waitedTime=28717565
-sid5ts178000
-Broadcast from 4 to 5 .
-[送信(4 to 5)]: OPERATION@{"sid":"5","ts":"114000","opType":"5","opParams":{"posID":"-1:2:-1","transMatrix":"-1:0:0"}}@5
-[受信(on 5)]:OPERATION@{"sid":"5","ts":"114000","opType":"5","opParams":{"posID":"-1:2:-1","transMatrix":"-1:0:0"}}
-EndWait! sid=5, ts=178000: waitedTime=41687503
-Broadcast from 4 to 5 .
-[送信(4 to 5)]: OPERATION@{"sid":"5","ts":"178000","opType":"5","opParams":{"posID":"0:2:-1","transMatrix":"-1:0:0"}}@5
-[受信(on 5)]:OPERATION@{"sid":"5","ts":"178000","opType":"5","opParams":{"posID":"0:2:-1","transMatrix":"-1:0:0"}}
-StartWait! sid=4, ts=76032000
-[ローカル送信(4 to 4)]: OPERATION@{"sid":"4","ts":"76032000","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"-1:6:1,-1:5:1,-1:4:1","transMatrix":"1:0:0"}}
-EndWait! sid=4, ts=76032000: waitedTime=11914273
-Broadcast from 4 to 5 .
-[送信(4 to 5)]: OPERATION@{"sid":"4","ts":"76032000","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"-1:6:1,-1:5:1,-1:4:1","transMatrix":"1:0:0"}}@5
-[受信(on 5)]:OPERATION@{"sid":"4","ts":"76032000","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"-1:6:1,-1:5:1,-1:4:1","transMatrix":"1:0:0"}}
-StartWait! sid=4, ts=391407000
-[ローカル送信(4 to 4)]: OPERATION@{"sid":"4","ts":"391407000","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"0:6:1,0:5:1,0:4:1","transMatrix":"-1:0:0"}}
-EndWait! sid=4, ts=391407000: waitedTime=4514405
-Broadcast from 4 to 5 .
-[送信(4 to 5)]: OPERATION@{"sid":"4","ts":"391407000","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"0:6:1,0:5:1,0:4:1","transMatrix":"-1:0:0"}}@5
-[受信(on 5)]:OPERATION@{"sid":"4","ts":"391407000","opType":"10","opParams":{"gid":"group58295829gehioghew2","posIDs":"0:6:1,0:5:1,0:4:1","transMatrix":"-1:0:0"}}
-[送信(4 to -1)]: EXIT@4@-1
-[送信(5 to -1)]: EXIT@5@-1
-
+OPERATION@{"sid":"2","ts":"636495629465147123","opType":"0","opParams":{"posID":"4:0:4","textureType":"1"}}
+OPERATION@{"sid":"3","ts":"636495629465219645","opType":"0","opParams":{"posID":"-6:0:12","textureType":"8"}}
+OPERATION@{"sid":"3","ts":"636495629465219645","opType":"0","opParams":{"posID":"-6:0:12","textureType":"8"}}
+OPERATION@{"sid":"2","ts":"636495629479645847","opType":"0","opParams":{"posID":"3:0:4","textureType":"1"}}
+OPERATION@{"sid":"3","ts":"636495629483596897","opType":"0","opParams":{"posID":"-2:0:13","textureType":"8"}}
+OPERATION@{"sid":"3","ts":"636495629483596897","opType":"0","opParams":{"posID":"-2:0:13","textureType":"8"}}
+OPERATION@{"sid":"2","ts":"636495629487029566","opType":"0","opParams":{"posID":"2:0:4","textureType":"1"}}
+OPERATION@{"sid":"3","ts":"636495629530361192","opType":"5","opParams":{"posID":"-2:0:13","transMatrix":"-1:0:0"}}
