@@ -18,6 +18,12 @@ public class Util
         }
         return sumV;
     }
+    /*
+     * 100ナノ秒から秒単位へ単位変換する．
+     */
+    public static double convert100NanoSecToSec(long nano100) {
+         return nano100 / 1000.0d / 10000.0d; //10^7で割る
+    }
 
     public static long currentTime100Nanos() {
         long currentTimeMillis = new Date(System.currentTimeMillis()).getTime(); //milliseconds(10^-3)

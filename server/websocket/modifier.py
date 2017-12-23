@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
+
+import sys
 import os
 import json
 SRC_DIR = "recorded_operations/"
@@ -8,6 +10,19 @@ SPLIT_CHAR = '#'
 MSG_SPLIT_CHAR = '@'
 #UNIT = 100 #100ナノ秒単位 -> 1ナノ秒単位で扱う
 UNIT = 1 #100ナノ秒単位 -> 100ナノ秒単位で扱う
+
+if len(sys.argv) >= 3:
+    # 操作数とステップ数，メッセージ数の計測時
+    IS_FAST = (sys.argv[1] == "fast")
+    NUM_OF_OPERATION = int(sys.argv[2])
+elif len(sys.argv) == 2:
+    # サイト数とステップ数，メッセージ数の計測時
+    IS_FAST = (sys.argv[1] == "fast")
+    NUM_OF_OPERATION = -1 #無限
+else:
+    IS_FAST = False
+    NUM_OF_OPERATION = -1 #無限
+
 
 for filename in os.listdir(SRC_DIR):
     if filename == ".DS_Store":
@@ -18,7 +33,10 @@ for filename in os.listdir(SRC_DIR):
     currentTs = 0
     exCurrentTs = 0
     firstOperation = True
+    line_i = 1
     for line in rf:
+        if NUM_OF_OPERATION > 0 and line_i > NUM_OF_OPERATION:
+            break
         line = line.replace('\n', '')
         if line == '':
             continue
@@ -32,9 +50,15 @@ for filename in os.listdir(SRC_DIR):
                 diffTs = 0
                 firstOperation = False
             #print op_dict['sid']
-            wf.write("%s%s%s\n" % (diffTs * UNIT, SPLIT_CHAR, line))
+            if IS_FAST:
+                #計測時
+                wf.write("%s%s%s\n" % (100, SPLIT_CHAR, line))
+            else:
+                #通常はこっち
+                wf.write("%s%s%s\n" % (diffTs * UNIT, SPLIT_CHAR, line))
             exCurrentTs = currentTs
         elif op_name == "START":
             pass
+        line_i += 1
 
     rf.close()

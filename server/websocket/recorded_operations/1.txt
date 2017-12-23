@@ -47,4 +47,3 @@ OPERATION@{"sid":"1","ts":"636495538661717510","opType":"0","opParams":{"posID":
 OPERATION@{"sid":"1","ts":"636495538669401440","opType":"0","opParams":{"posID":"-7:7:12","textureType":"8"}}
 OPERATION@{"sid":"1","ts":"636495538701390950","opType":"0","opParams":{"posID":"-2:7:12","textureType":"8"}}
 OPERATION@{"sid":"1","ts":"636495538766236070","opType":"0","opParams":{"posID":"-1:7:12","textureType":"8"}}
-

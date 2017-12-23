@@ -370,7 +370,6 @@ public class VSite extends Thread
                     waitedTimes.add(waitedTime);
                     totalWaitedTime += waitedTime;
 
-                    //execTime += waitedTime;
                     this.increaseNumberOfSteps();
                     this.increaseNumberOfMessages();
 
@@ -399,7 +398,9 @@ public class VSite extends Thread
             catch (InterruptedException e) { e.printStackTrace(); }
         }
 
-        System.out.println("site id:" + this.id + ", totalWaitedTime:" + totalWaitedTime);
+        System.out.println("site id:" + this.id +
+            ", totalWaitedTime:" + totalWaitedTime  + "nano100sec, totalWaitedTime:" +
+            Util.convert100NanoSecToSec(totalWaitedTime) + "sec.");
     }
 
 
@@ -460,7 +461,9 @@ public class VSite extends Thread
         if (waitedTime > 0 && sid == this.id) {
             //自分自身が送信したメッセージが帰ってきたら
             //本来はtsがちゃんと設定されるべきだが自作tsなのでマイナスが出たりする．
-            System.out.println("EndWait! key="+ WaitingTimer.getOpStr(sid,ts) + ": waitedTime=" + waitedTime);
+            System.out.println("EndWait! key="+ WaitingTimer.getOpStr(sid,ts) +
+                ", waitedTime=" + waitedTime + "nano100sec, waitedTime="
+                + Util.convert100NanoSecToSec(waitedTime) + "sec. ");
             return waitedTime;
         }
         else { return 0L; }
