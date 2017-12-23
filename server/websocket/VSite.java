@@ -69,6 +69,10 @@ public class VSite extends Thread
         this.reader = reader;
     }
 
+    public int getLeaderID() { return this.leaderID; }
+    public int getID() { return this.id; }
+    public int getNumberOfSteps() { return this.numberOfSteps; }
+    public int getNumberOfMessages() { return this.numberOfMessages; }
 
     // ネットワーク側（メッセージ受信）
     //----------------------------------------
@@ -503,6 +507,11 @@ public class VSite extends Thread
 
     public static void main(String[] args) throws Exception
     {
+        if (args.length < 2) {
+            System.err.println("エラー: 引数が足りません!");
+            System.exit(1);
+        }
+
         File[] recordedFiles = new File("./modified_recorded_operations/").listFiles();
         List<File> opFiles = new ArrayList<File>();
         int x = 0; //ファイル名は0オリジン
@@ -511,14 +520,18 @@ public class VSite extends Thread
             x++;
         }
 
-        int numOfSites = 2;
+        //引数2つが通常(site数ベース)，3つ目はadditional(操作数ベース)
+        VSite.algorithm = args[0];
+        int numOfSites = Integer.parseInt(args[1]);
+        int numOfOperations = -1;
+        if (args.length == 3) { numOfOperations = Integer.parseInt(args[2]); }
+
         if (opFiles.size() < numOfSites) {
             System.err.println("エラー: レコード数が足りません!");
             System.exit(1);
         }
         Session[] sessions = new Session[numOfSites];
         VSite[] sites = new VSite[numOfSites];
-        VSite.algorithm = args[0];
         VSite.waitingTimer = new WaitingTimer();
 
         for(int i = 0; i < numOfSites; i++) {
@@ -534,7 +547,7 @@ public class VSite extends Thread
             sessions[i] = container.connectToServer(sites[i], URI.create("ws://localhost:18080"));
             //System.out.println(sites[i].id);
         }
-        Thread.sleep(3000); 
+        Thread.sleep(2000); 
 
         for(VSite aSite : sites) {
             aSite.start();
@@ -542,26 +555,6 @@ public class VSite extends Thread
         for(VSite aSite : sites) {
             aSite.join();
         }
-
-        /*
-        //性能評価結果
-        if (VSite.algorithm == VSite.CHAIN_VOXEL) {
-            System.out.println(
-                this.numberOfOperations * this.numberOfSites + " " + 
-                sites.get(0).getNumberOfSteps() + " " + 
-                sites.get(0).getNumberOfMessages() * this.numberOfSites
-            );
-        }
-        else if (VSite.algorithm == VSite.RAFT) {
-            System.out.println(
-                this.numberOfOperations * this.numberOfSites + " " +
-                sites.get(0).getNumberOfSteps() + " " +
-                sites.get(0).getNumberOfMessages()
-            );
-        }
-        */
-
-
         for(int i = 0; i < numOfSites; i++) {
             if (sessions[i].isOpen()) {
                 sites[i].closeBefore();
@@ -569,13 +562,89 @@ public class VSite extends Thread
             }
         }
 
-        /*
-        String msg = "OPERATION@{'sid': '0','ts':'525225252'}";
-        //session.getBasicRemote().sendText(msg);
-        session.getBasicRemote().sendBinary(
-            ByteBuffer.wrap(msg.getBytes(Charset.forName("UTF-8") ))
-        );
-        */
+        //性能評価
+        String EVALUATED_DATA_DIR = "evaluated_data/";
+        String filename_messages = "";
+        String filename_steps = "";
+        if (VSite.algorithm.equals("CHAINVOXEL")) {
+            //サイト数ベースの時
+            if (numOfOperations == -1) {
+                // 評価3. サイト数 vs ステップ数
+                filename_steps = EVALUATED_DATA_DIR + "chainvoxel_sites_vs_steps.txt";
+                // 評価4. サイト数 vs メッセージ数
+                filename_messages = EVALUATED_DATA_DIR + "chainvoxel_sites_vs_messages.txt";
+            }
+            //操作数ベースの時
+            else {
+                // 評価1. 操作数 vs ステップ数
+                filename_steps = EVALUATED_DATA_DIR + "chainvoxel_operations_vs_steps.txt";
+                // 評価2. 操作数 vs メッセージ数
+                filename_messages = EVALUATED_DATA_DIR + "chainvoxel_operations_vs_messages.txt";
+            }
+        }
+        else if (VSite.algorithm.equals("RAFT")) {
+            if (numOfOperations == -1) {
+                // 評価3. サイト数 vs ステップ数
+                filename_steps = EVALUATED_DATA_DIR + "raft_sites_vs_steps.txt";
+                // 評価4. サイト数 vs メッセージ数
+                filename_messages = EVALUATED_DATA_DIR + "raft_sites_vs_messages.txt";
+            }
+            else {
+                // 評価1. 操作数 vs ステップ数
+                filename_steps = EVALUATED_DATA_DIR + "raft_operations_vs_steps.txt";
+                // 評価2. 操作数 vs メッセージ数
+                filename_messages = EVALUATED_DATA_DIR + "raft_operations_vs_messages.txt";
+            }
+        }
+
+        //リーダーsiteを見つける
+        VSite leaderSite = null;
+        for(int i = 0; i < sites.length; i++) {
+            if (sites[i].getLeaderID() == sites[i].getID()) {
+                leaderSite = sites[i];
+            }
+        }
+
+
+        //性能評価結果
+        int totalNumOfMessages = 0;
+        if (VSite.algorithm.equals("CHAINVOXEL")) {
+            totalNumOfMessages = leaderSite.getNumberOfMessages() * numOfSites; //????
+        }
+        else if (VSite.algorithm.equals("RAFT")) {
+            totalNumOfMessages = leaderSite.getNumberOfMessages();
+        }
+        int totalNumOfOperations = numOfOperations * numOfSites;
+        int numOfSteps = leaderSite.getNumberOfSteps();
+        
+
+        //性能評価結果をfilename_stepsとfilename_messagesに保存
+        String stepsLine = "", messagesLine = "";
+        if (numOfOperations == -1) {
+            stepsLine = numOfSites + " " + numOfSteps;
+            messagesLine = numOfSites + " " + totalNumOfMessages;
+        }
+        else {
+            stepsLine = totalNumOfOperations + " " + numOfSteps;
+            messagesLine = totalNumOfOperations + " " + totalNumOfMessages;
+        }
+        System.out.println("==========================================");
+        System.out.println("stepsLine: " + stepsLine);
+        System.out.println("messagesLine: " + messagesLine);
+        System.out.println("==========================================");
+
+        try {
+            FileWriter wfSteps = new FileWriter(new File(filename_steps), true);
+            FileWriter wfMessages = new FileWriter(new File(filename_messages), true);
+            wfSteps.write(stepsLine + "\r\n");
+            wfMessages.write(messagesLine + "\r\n");
+            wfSteps.flush();
+            wfMessages.flush();
+            wfSteps.close();
+            wfMessages.close();
+        }
+        catch (IOException e) { e.printStackTrace(); }
+
     }
 
 }

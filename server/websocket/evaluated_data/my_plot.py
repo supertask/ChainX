@@ -19,10 +19,32 @@ def plot(title, x, y, raft_filepath, chainvoxel_filepath, outpath):
     p = subprocess.Popen('gnuplot -e \'load "tmp.g"\'', shell=True)
     p.wait()
 
+
+plot(
+    title = "Operations vs steps",
+    x = "Number of operations", y = "Number of steps",
+    raft_filepath = "./raft_operations_vs_steps.txt",
+    chainvoxel_filepath = "./chainvoxel_operations_vs_steps.txt",
+    outpath = "./img/operations_vs_steps.eps"
+)
 plot(
     title = "Operations vs messages",
     x = "Number of operations", y = "Number of messages",
     raft_filepath = "./raft_operations_vs_messages.txt",
     chainvoxel_filepath = "./chainvoxel_operations_vs_messages.txt",
     outpath = "./img/operations_vs_messages.eps"
+)
+plot(
+    title = "Sites vs steps",
+    x = "Number of sites", y = "Number of steps",
+    raft_filepath = "./raft_sites_vs_steps.txt",
+    chainvoxel_filepath = "./chainvoxel_sites_vs_steps.txt",
+    outpath = "./img/sites_vs_steps.eps"
+)
+plot(
+    title = "Sites vs messages",
+    x = "Number of sites", y = "Number of messages",
+    raft_filepath = "./raft_sites_vs_messages.txt",
+    chainvoxel_filepath = "./chainvoxel_sites_vs_messages.txt",
+    outpath = "./img/sites_vs_messages.eps"
 )

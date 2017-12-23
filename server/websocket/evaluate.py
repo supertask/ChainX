@@ -4,22 +4,10 @@
 import sys
 import os
 import subprocess
+import time
 
-RECORDED_OPS_DIR = "recorded_operations/"
-EVALUATED_DATA_DIR = "evaluated_data/"
-# 評価1. 操作数 vs ステップ数
-# 評価2. 操作数 vs メッセージ数
-#RAFT_OPERATIONS_VS_STEPS = os.path.join(EVALUATED_DATA_DIR, "raft_operations_vs_steps.txt")
-#RAFT_OPERATIONS_VS_MESSAGES = os.path.join(EVALUATED_DATA_DIR, "raft_operations_vs_messages.txt")
-#CHAIN_OPERATIONS_VS_STEPS = os.path.join(EVALUATED_DATA_DIR, "chainvoxel_operations_vs_steps.txt")
-#CHAIN_OPERATIONS_VS_MESSAGES = os.path.join(EVALUATED_DATA_DIR, "chainvoxel_operations_vs_messages.txt")
-
-# 評価3. サイト数 vs ステップ数
-# 評価4. サイト数 vs メッセージ数
-#RAFT_SITES_VS_STEPS = os.path.join(EVALUATED_DATA_DIR, "raft_sites_vs_steps.txt")
-#RAFT_SITES_VS_MESSAGES = os.path.join(EVALUATED_DATA_DIR, "raft_sites_vs_messages.txt")
-#CHAIN_SITES_VS_STEPS = os.path.join(EVALUATED_DATA_DIR, "chainvoxel_sites_vs_steps.txt")
-#CHAIN_SITES_VS_MESSAGES = os.path.join(EVALUATED_DATA_DIR, "chainvoxel_sites_vs_messages.txt")
+RECORDED_OPS_DIR = "recorded_operations"
+EVALUATED_DATA_DIR = "evaluated_data"
 
 # 評価5. 操作数 vs メモリ数
 # 評価6. サイト数 vs メモリ数
@@ -37,7 +25,22 @@ if len(sys.argv) < 3:
 modules, target = sys.argv[1:3]
 
 
+def exec_process(line):
+    p = subprocess.Popen(line, shell=True)
+    try:
+        while p.poll() is None:
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        p.terminate()
+        raise
+        #sys.exit(1)
+    p.wait()
+
+
 def evaluate_operations():
+    """ 操作数とステップ数/メッセージ数を各アルゴリズム(ChainVoxel, Raft)ごとに
+        測定し，出力する
+    """
     print "Evaluate operations!!"
 
     #
@@ -77,11 +80,8 @@ def evaluate_operations():
         line += "java -cp %s %s CHAINVOXEL %s %s;\n" \
             % (modules, target, num_of_sites, operations_on_each_site)
         print line
-        #p = subprocess.Popen(line)
-        #p.wait()
-
+        exec_process(line)
         i+=1
-
 
 
 def evaluate_sites():
@@ -96,16 +96,15 @@ def evaluate_sites():
     #
     # サイト数を指定してステップ数，メッセージ数を計測する
     #
-    #p = subprocess.Popen("python modifier.py fast;\n", shell=True)
-    #p.wait()
+    exec_process("python modifier.py fast;")
     line = ""
     for i in range(num_of_sites):
         line = ""
         line += "java -cp %s %s RAFT %s;\n" % (modules, target, i+1) #1オリジン
         line += "java -cp %s %s CHAINVOXEL %s;\n" % (modules, target, i+1) #1オリジン
         print line
-        #p = subprocess.Popen(line, shell=True)
-        #p.wait()
+        exec_process(line)
+
 
 
 evaluate_operations()
