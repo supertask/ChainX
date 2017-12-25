@@ -54,7 +54,7 @@ public class EmulatedSocket
 				Debug.LogError(receivedMessage); //TODO(Tasuku): Think about this errors
 			}
 			Operation op = Operation.FromJson(receivedMessage);
-			this.controller.cv.apply (op);
+			this.controller.cv.apply (op, ChainVoxel.REMOTE_OPERATION);
 
 			this.socket.BeginReceive (socketBuffer, 0, this.socketBuffer.Length,
 				SocketFlags.None, this.OnReceiveData, socket);

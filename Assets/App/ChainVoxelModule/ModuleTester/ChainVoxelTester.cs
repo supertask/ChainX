@@ -16,7 +16,7 @@ public class ChainVoxelTester
 			"{\"gid\": \"" + gid +
 			"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
 			"\", \"objPath\": \"" + objPath + "\"}");
-		this.cv.apply(o);
+		this.cv.apply(o, ChainVoxel.LOCAL_OPERATION);
 		Debug.Assert (this.cv.getVoxel(posIDs[posIDs.Length - 1]) != null);
 		Debug.Assert (this.cv.stt.isGroupingAll(posIDs));
 	}
@@ -29,7 +29,7 @@ public class ChainVoxelTester
 			"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
 			"\", \"transMatrix\": \"" + Util.CreatePosID (transMatrix) + "\"}");
 		//Debug.Log ("In test: posIDs=" + Util.GetCommaLineFrom(posIDs) + ", destPosIDs=" + Util.GetCommaLineFrom(destPosIDs));
-		this.cv.apply (o);
+		this.cv.apply (o, ChainVoxel.LOCAL_OPERATION);
 		//ArrangeしてからCheck!!!!!
 		Debug.Assert (this.cv.getVoxel(destPosIDs[destPosIDs.Length - 1]) != null); //Here
 		Debug.Assert (this.cv.stt.isGroupingAll (destPosIDs));
@@ -39,7 +39,7 @@ public class ChainVoxelTester
 		Operation o = new Operation (0, Operation.DELETE_POLYGON,
 			"{\"gid\": \"" + gid +
 			"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) + "\"}");
-		this.cv.apply (o);
+		this.cv.apply (o, ChainVoxel.LOCAL_OPERATION);
 		Debug.Assert (this.cv.getVoxel(posIDs[posIDs.Length - 1]) == null);
 
 		//timestampは更新されるが削除はされないのisGroupingAll関数を書き換える！！
@@ -85,7 +85,7 @@ public class ChainVoxelTester
 			"{\"gid\": \"" + gid +
 			"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
 			"\", \"textureTypes\": \"" + textureTypes + "\"}");
-		this.cv.apply (o);
+		this.cv.apply (o, ChainVoxel.LOCAL_OPERATION);
 		Debug.Assert (this.cv.isIncludingAll(posIDs) );
 		Debug.Assert (this.cv.stt.isGroupingAll(posIDs) );
 	}
@@ -95,7 +95,7 @@ public class ChainVoxelTester
 		Operation o = new Operation (0, Operation.DELETE_ALL,
 			"{\"gid\": \"" + gid +
 			"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) + "\"}");
-		cv.apply (o);
+		cv.apply (o, ChainVoxel.LOCAL_OPERATION);
 		Debug.Assert (!this.cv.isIncludingAll (posIDs));
 		Debug.Assert (!this.cv.stt.isGroupingAll (posIDs)); //バグ
 	}
@@ -107,7 +107,7 @@ public class ChainVoxelTester
 			"{\"gid\": \"" + gid +
 			"\", \"posIDs\": \"" + Util.GetCommaLineFrom (posIDs) +
 			"\", \"transMatrix\": \"" + Util.CreatePosID (transMatrix) + "\"}");
-		this.cv.apply (o);
+		this.cv.apply (o, ChainVoxel.LOCAL_OPERATION);
 		Debug.Assert (this.cv.isIncludingAll (destPosIDs));
 		Debug.Assert (this.cv.stt.isGroupingAll (destPosIDs));
 	}
@@ -116,7 +116,7 @@ public class ChainVoxelTester
 	{
 		Operation o = new Operation (0, Operation.LEAVE_ALL,
 			"{\"gid\": \"" + gid + "\"}");
-		this.cv.apply (o);
+		this.cv.apply (o, ChainVoxel.LOCAL_OPERATION);
 		Debug.Assert (this.cv.isIncludingAll (posIDs));
 		Debug.Assert (!this.cv.stt.isGroupingAll (posIDs));
 	}
@@ -150,7 +150,7 @@ public class ChainVoxelTester
 		//複数Voxelをinsertした後、それらをjoinする
 		o = new Operation (0, Operation.CREATE,
 			"{\"gid\": \"" + gid + "\"}");
-		this.cv.apply (o);
+		this.cv.apply (o, ChainVoxel.LOCAL_OPERATION);
 
 		this.CheckInsertAll(gid, posIDs, textureTypes);
 

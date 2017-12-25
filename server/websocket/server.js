@@ -38,11 +38,32 @@ var RE_ID = /@(\d*)$/;
 var latestNodesID = -1;
 var nodeIDs = [];
 
+fs.createReadStream(SAVE_FILE).pipe(fs.createWriteStream(BACKUP_FILE));
+
+
+var RECORDED_FILE = "recorded_operations/recorded_out.txt";
+
+//レコードファイルが既にあれば削除
+try {
+    if (fs.statSync(RECORDED_FILE).isFile()) {
+        fs.unlink(RECORDED_FILE, function (err) { //ファイル削除
+            if (err) throw err;
+        });
+    }
+}
+catch (err) { } //ファイルがない場合
+
+function appendFile(path, data) {
+    fs.appendFile(path, data, function (err) {
+        if (err) { throw err; }
+    });
+}
+
+
 
 var Server = function()
 {
     var PORT_NUMBER = 18080;
-    fs.createReadStream(SAVE_FILE).pipe(fs.createWriteStream(BACKUP_FILE));
 
     function _connect(socket) {
         console.log('connected!');
@@ -61,7 +82,9 @@ var Server = function()
             //console.log(msgBinary.toString());
             
             if (_partEqual(msgBinary, OPERATION_BINARY_HEADER)) {
-                console.log(msgBinary.toString());
+                var msg = msgBinary.toString();
+                if (socket.id == 0) { appendFile(RECORDED_FILE, msg + "\n"); }
+                console.log(msg);
                 server.send(destId, msgBinary); //指定されたIDへ送る
             }
             else if (_partEqual(msgBinary, REQUEST_VOTE_BINARY_HEADER) ||

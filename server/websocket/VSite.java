@@ -321,7 +321,9 @@ public class VSite extends Thread
         long opDiffTime = Long.parseLong(recordLine[0]);
         String opLine = recordLine[1];
 
-        long startSystemTime = Util.currentTime100Nanos(); //System.nanoTime();
+        Ticks ticks = new Ticks();
+        ticks.start();
+        long startSystemTime = ticks.end();
         long exCurrentVirtualTime = 0L;
         long execTime = opDiffTime;
         List<Long> waitedTimes = new ArrayList<Long>();
@@ -329,7 +331,7 @@ public class VSite extends Thread
         waitedTimes.add(0L);
         while(true) {
             if (recordLine == null) { break; }
-            long currentSystemTime = Util.currentTime100Nanos(); //System.nanoTime();
+            long currentSystemTime = ticks.end(); //System.nanoTime();
             long currentVirtualTime = currentSystemTime - startSystemTime;
             long diffTime = currentVirtualTime - exCurrentVirtualTime;
 
@@ -342,7 +344,7 @@ public class VSite extends Thread
                 //（レコードされた操作を実行し，送信！）
                 //System.out.println(this.id + ": currentVirtualTime = " + this.getSecondTime(currentVirtualTime));
                 //System.out.println(this.id + ": execTime = " + this.getSecondTime(execTime));
-                long ts = Util.currentTime100Nanos();
+                long ts = ticks.end();
                 opLine = this.replaceSIDandTS(opLine, this.id, ts);
                 System.out.println(opLine);
                 String key = VSite.waitingTimer.startWaitingTime(this.id, ts, ts); //タグ付け引数
@@ -370,7 +372,7 @@ public class VSite extends Thread
                 if (opMsg != "") {
                     // step1: 送信された操作を受け取る
                     //waiting終了，自分の操作が自分に返ってくるまでの時間
-                    long waitedTime = this.showWaitingTime(opMsg);
+                    long waitedTime = this.showWaitingTime(ticks, opMsg);
                     waitedTimes.add(waitedTime);
                     totalWaitedTime += waitedTime;
 
@@ -389,7 +391,7 @@ public class VSite extends Thread
                 String opMsg = this.waitOperation(VSite.OPERATION_HEADER);
                 if (opMsg != "") {
                     //waiting終了，自分の操作が自分に返ってくるまでの時間
-                    long waitedTime = this.showWaitingTime(opMsg);
+                    long waitedTime = this.showWaitingTime(ticks, opMsg);
                     waitedTimes.add(waitedTime);
                     totalWaitedTime += waitedTime;
 
@@ -420,13 +422,15 @@ public class VSite extends Thread
         long opDiffTime = Long.parseLong(recordLine[0]);
         String opLine = recordLine[1];
 
-        long startSystemTime = Util.currentTime100Nanos(); //System.nanoTime();
+        Ticks ticks = new Ticks();
+        ticks.start();
+        long startSystemTime = ticks.end(); //System.nanoTime();
         long exCurrentVirtualTime = 0L;
         long execTime = opDiffTime;
         //currentVirtualTimeは0から始まる
         while(true) {
             if (recordLine == null) { break; }
-            long currentSystemTime = Util.currentTime100Nanos(); //System.nanoTime();
+            long currentSystemTime = ticks.end(); //System.nanoTime();
             long currentVirtualTime = currentSystemTime - startSystemTime;
             long diffTime = currentVirtualTime - exCurrentVirtualTime;
 
@@ -434,9 +438,9 @@ public class VSite extends Thread
                 //System.out.println(this.id + ": currentVirtualTime = " + this.getSecondTime(currentVirtualTime));
                 //System.out.println(this.id + ": execTime = " + this.getSecondTime(execTime));
                 //ここでレコードされた操作を実行し，送信！
-                long ts = Util.currentTime100Nanos();
+                long ts = ticks.end();
                 opLine = this.replaceSIDandTS(opLine, this.id, ts);
-                //System.out.println(opLine);
+                System.out.println(opLine);
 
                 this.broadcast(opLine);
                 this.increaseNumberOfSteps();
@@ -456,11 +460,11 @@ public class VSite extends Thread
         return;
     }
 
-    private long showWaitingTime(String opMsg) {
+    private long showWaitingTime(Ticks ticks, String opMsg) {
         String[] res = getSIDandTS(opMsg);
         int sid = Integer.parseInt(res[0]);
         long ts = Long.parseLong(res[1]);
-        long current_ts = Util.currentTime100Nanos();
+        long current_ts = ticks.end();
         long waitedTime = VSite.waitingTimer.endWaitingTime(sid, ts, current_ts);
         if (waitedTime > 0 && sid == this.id) {
             //自分自身が送信したメッセージが帰ってきたら
@@ -605,6 +609,10 @@ public class VSite extends Thread
             }
         }
 
+        //
+        // Unity上で実行している場合，リーダーはUnity上のユーザになるので，パス
+        //
+        if (leaderSite == null) { return; }
 
         //性能評価結果
         int totalNumOfMessages = 0;

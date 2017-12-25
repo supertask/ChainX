@@ -4,7 +4,7 @@ SRC=\
 	VSite.java
 MODULES=\
 	.:java_modules/gson-2.6.2.jar:java_modules/tyrus-standalone-client-1.9.jar
-SITES=2
+SITES=1
 OPERATIONS=10
 EVALUATED_DATA_DIR=evaluated_data
 

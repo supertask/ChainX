@@ -55,7 +55,8 @@ public class ChainXController : MonoBehaviour
 
     void Update ()
 	{
-		//Debug.Log (System.DateTime.Now.Ticks);
+		//Debug.Log(DateTime.UtcNow.Ticks);
+
 		lock (ChainXController.thisLock) {
 			this.UpdateVoxels ();
 			this.SetUpGUICompornets ();
@@ -212,7 +213,7 @@ public class ChainXController : MonoBehaviour
 
 
     public void ApplyChainVoxel(Operation o) {
-        this.cv.apply(o);
+		this.cv.apply(o, ChainVoxel.LOCAL_OPERATION);
 		string op = Const.OPERATION_HEADER + Operation.ToJson (o);
 		this.socket.SendBinary(-1, Encoding.ASCII.GetBytes(op));
     }
@@ -472,7 +473,9 @@ public class ChainXController : MonoBehaviour
      */
     private void applyShader(GameObject anObj, Shader aShader) {
         if (anObj.transform.childCount == 0) {
-            anObj.GetComponent<Renderer>().material.shader = aShader;
+			if (anObj.GetComponent<Renderer>() != null) {
+	            anObj.GetComponent<Renderer>().material.shader = aShader;
+			}
         }
         else { //childCount > 0
             foreach(Transform aChildTransform in anObj.transform) {
@@ -598,14 +601,18 @@ public class ChainXController : MonoBehaviour
 				if (aParent != null) {
 					//Debug.Log("LEAVE");
 					if (aParent.transform.childCount > 0) {
-						this.RemoveFromSelectedObjects(aParent);
+						//ローカル操作のみのグループを選択可能にする
+						if (this.cv.selectedLeftGIDs.Contains(gid)) {
+							this.RemoveFromSelectedObjects(aParent);
+						}
 					}
 					this.selectedObjects.Remove (aParent);
 					aParent.transform.DetachChildren ();
 					GameObject.DestroyImmediate(aParent);
 				}
 			}
-			cv.leftGIDs.Clear ();
+			this.cv.selectedLeftGIDs.Clear();
+			this.cv.leftGIDs.Clear ();
 		}
 
         /*
@@ -628,10 +635,15 @@ public class ChainXController : MonoBehaviour
 				}
 				//UIにこのグループオブジェクトを登録
 				//TODO(Tasuku): グループオブジェクトが2重に登録されないようにする
-				this.model.AddGroupToUI (gid);
-				this.AddToSelectedObjects (aParent); //ここでバグが起こるだけで無限ループが起こる
+				this.model.AddGroupToUI(gid);
+
+				//ローカル操作のみのグループを選択可能にする
+				if (this.cv.selectedJoinedGIDs.Contains(gid)) {
+					this.AddToSelectedObjects(aParent); //ここでバグが起こるだけで無限ループが起こる
+				}
 			}
-			cv.joinedGIDs.Clear ();
+			this.cv.selectedJoinedGIDs.Clear();
+			this.cv.joinedGIDs.Clear ();
 		}
 
     }

@@ -162,8 +162,7 @@ public class Util{
 
 
 	public static long currentTimeNanos() {
-		return System.DateTime.Now.Ticks; //100 nano seconds
-		//return System.DateTime.Now.Ticks - Util.START_NANO_TIME;
+		return DateTime.UtcNow.Ticks; //100 nano seconds
 	}
 
 	/*

@@ -37,11 +37,17 @@ public class ChainVoxel {
 
 	private ChainXController controller;
 
+	public static int LOCAL_OPERATION = 0;	
+	public static int REMOTE_OPERATION = 1;	
+	private int eitherLocalRemote = -1;
+
 	public List<string> insertedPosIDs;
 	public List<string> deletedPosIDs;
 	public Dictionary<string,string> movedPosIDs;
 	public List<string> joinedGIDs;
 	public List<string> leftGIDs;
+	public List<string> selectedJoinedGIDs;
+	public List<string> selectedLeftGIDs;
 	public string textPath;
 
 
@@ -58,6 +64,9 @@ public class ChainVoxel {
 		this.movedPosIDs = new Dictionary<string,string>();
 		this.joinedGIDs = new List<string>();
 		this.leftGIDs = new List<string>();
+
+		this.selectedJoinedGIDs = new List<string>();
+		this.selectedLeftGIDs = new List<string>();
 		if (!Directory.Exists (Const.SAVED_DIR)) Directory.CreateDirectory(Const.SAVED_DIR);
 	}
 
@@ -68,11 +77,10 @@ public class ChainVoxel {
      * @param textureType テクスチャ番号
      * @see Operation
      */
-	public void apply (Operation op)
+	public void apply(Operation op, int eitherLocalRemote)
 	{
-
 		lock (ChainXController.thisLock) {
-
+			this.eitherLocalRemote = eitherLocalRemote;
 
 			string posID, destPosID;
 			string[] posIDs;
@@ -489,6 +497,9 @@ public class ChainVoxel {
 		if (op.getOpType() != Operation.MOVE_ALL && op.getOpType() != Operation.MOVE_POLYGON) {
 			//Debug.Log ("gid: " + gid);
 			this.joinedGIDs.Add(gid);//最新のタイムスタンプのグループをとる
+			if (this.eitherLocalRemote == ChainVoxel.LOCAL_OPERATION) {
+				this.selectedJoinedGIDs.Add(gid);
+			}
 		}
 		return true;
 	}
@@ -512,16 +523,23 @@ public class ChainVoxel {
 	public bool leaveAll(Operation op, long timestamp, string gid, string[] posIDs) {
 		//座標を与えよう！！！！
 		//移動する前のGIDまで汲み取ってしまうため、NULL Exceptionが発生する
+
+		Voxel[] voxels = this.getVoxelBlock(posIDs);
+		int[] textureTypes = new int[voxels.Length];
+		for(int i = 0; i < voxels.Length; i++) {
+			textureTypes[i] = voxels[i].getTextureType();
+		}
 		bool isLeft = this.stt.leaveAll(op.getSID(), timestamp, gid, posIDs); 
 		if (!isLeft) { return false; }
 
-		Voxel[] voxels = this.getVoxelBlock(posIDs);
-
 		for(int i = 0; i < voxels.Length; ++i) {
-			this.insert(op, timestamp, posIDs[i], voxels[i].getTextureType());
+			this.insert(op, timestamp, posIDs[i], textureTypes[i]);
 		}
 		if (op.getOpType() != Operation.MOVE_ALL) {
 			this.leftGIDs.Add(gid);//最新のタイムスタンプのグループをとる
+			if (this.eitherLocalRemote == ChainVoxel.LOCAL_OPERATION) {
+				this.selectedLeftGIDs.Add(gid);
+			}
 		}
 
 		return true;
@@ -689,7 +707,7 @@ public class ChainVoxel {
 								"\", \"textureType\":\"" + textureType.ToString() + "\"}"
 							);
 							op.setTimestamp(0L);
-							this.apply(op);
+							this.apply(op, ChainVoxel.LOCAL_OPERATION);
 						}
 						else {
 							posIDs.Add(posID);
@@ -712,7 +730,7 @@ public class ChainVoxel {
 
 						for(int i = 0; i < ops.Length; i++) {
 							ops[i].setTimestamp(1L + i); //0LだとStrucutureTableの条件分岐でバグる
-							this.apply(ops[i]);
+							this.apply(ops[i], ChainVoxel.LOCAL_OPERATION);
 						}
 							
 						gid = "";

@@ -39,7 +39,7 @@ public class EmulatedWebSocket
 		while (true) {
 			msgBinary = this.ws.Recv();
 			if (msgBinary != null) {
-				Debug.Log (Encoding.ASCII.GetString(msgBinary));
+				//Debug.Log (Encoding.ASCII.GetString(msgBinary));
 				//byte[] idBinary = this.getIdFromEndUntilAt(ref receivedBinary);
 				//int destID = System.BitConverter.ToInt32(idBinary, 0); //送り先!!
 				//byte[] msgBinary = this.getOperationFromEndUntilAt(ref receivedBinary);
@@ -48,7 +48,7 @@ public class EmulatedWebSocket
 					string line = Encoding.UTF8.GetString (msgBinary);
 					line = line.Remove (0, Const.OPERATION_HEADER.Length).Trim();
 					Operation op = Operation.FromJson (line);
-					this.controller.cv.apply (op);
+					this.controller.cv.apply(op, ChainVoxel.REMOTE_OPERATION);
 				}
 				else if (this.partEqual (ref msgBinary, ref Const.JOIN_BINARY_HEADER)) {
 					string msg = Encoding.UTF8.GetString(msgBinary);
@@ -102,7 +102,7 @@ public class EmulatedWebSocket
 							"\", \"gid\": \"" + ChainXModel.CreateGID() +
 							"\", \"objPath\":\"" + filepaths[0] + "\"}");
 						//Debug.Log(Operation.ToJson(op));
-						this.controller.cv.apply(op);
+						this.controller.cv.apply(op, ChainVoxel.LOCAL_OPERATION);
 
 						filepaths = new string[]{"", ""}; //Clear for the next 3d objs 
 					}
