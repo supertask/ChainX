@@ -46,6 +46,9 @@ opC: all
 	python modifier.py fast ${OPERATIONS}
 	java -cp ${MODULES} ${TARGET} CHAINVOXEL ${SITES} ${OPERATIONS}
 
+plot:
+	cd evaluated_data/; python my_plot.py
+
 cleaneval:
 	rm -f ${EVALUATED_DATA_DIR}/raft_operations_vs_messages.txt
 	rm -f ${EVALUATED_DATA_DIR}/raft_operations_vs_steps.txt

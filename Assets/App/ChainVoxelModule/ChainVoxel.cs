@@ -153,7 +153,7 @@ public class ChainVoxel {
 				Debug.Assert (false);
 				break;
 			}
-			this.controller.log = this.getStatusString ();
+			//this.controller.log = this.getStatusString ();
 		}
 		//this.show();
 		//this.stt.show();

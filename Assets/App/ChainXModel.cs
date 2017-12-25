@@ -172,11 +172,11 @@ public class ChainXModel
 					List<string> destTextureTypes = new List<string> ();	
 					foreach (Transform child in anObj.transform)
 					{
-						Debug.Assert (Util.CreatePosID (child.position) == child.name);
-						Vector3 destPosition = child.position + transMatrix;
+						//Debug.Assert (Util.CreatePosID (child.position) == child.name);
+						Vector3 destPosition = Util.SplitPosID(child.name) + transMatrix;
 						posIDs.Add(child.name);
 						destPosIDs.Add(Util.CreatePosID(destPosition));
-						Voxel aVoxel = this.controller.cv.getVoxel (child.name);
+						Voxel aVoxel = this.controller.cv.getVoxel(child.name);
 						destTextureTypes.Add(aVoxel.getTextureType().ToString());
 					}
 

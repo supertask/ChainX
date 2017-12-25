@@ -4,6 +4,7 @@
 import sys
 import os
 import json
+import re
 SRC_DIR = "recorded_operations/"
 DEST_DIR = "modified_recorded_operations/"
 SPLIT_CHAR = '#'
@@ -23,9 +24,10 @@ else:
     IS_FAST = False
     NUM_OF_OPERATION = -1 #無限
 
-
-for filename in os.listdir(SRC_DIR):
-    if filename == ".DS_Store":
+RE_NUM_FILE = re.compile("\d+\.txt")
+for i,filename in enumerate(os.listdir(SRC_DIR)):
+    matched = RE_NUM_FILE.match(filename)
+    if not matched:
         continue
     rf = open(SRC_DIR + filename, 'r')
     wf = open(DEST_DIR + filename, 'w')

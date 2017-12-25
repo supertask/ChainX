@@ -59,7 +59,7 @@ public class ChainXController : MonoBehaviour
 
 		lock (ChainXController.thisLock) {
 			this.UpdateVoxels ();
-			this.SetUpGUICompornets ();
+			//this.SetUpGUICompornets ();
 
 			//スクリーンサイズが変更された時、実行される
 			if (this.screenSize.width != Screen.width ||
@@ -389,7 +389,12 @@ public class ChainXController : MonoBehaviour
                 transform.gameObject.GetComponent<Renderer>().enabled = enabled;
             }
         }
-        else { this.paintTool.GetComponent<Renderer>().enabled = enabled; }
+        else {
+			if (this.paintTool.GetComponent<Renderer>() != null) {
+				this.paintTool.GetComponent<Renderer>().enabled = enabled;
+			}
+			//ペイントツールがなければ，無視
+		}
     }
 
 

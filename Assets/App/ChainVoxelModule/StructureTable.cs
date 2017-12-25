@@ -156,7 +156,7 @@ public class StructureTable {
 	public bool leaveAll(int sid, long ts, string gid, string[] posIDs) {
 		foreach (string posID in posIDs) {
 			bool isLeft = this.leave(sid, ts, posID, gid);
-			Debug.Log(gid + " " + ts + " "  + posID + " " + isLeft);
+			//Debug.Log(gid + " " + ts + " "  + posID + " " + isLeft);
 			if (!isLeft) { return false; }
 		}
 		return true;
