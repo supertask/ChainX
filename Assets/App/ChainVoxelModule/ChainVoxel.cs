@@ -707,7 +707,7 @@ public class ChainVoxel {
 								"\", \"textureType\":\"" + textureType.ToString() + "\"}"
 							);
 							op.setTimestamp(0L);
-							this.apply(op, ChainVoxel.LOCAL_OPERATION);
+							this.apply(op, ChainVoxel.REMOTE_OPERATION);
 						}
 						else {
 							posIDs.Add(posID);
@@ -730,7 +730,7 @@ public class ChainVoxel {
 
 						for(int i = 0; i < ops.Length; i++) {
 							ops[i].setTimestamp(1L + i); //0LだとStrucutureTableの条件分岐でバグる
-							this.apply(ops[i], ChainVoxel.LOCAL_OPERATION);
+							this.apply(ops[i], ChainVoxel.REMOTE_OPERATION);
 						}
 							
 						gid = "";
