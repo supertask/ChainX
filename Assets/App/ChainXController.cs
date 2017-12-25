@@ -384,6 +384,7 @@ public class ChainXController : MonoBehaviour
     private void showPaintTool() { this.visualizePaintTool(true); }
     private void visualizePaintTool(bool enabled)
     {
+		if (this.paintTool == null) { return; }
         if (this.paintTool.transform.childCount > 0) {
             foreach(Transform transform in this.paintTool.transform) {
                 transform.gameObject.GetComponent<Renderer>().enabled = enabled;
