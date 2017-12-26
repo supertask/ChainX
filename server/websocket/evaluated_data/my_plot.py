@@ -7,6 +7,7 @@ def plot(title, x, y, raft_filepath, chainvoxel_filepath, outpath):
     wf = open('tmp.g','w')
     wf.write('set xlabel "%s"\n' % x)
     wf.write('set ylabel "%s"\n' % y)
+    wf.write('set yrange [0:]\n')
     #wf.write('set key bottom\n')
     wf.write('set grid ls 0\n')
     wf.write('set term aqua title "%s"; ' % title)

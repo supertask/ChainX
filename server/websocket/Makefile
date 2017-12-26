@@ -10,7 +10,7 @@ SITES=5
 OPERATIONS=10
 
 # 計測時の操作数の刻み幅
-STRIDE_OPERATIONS=25
+STRIDE_OPERATIONS=10
 EVALUATED_DATA_DIR=evaluated_data
 
 all: cleaneval
