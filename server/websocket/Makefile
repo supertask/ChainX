@@ -4,8 +4,13 @@ SRC=\
 	VSite.java
 MODULES=\
 	.:java_modules/gson-2.6.2.jar:java_modules/tyrus-standalone-client-1.9.jar
-SITES=1
+
+# 通常実行の際のサイト数，各サイトごとの操作数の設定
+SITES=5
 OPERATIONS=10
+
+# 計測時の操作数の刻み幅
+STRIDE_OPERATIONS=25
 EVALUATED_DATA_DIR=evaluated_data
 
 all: cleaneval
@@ -25,9 +30,9 @@ chain: all
 #
 # 最速実行
 #
-#性能評価する
+# 性能評価する
 eval: all
-	python evaluate.py ${MODULES} ${TARGET}
+	python evaluate.py ${MODULES} ${TARGET} ${STRIDE_OPERATIONS}
 
 #性能評価できてるか確かめる
 siteR: all

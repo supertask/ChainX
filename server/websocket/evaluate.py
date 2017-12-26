@@ -5,24 +5,21 @@ import sys
 import os
 import subprocess
 import time
+import re
 
 RECORDED_OPS_DIR = "recorded_operations"
 EVALUATED_DATA_DIR = "evaluated_data"
 
-# 評価5. 操作数 vs メモリ数
-# 評価6. サイト数 vs メモリ数
-#TODO(Tasuku): 12/27以降に実装
+#TODO(Tasuku): 12/27以降にメモリ数とサイト数の実装
 
 
-# 操作の刻み幅
-# 10なら10操作刻みで計測を行う
-STRIDE_OPERATIONS = 5
-
-
-if len(sys.argv) < 3:
+if len(sys.argv) < 4:
     sys.exit(1)
 
-modules, target = sys.argv[1:3]
+# STRIDE_OPERATIONS(操作の刻み幅)
+# 10なら10操作刻みで計測を行う
+modules, target  = sys.argv[1:3]
+STRIDE_OPERATIONS = int(sys.argv[3])
 
 
 def exec_process(line):
@@ -46,18 +43,24 @@ def evaluate_operations():
     #
     # 全てのサイトの操作数の最小値を取得
     #
+    RE_NUM_FILE = re.compile("\d+\.txt")
     min_num_lines = 10**9
     num_of_sites = 0
-    for i, filename in enumerate(os.listdir(RECORDED_OPS_DIR)):
-        if filename == (str(i) + ".txt"):
+    for filename in os.listdir(RECORDED_OPS_DIR):
+        matched = RE_NUM_FILE.match(filename)
+        if matched:
             filepath = os.path.join(RECORDED_OPS_DIR, filename)
             num_lines = sum(1 for line in open(filepath)) 
             min_num_lines = min(num_lines, min_num_lines)
             num_of_sites+=1
+    print "サイト数:", num_of_sites
     print "操作数の最小値:", min_num_lines
 
     # 操作の刻みのインデックス
     i = 1
+    print 25 < 35
+    print type(i * STRIDE_OPERATIONS), type(min_num_lines)
+    print (i * STRIDE_OPERATIONS) < min_num_lines
 
     while (i * STRIDE_OPERATIONS) < min_num_lines:
         # 各サイトの操作数
@@ -108,5 +111,5 @@ def evaluate_sites():
 
 
 evaluate_operations()
-print
-evaluate_sites()
+#print
+#evaluate_sites()
