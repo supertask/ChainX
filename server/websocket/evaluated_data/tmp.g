@@ -1,3 +1,4 @@
+set xtics 1; 
 set xlabel "Number of sites"
 set ylabel "Number of messages"
 set yrange [0:]

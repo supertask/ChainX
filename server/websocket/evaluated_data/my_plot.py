@@ -3,8 +3,10 @@ import subprocess
 import sys
 import re
 
-def plot(title, x, y, raft_filepath, chainvoxel_filepath, outpath):
+def plot(title, x, y, raft_filepath, chainvoxel_filepath, outpath, extra=None):
     wf = open('tmp.g','w')
+    if extra:
+        wf.write(extra + '\n')
     wf.write('set xlabel "%s"\n' % x)
     wf.write('set ylabel "%s"\n' % y)
     wf.write('set yrange [0:]\n')
@@ -40,12 +42,14 @@ plot(
     x = "Number of sites", y = "Number of steps",
     raft_filepath = "./raft_sites_vs_steps.txt",
     chainvoxel_filepath = "./chainvoxel_sites_vs_steps.txt",
-    outpath = "./img/sites_vs_steps.eps"
+    outpath = "./img/sites_vs_steps.eps",
+    extra = "set xtics 1; "
 )
 plot(
     title = "Sites vs messages",
     x = "Number of sites", y = "Number of messages",
     raft_filepath = "./raft_sites_vs_messages.txt",
     chainvoxel_filepath = "./chainvoxel_sites_vs_messages.txt",
-    outpath = "./img/sites_vs_messages.eps"
+    outpath = "./img/sites_vs_messages.eps",
+    extra = "set xtics 1; "
 )
