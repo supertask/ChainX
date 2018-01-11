@@ -11,6 +11,7 @@ SPLIT_CHAR = '#'
 MSG_SPLIT_CHAR = '@'
 #UNIT = 100 #100ナノ秒単位 -> 1ナノ秒単位で扱う
 UNIT = 1 #100ナノ秒単位 -> 100ナノ秒単位で扱う
+STRIDE_OPERATIONS = 200000 #200000 * 100ナノ秒= 20ミリ秒
 
 if len(sys.argv) >= 3:
     # 操作数とステップ数，メッセージ数の計測時
@@ -37,7 +38,7 @@ for i,filename in enumerate(os.listdir(SRC_DIR)):
     firstOperation = True
     line_i = 1
     for line in rf:
-        if NUM_OF_OPERATION > 0 and line_i > NUM_OF_OPERATION:
+        if NUM_OF_OPERATION >= 0 and line_i > NUM_OF_OPERATION:
             break
         line = line.replace('\n', '')
         if line == '':
@@ -54,7 +55,7 @@ for i,filename in enumerate(os.listdir(SRC_DIR)):
             #print op_dict['sid']
             if IS_FAST:
                 #計測時
-                wf.write("%s%s%s\n" % (100, SPLIT_CHAR, line))
+                wf.write("%s%s%s\n" % (STRIDE_OPERATIONS, SPLIT_CHAR, line))
             else:
                 #通常はこっち
                 wf.write("%s%s%s\n" % (diffTs * UNIT, SPLIT_CHAR, line))

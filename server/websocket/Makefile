@@ -9,8 +9,8 @@ MODULES=\
 SITES=5
 OPERATIONS=10
 
-# 計測時の操作数の刻み幅
-STRIDE_OPERATIONS=25
+# 計測時の操作数の刻み幅．STRIDE_OPERATIONS * SITES(2*5 = 10)が実質メモリの刻み幅
+STRIDE_OPERATIONS=2
 EVALUATED_DATA_DIR=evaluated_data
 
 all: cleaneval

@@ -318,6 +318,7 @@ public class VSite extends Thread
 
         //操作の実行を行う（ユーザ入力レコードを実行する）
         String[] recordLine = this.nextRecord();
+        if (recordLine == null) { return; }
         long opDiffTime = Long.parseLong(recordLine[0]);
         String opLine = recordLine[1];
 
@@ -419,6 +420,7 @@ public class VSite extends Thread
     {
         //操作の実行を行う（ユーザ入力レコードを実行する）
         String[] recordLine = this.nextRecord();
+        if (recordLine == null) { return; }
         long opDiffTime = Long.parseLong(recordLine[0]);
         String opLine = recordLine[1];
 

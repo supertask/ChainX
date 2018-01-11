@@ -57,12 +57,8 @@ def evaluate_operations():
     print "操作数の最小値:", min_num_lines
 
     # 操作の刻みのインデックス
-    i = 1
-    print 25 < 35
-    print type(i * STRIDE_OPERATIONS), type(min_num_lines)
-    print (i * STRIDE_OPERATIONS) < min_num_lines
-
-    while (i * STRIDE_OPERATIONS) < min_num_lines:
+    i = 0
+    while (i * STRIDE_OPERATIONS) <= min_num_lines:
         # 各サイトの操作数
         operations_on_each_site = i * STRIDE_OPERATIONS
         
@@ -111,5 +107,5 @@ def evaluate_sites():
 
 
 evaluate_operations()
-#print
-#evaluate_sites()
+print
+evaluate_sites()
