@@ -16,8 +16,8 @@ if len(sys.argv) < 2:
 in_file_1 = sys.argv[1]
 out_file = "interval.txt"
 
-# 5秒(5 * 10^7 * 100ナノ秒)
-LIMIT_INTERVAL = 5 * (10 ** 7)
+# デフォルト: 3秒(3 * 10^7 * 100ナノ秒)
+LIMIT_INTERVAL = 3 * (10 ** 7)
 if len(sys.argv) == 3:
     # N秒(N * 10^7 * 100ナノ秒)
     LIMIT_INTERVAL = int(sys.argv[2]) * (10 ** 7)

@@ -247,8 +247,9 @@ public class ChainVoxel {
 		}
 
 		List<Voxel> voxelList = this.getVoxelList(posID);
-		Voxel tmpVoxel = this.getVoxel (posID); //NULL(06/03/2017)
-		int textureType = tmpVoxel.getTextureType ();
+		Voxel deletingVoxel = this.getVoxel(posID); //NULL(06/03/2017)
+		if (deletingVoxel == null) { return false; }
+		int textureType = deletingVoxel.getTextureType ();
 
 		// step2: 負のvoxelより古いvoxelを削除する
 		for (int i = voxelList.Count - 1; i >= 0; --i) { // 先頭から削除するとイテレータがおかしくなる

@@ -698,8 +698,8 @@ public class ChainXController : MonoBehaviour
 		long memorySize = this.cv.getMemory();
 		memorySize += this.cv.stt.getMemory();
 		Debug.Log("Memory on Primary and Grouping Layer: " + memorySize);
-		this.cv.show();
-		this.cv.stt.show();
+		//this.cv.show();
+		//this.cv.stt.show();
 
 		string path = Const.SAVED_FILE;
 		string filename = Path.GetFileName(path);

@@ -38,25 +38,34 @@ var RE_ID = /@(\d*)$/;
 var latestNodesID = -1;
 var nodeIDs = [];
 
-fs.createReadStream(SAVE_FILE).pipe(fs.createWriteStream(BACKUP_FILE));
-
-
-var RECORDED_FILE = "recorded_operations/recorded_out.txt";
-
-//レコードファイルが既にあれば削除
-try {
-    if (fs.statSync(RECORDED_FILE).isFile()) {
-        fs.unlink(RECORDED_FILE, function (err) { //ファイル削除
-            if (err) throw err;
-        });
+function isExistFile(file) {
+    try {
+        fs.statSync(file);
+        return true;
+    } catch(err) {
+        if(err.code === 'ENOENT') return false;
     }
 }
-catch (err) { } //ファイルがない場合
 
 function appendFile(path, data) {
     fs.appendFile(path, data, function (err) {
         if (err) { throw err; }
     });
+}
+
+//SAVE_FILEがないければ空ファイル作成
+if (!isExistFile(SAVE_FILE)) {
+    fs.writeFile(SAVE_FILE, "", function(err) { if (err) { throw err; } });
+}
+fs.createReadStream(SAVE_FILE).pipe(fs.createWriteStream(BACKUP_FILE));
+
+
+var RECORDED_FILE = "recorded_operations/recorded_out.txt";
+
+//RECORDED_FILEが既にあれば削除
+if (isExistFile(RECORDED_FILE)) {
+    //ファイル削除
+    fs.unlink(RECORDED_FILE, function (err) { if (err) throw err; });
 }
 
 
@@ -73,70 +82,70 @@ var Server = function()
 
         var filepaths = ["", ""];
         socket.on('message', function (msgBinary) {
-            //
-            // destIdを取り出す
-            //
-            var msgBinaries = _getIdFromEndUntilAt(msgBinary); //メッセージとIDに切り分ける
-            msgBinary = msgBinaries[0];
-            var destId = parseInt(msgBinaries[1].toString());
-            //console.log(msgBinary.toString());
-            
-            if (_partEqual(msgBinary, OPERATION_BINARY_HEADER)) {
+                //
+                // destIdを取り出す
+                //
+                var msgBinaries = _getIdFromEndUntilAt(msgBinary); //メッセージとIDに切り分ける
+                msgBinary = msgBinaries[0];
+                var destId = parseInt(msgBinaries[1].toString());
+                //console.log(msgBinary.toString());
+
+                if (_partEqual(msgBinary, OPERATION_BINARY_HEADER)) {
                 var msg = msgBinary.toString();
                 if (socket.id == 0) { appendFile(RECORDED_FILE, msg + "\n"); }
                 console.log(msg);
                 server.send(destId, msgBinary); //指定されたIDへ送る
-            }
-            else if (_partEqual(msgBinary, REQUEST_VOTE_BINARY_HEADER) ||
-                     _partEqual(msgBinary, VOTE_BINARY_HEADER) ||
-                     _partEqual(msgBinary, APPEND_ENTRIES_BINARY_HEADER)) {
+                }
+                else if (_partEqual(msgBinary, REQUEST_VOTE_BINARY_HEADER) ||
+                        _partEqual(msgBinary, VOTE_BINARY_HEADER) ||
+                        _partEqual(msgBinary, APPEND_ENTRIES_BINARY_HEADER)) {
                 console.log(msgBinary.toString());
                 server.send(destId, msgBinary); //指定されたIDへ送る
-            }
-            else if (_partEqual(msgBinary, START_BINARY_HEADER)) {
-                //_joinNewClient(socket);
-            }
-            else if (_partEqual(msgBinary, EXIT_BINARY_HEADER)) {
-                var msg = msgBinary.toString();
-                msg = msg.replace(EXIT_HEADER, "");
-                if (msg.length > 0) {
-                    var siteId = Number(msg);
-                    if(siteId >= 0) {
-                        var index = nodeIDs.indexOf(siteId);
-                        nodeIDs.splice(index, 1);
-                        console.log("Removed: " + siteId);
+                }
+                else if (_partEqual(msgBinary, START_BINARY_HEADER)) {
+                    //_joinNewClient(socket);
+                }
+                else if (_partEqual(msgBinary, EXIT_BINARY_HEADER)) {
+                    var msg = msgBinary.toString();
+                    msg = msg.replace(EXIT_HEADER, "");
+                    if (msg.length > 0) {
+                        var siteId = Number(msg);
+                        if(siteId >= 0) {
+                            var index = nodeIDs.indexOf(siteId);
+                            nodeIDs.splice(index, 1);
+                            console.log("Removed: " + siteId);
+                        }
                     }
                 }
-            }
-            else if (_partEqual(msgBinary, ID_LIST_BINARY_HEADER)) {
-                //pass
-            }
-            else if (_partEqual(msgBinary, SOME_FILE_BINARY_HEADER)) {
-                var filename = _getPathUntilAt(msgBinary);
-                var filepath = TMP_DIR + filename;
-                var exif_len = SOME_FILE_HEADER.length + filename.length + 1;
-                file_binary = msgBinary.slice(exif_len, msgBinary.length);
-
-                var ext = path.extname(filename);
-                if (ext == ".obj") { filepaths[0] = filepath; }
-                else if(ext == ".jpg") { filepaths[1] = filepath; }
-                fs.writeFile(filepath, new Buffer(file_binary), function (err) { });
-                console.log("Wrote data into \"" + filepath + "\".");
-
-                if (filepaths[0] != "" && filepaths[1] != "") {
-                    //全てのファイル情報送信
-                    for(var i = 0; i < filepaths.length; i++) {
-                        console.log("Send \"" + filepaths[i] + "\" to clients.");
-                        server.sendFile(socket, filepaths[i]);
-                    }
-                    filepaths = ["", ""];
+                else if (_partEqual(msgBinary, ID_LIST_BINARY_HEADER)) {
+                    //pass
                 }
+                else if (_partEqual(msgBinary, SOME_FILE_BINARY_HEADER)) {
+                    var filename = _getPathUntilAt(msgBinary);
+                    var filepath = TMP_DIR + filename;
+                    var exif_len = SOME_FILE_HEADER.length + filename.length + 1;
+                    file_binary = msgBinary.slice(exif_len, msgBinary.length);
 
-            }
+                    var ext = path.extname(filename);
+                    if (ext == ".obj") { filepaths[0] = filepath; }
+                    else if(ext == ".jpg") { filepaths[1] = filepath; }
+                    fs.writeFile(filepath, new Buffer(file_binary), function (err) { });
+                    console.log("Wrote data into \"" + filepath + "\".");
+
+                    if (filepaths[0] != "" && filepaths[1] != "") {
+                        //全てのファイル情報送信
+                        for(var i = 0; i < filepaths.length; i++) {
+                            console.log("Send \"" + filepaths[i] + "\" to clients.");
+                            server.sendFile(socket, filepaths[i]);
+                        }
+                        filepaths = ["", ""];
+                    }
+
+                }
         });
         socket.on('close', function _onClose(msg) {
-            console.log('disconnected...');
-        });
+                console.log('disconnected...');
+                });
     }
 
     function _joinNewClient(socket) {
@@ -164,57 +173,57 @@ var Server = function()
         return false;
     }
 
-	function _getPathUntilAt(buf_all) {
-		var part = MSG_SPLIT_CHAR.charCodeAt(0);
-		var i = 0;
-		while(i < buf_all.length && (buf_all[i] != part)) { i++; }
-		i++;
-		var start_i = i;
-		while(i < buf_all.length && (buf_all[i] != part)) { i++; }
-		var end_i = i;
-		//console.log (String.fromCharCode(buf_all[i]));
+    function _getPathUntilAt(buf_all) {
+        var part = MSG_SPLIT_CHAR.charCodeAt(0);
+        var i = 0;
+        while(i < buf_all.length && (buf_all[i] != part)) { i++; }
+        i++;
+        var start_i = i;
+        while(i < buf_all.length && (buf_all[i] != part)) { i++; }
+        var end_i = i;
+        //console.log (String.fromCharCode(buf_all[i]));
         var filepathBinary = buf_all.slice(start_i, end_i);
 
-		return filepathBinary.toString('utf8');
-	}
+        return filepathBinary.toString('utf8');
+    }
 
-	function _getIdFromEndUntilAt(buf_all) {
-		var part = MSG_SPLIT_CHAR.charCodeAt(0);
-		var i = buf_all.length - 1;
+    function _getIdFromEndUntilAt(buf_all) {
+        var part = MSG_SPLIT_CHAR.charCodeAt(0);
+        var i = buf_all.length - 1;
         var end_i = i;
-		while(i >= 0 && (buf_all[i] != part)) { i--; }
+        while(i >= 0 && (buf_all[i] != part)) { i--; }
         var start_i = i + 1; //@の後のindex
         var idBinary = buf_all.slice(start_i, end_i + 1); //start_iは含む，end_iは含まれない
         var messageBinary = buf_all.slice(0, start_i-1); //start_iは含む，end_iは含まれない
-		return [messageBinary, idBinary];
-	}
+        return [messageBinary, idBinary];
+    }
 
     function _sendFile(socket, filepath) {
         var header = new Buffer(SOME_FILE_HEADER + path.basename(filepath) + MSG_SPLIT_CHAR);
 
         fs.readFile(filepath, function (err, data) {
-            if (err == null) {
+                if (err == null) {
                 socket.send(Buffer.concat([header, data])); //or new Buffer(data)
-            }
-            else { console.log(err); }
-        });
+                }
+                else { console.log(err); }
+                });
     }
 
     function _send(destId, msgBinary) {
         this.clients.forEach(function(socket, index) {
-            if (socket.id == destId) {
+                if (socket.id == destId) {
                 socket.send(msgBinary);
-            }
-        });
+                }
+                });
     }
 
     function _broadcast(this_socket, msgBinary) {
         this.clients.forEach(function(socket, index) {
-            if (this_socket != socket) {
+                if (this_socket != socket) {
                 //console.log("socket id: " + socket.id);
                 socket.send(msgBinary);
-            }
-        });
+                }
+                });
     }
 
 
@@ -228,7 +237,7 @@ var Server = function()
     }
 
     return {
-        run: _run
+run: _run
     };
 }
 
