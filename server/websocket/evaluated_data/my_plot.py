@@ -16,8 +16,8 @@ def plot(title, x, y, raft_filepath, chainvoxel_filepath, outpath, extra=None):
     #wf.write('set key font "Arial,15"\n')
     wf.write('set terminal postscript eps enhanced color\n') # neccessary to output eps with color
     wf.write('set output "%s"\n' % outpath)
-    wf.write('plot "%s" with line title "Lets3D-C" lc rgb "green", \
-        "%s" with line title "ChainVoxel" lc rgb "red"\n' % (raft_filepath, chainvoxel_filepath))
+    wf.write('plot "%s" with line title "Lets3D-C" lc rgb "green" lw 3, \
+        "%s" with line title "ChainVoxel" lc rgb "red" lw 3\n' % (raft_filepath, chainvoxel_filepath))
     wf.close()
     p = subprocess.Popen('gnuplot -e \'load "tmp.g"\'', shell=True)
     p.wait()
