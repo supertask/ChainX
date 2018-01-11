@@ -48,6 +48,11 @@ public class Group {
 		return "(gid=" + this.getGroupId() + ", ts=" + this.getTimestamp().ToString() + ")";
 	}
 
+	public long getMemory() {
+		//group id, timestamp
+		return (groupId.Length * 1) + sizeof(long);
+	}
+
 	/**
 	 * Test a Group and GroupComparer class.
 	 */

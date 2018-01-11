@@ -1,6 +1,8 @@
+set xtics 1; 
 set xlabel "Number of sites"
-set ylabel "Number of messages"
+set ylabel "Memory on both layers (bytes)"
+set key bottom
 set grid ls 0
-set term aqua title "Sites vs messages"; set terminal postscript eps enhanced color
-set output "./img/sites_vs_messages.eps"
-plot "./raft_sites_vs_messages.txt" with line title "Lets3D-C" lc rgb "green",         "./chainvoxel_sites_vs_messages.txt" with line title "ChainVoxel" lc rgb "red"
+set term aqua title "Sites vs memory (bytes)"; set terminal postscript eps enhanced color
+set output "./img/total_memory.eps"
+plot "./total_memory.txt" with line title "On primary and grouping Layer" lc rgb "red" lw 3

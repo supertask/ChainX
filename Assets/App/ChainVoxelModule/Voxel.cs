@@ -137,6 +137,12 @@ public class Voxel {
 			", objPath=" + this.getObjPath() + ", timestamp=" + this.getTimestamp();
 	}
 
+	public long getMemory() {
+		//id, textureType, timestamp, objPath
+		return sizeof(int) + sizeof(int) + sizeof(long) + this.objPath.Length * 1;
+	}
+
+
 	/**
 	 * Test a Voxel class.
 	 */

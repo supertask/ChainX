@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 using UnityEngine;
 
@@ -317,6 +318,24 @@ public class StructureTable {
 	public void show() {
 		Debug.Log(this.getStatusString());
 	}
+
+	public long getMemory() {
+		long memorySize = 0L;
+		foreach (KeyValuePair<string,HashSet<string>> p in this.groupMembersTable) {
+			memorySize += p.Key.Length * 1; //1文字=1バイト
+			foreach (string gid in p.Value) {
+				memorySize += p.Key.Length * 1; //1文字=1バイト
+			}
+		}
+		foreach (KeyValuePair<string,HashSet<Group>> p in this.groupEntriesTable) {
+			memorySize += p.Key.Length * 1; //1文字=1バイト
+			foreach (Group g in p.Value) {
+				memorySize += g.getMemory();
+			}
+		}
+		return memorySize;
+	}
+
 
 	/**
 	 * Test a StructureTable class.

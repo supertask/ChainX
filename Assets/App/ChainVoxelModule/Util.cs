@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -198,6 +200,17 @@ public class Util{
 		}
 		return m % n;
 	}
+
+	public static long GetSerializedLength(object anObj) {
+		MemoryStream stream = new MemoryStream();
+		BinaryWriter writer = new BinaryWriter(stream);
+		(new BinaryFormatter()).Serialize(writer.BaseStream, anObj);
+		writer.Flush();
+		long size = stream.Length;
+		stream.Close();
+		return size;
+	}
+
 
 	/*
 	public static dynamic ConvertType(dynamic anObject) {

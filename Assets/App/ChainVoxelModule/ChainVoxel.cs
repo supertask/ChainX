@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 /**
@@ -756,7 +757,7 @@ public class ChainVoxel {
 	 */
 	public string SaveData(string saving_path)
 	{
-		this.show();
+		//this.show();
 		try {
 			//using (StringWriter writer = new StringWriter()) {
 			using (StreamWriter writer = new StreamWriter(saving_path)) {
@@ -811,5 +812,20 @@ public class ChainVoxel {
 
 	public byte[] GetBinaryFromFile(string filepath) {
 		return File.ReadAllBytes (filepath);	
+	}
+
+	public long getMemory() {
+		long memorySize = 0L; //バイト数
+		foreach (KeyValuePair<string, List<Voxel>> p in this.atoms) {
+			memorySize += p.Key.Length * 1; //1文字=1バイト
+			foreach (Voxel voxel in p.Value) {
+				memorySize += voxel.getMemory();	
+			}
+		}
+		foreach (KeyValuePair<string, Voxel> p in this.negativeVoxels) {
+			memorySize += p.Key.Length * 1; //1文字=1バイト
+			memorySize += p.Value.getMemory();	
+		}
+		return memorySize;
 	}
 }

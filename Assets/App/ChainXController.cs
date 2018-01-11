@@ -692,6 +692,15 @@ public class ChainXController : MonoBehaviour
     }
 
     private void OnApplicationQuit() {
+		//Util.GetSerializedLength(this.cv);
+		//Debug.Log("Memory on Primary Layer memory: " + this.cv.getMemory());
+		//Debug.Log("Memory on Grouping Layer: " + this.cv.stt.getMemory());
+		long memorySize = this.cv.getMemory();
+		memorySize += this.cv.stt.getMemory();
+		Debug.Log("Memory on Primary and Grouping Layer: " + memorySize);
+		this.cv.show();
+		this.cv.stt.show();
+
 		string path = Const.SAVED_FILE;
 		string filename = Path.GetFileName(path);
 		this.cv.SaveData(Const.SAVED_FILE);
