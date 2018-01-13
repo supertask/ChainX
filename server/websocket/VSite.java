@@ -520,10 +520,16 @@ public class VSite extends Thread
 
         File[] recordedFiles = new File("./modified_recorded_operations/").listFiles();
         List<File> opFiles = new ArrayList<File>();
-        int x = 0; //ファイル名は0オリジン
-        for(File aFile: recordedFiles) {
-            if (aFile.getName().equals(x + ".txt")) { opFiles.add(aFile); }
-            x++;
+
+        //ファイル名は0オリジン
+        for(int i = 0; i < 100; i++) {
+            String name = i + ".txt";
+            for(File aFile : recordedFiles) {
+                if (aFile.getName().equals(name)) {
+                    opFiles.add(aFile);
+                    break;
+                }
+            }
         }
 
         //引数2つが通常(site数ベース)，3つ目はadditional(操作数ベース)
