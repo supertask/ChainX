@@ -6,6 +6,7 @@ import os
 import json
 SPLIT_CHAR = '#'
 MSG_SPLIT_CHAR = '@'
+MIN_BETWEEN_BEFORE_AFTER = 1
 
 if len(sys.argv) < 3:
     print "引数が足りない(<infile1> <infile2>)"
@@ -29,10 +30,10 @@ with open(in_file_1) as rf:
 
 rf = open(in_file_2, 'r')
 
-# 1秒(2 * 10^7 * 100ナノ秒)の間隔をあける
+# MIN_BETWEEN_BEFORE_AFTER秒(x * 10^7 * 100ナノ秒)の間隔をあける
 currentTs = 0
 exCurrentTs = 0
-newCurrentTs = last_ts + 1 * (10 ** 7)
+newCurrentTs = last_ts + MIN_BETWEEN_BEFORE_AFTER * (10 ** 7)
 firstOperation = True
 for line in rf:
     line = line.replace('\n', '')
