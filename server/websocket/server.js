@@ -91,16 +91,16 @@ var Server = function()
                 //console.log(msgBinary.toString());
 
                 if (_partEqual(msgBinary, OPERATION_BINARY_HEADER)) {
-                var msg = msgBinary.toString();
-                if (socket.id == 0) { appendFile(RECORDED_FILE, msg + "\n"); }
-                console.log(msg);
-                server.send(destId, msgBinary); //指定されたIDへ送る
-                }
-                else if (_partEqual(msgBinary, REQUEST_VOTE_BINARY_HEADER) ||
-                        _partEqual(msgBinary, VOTE_BINARY_HEADER) ||
-                        _partEqual(msgBinary, APPEND_ENTRIES_BINARY_HEADER)) {
-                console.log(msgBinary.toString());
-                server.send(destId, msgBinary); //指定されたIDへ送る
+                    var msg = msgBinary.toString();
+                    //if (socket.id == 0) { appendFile(RECORDED_FILE, msg + "\n"); } //操作記録するところ
+                    console.log(msg);
+                    server.send(destId, msgBinary); //指定されたIDへ送る
+                    }
+                    else if (_partEqual(msgBinary, REQUEST_VOTE_BINARY_HEADER) ||
+                            _partEqual(msgBinary, VOTE_BINARY_HEADER) ||
+                            _partEqual(msgBinary, APPEND_ENTRIES_BINARY_HEADER)) {
+                    console.log(msgBinary.toString());
+                    server.send(destId, msgBinary); //指定されたIDへ送る
                 }
                 else if (_partEqual(msgBinary, START_BINARY_HEADER)) {
                     //_joinNewClient(socket);

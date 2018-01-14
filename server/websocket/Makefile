@@ -5,20 +5,27 @@ SRC=\
 MODULES=\
 	.:java_modules/gson-2.6.2.jar:java_modules/tyrus-standalone-client-1.9.jar
 
-# 通常実行の際のサイト数，各サイトごとの操作数の設定
-SITES=5
-OPERATIONS=10
-
-# 計測時の操作数の刻み幅．STRIDE_OPERATIONS * SITES(2*5 = 10)が実質メモリの刻み幅
-STRIDE_OPERATIONS=2
+# 計測時の操作数の刻み幅．STRIDE_OPERATIONS * SITES (ex. 20*10 = 200)が実質メモリの刻み幅
+STRIDE_OPERATIONS=20
 EVALUATED_DATA_DIR=evaluated_data
 
 all: cleaneval
 	javac -cp ${MODULES} ${SRC}
 
 #
-# ゆっくり実行
+# 性能評価する
 #
+eval: all
+	python evaluate.py ${MODULES} ${TARGET} ${STRIDE_OPERATIONS}
+
+
+#
+# 性能評価ではないデバッグや通常実行
+#
+# 通常実行の際のサイト数
+SITES=10
+
+# 通常実行
 raft: all
 	python modifier.py
 	java -cp ${MODULES} ${TARGET} RAFT ${SITES}
@@ -27,12 +34,8 @@ chain: all
 	java -cp ${MODULES} ${TARGET} CHAINVOXEL ${SITES}
 
 
-#
-# 最速実行
-#
-# 性能評価する
-eval: all
-	python evaluate.py ${MODULES} ${TARGET} ${STRIDE_OPERATIONS}
+#各サイトごとの操作数の設定
+OPERATIONS=50
 
 #性能評価できてるか確かめる
 siteR: all

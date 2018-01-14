@@ -11,7 +11,8 @@ SPLIT_CHAR = '#'
 MSG_SPLIT_CHAR = '@'
 #UNIT = 100 #100ナノ秒単位 -> 1ナノ秒単位で扱う
 UNIT = 1 #100ナノ秒単位 -> 100ナノ秒単位で扱う
-STRIDE_OPERATIONS = 200000 #200000 * 100ナノ秒= 20ミリ秒
+#STRIDE_OPERATIONS = 200000 #200000 * 100ナノ秒= 20ミリ秒
+STRIDE_OPERATIONS = 500000 #500000 * 100ナノ秒= 50ミリ秒
 
 if len(sys.argv) >= 3:
     # 操作数とステップ数，メッセージ数の計測時

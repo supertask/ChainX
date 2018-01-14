@@ -1,0 +1,6 @@
+javac -cp .:java_modules/gson-2.6.2.jar:java_modules/tyrus-standalone-client-1.9.jar Operation.java VSite.java
+Picked up _JAVA_OPTIONS: -Dfile.encoding=UTF-8
+python evaluate.py .:java_modules/gson-2.6.2.jar:java_modules/tyrus-standalone-client-1.9.jar VSite 5
+Evaluate sites!!
+java -cp .:java_modules/gson-2.6.2.jar:java_modules/tyrus-standalone-client-1.9.jar VSite RAFT 1;
+java -cp .:java_modules/gson-2.6.2.jar:java_modules/tyrus-standalone-client-1.9.jar VSite CHAINVOXEL 1;
