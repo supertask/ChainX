@@ -622,8 +622,8 @@ public class VSite extends Thread
             }
         }
 
-        System.out.println("leader: " + leaderSite);
-        System.out.println("numOfSites: " + numOfSites);
+        //System.out.println("leader: " + leaderSite);
+        //System.out.println("numOfSites: " + numOfSites);
 
         //
         // Unity上で実行している場合，リーダーはUnity上のユーザになるので，パス
