@@ -622,6 +622,9 @@ public class VSite extends Thread
             }
         }
 
+        System.out.println("leader: " + leaderSite);
+        System.out.println("numOfSites: " + numOfSites);
+
         //
         // Unity上で実行している場合，リーダーはUnity上のユーザになるので，パス
         //
@@ -631,22 +634,26 @@ public class VSite extends Thread
         int totalNumOfMessages = 0;
         if (VSite.algorithm.equals("CHAINVOXEL")) {
             //totalNumOfMessages = leaderSite.getNumberOfMessages() * numOfSites; //????
-            totalNumOfMessages = leaderSite.getNumberOfMessages() * numOfSites; //????
+            for(VSite aSite : sites) {
+                totalNumOfMessages += aSite.getNumberOfMessages();
+            }
         }
         else if (VSite.algorithm.equals("RAFT")) {
             totalNumOfMessages = leaderSite.getNumberOfMessages();
         }
-        int totalNumOfOperations = numOfOperations * numOfSites;
         int numOfSteps = leaderSite.getNumberOfSteps();
         
 
         //性能評価結果をfilename_stepsとfilename_messagesに保存
         String stepsLine = "", messagesLine = "";
         if (numOfOperations == -1) {
+            //サイト数に対するのを調べるとき
             stepsLine = numOfSites + " " + numOfSteps;
             messagesLine = numOfSites + " " + totalNumOfMessages;
         }
         else {
+            //操作数に対するのを調べるとき
+            int totalNumOfOperations = numOfOperations * numOfSites;
             stepsLine = totalNumOfOperations + " " + numOfSteps;
             messagesLine = totalNumOfOperations + " " + totalNumOfMessages;
         }
