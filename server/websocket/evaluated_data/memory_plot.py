@@ -21,8 +21,8 @@ def plot(title, x, y, filepath, outpath):
 
 
 plot(
-    title = "Sites vs memory (bytes)",
-    x = "Number of sites", y = "Memory on both layers (bytes)",
-    filepath = "./total_memory.txt",
+    title = "Sites vs memory (KB)",
+    x = "Number of sites", y = "Memory on both layers (KB)",
+    filepath = "./total_memory_KB.txt",
     outpath = "./img/total_memory.eps"
 )
