@@ -8,7 +8,7 @@ ChainVoxelを使った3Dモデルのための協調編集システムです．�
 `./ChainX/Assets/Scene/Main.unity`を実行して、アプリケーションをスタートさせるとプロジェクトを起動できます．その後サーバを起動し，複数クライアントを起動させると協調編集シミュレーションができます．
 
     $ cd ./ChainX/
-    $ open ./Assets/Sceen/Main.unity //Launch Unity
+    $ open ./Assets/Scene/Main.unity //Launch Unity
     $ cd server/websocket/
     $ node server.js
     $ //Push a running button on Unity.app
