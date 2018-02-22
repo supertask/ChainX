@@ -149,12 +149,12 @@ public class Operation {
 			new List<string>() {"posIDs", "gid"}, // deleteAll(DELETE_ALL)
 			new List<string>() {"posIDs", "gid"}, // joinAll(JOIN_ALL)
 			new List<string>() {"posIDs", "gid"}, // leaveAll(LEAVE_ALL)
-			new List<string>() {"posIDs", "transMatrix", "gid"}, // moveAll((MOVE_ALL)
+			new List<string>() {"posIDs", "transMatrix", "gid"}, // moveAll((MOVE_ALL)，廃止
 
 			//重要！ posIDsの最後の要素だけがobjPathをもち，insertされる．それ以外は空要素
 			new List<string>() {"posIDs", "objPath", "gid"}, // insertPolygon(INSERT_POLYGON)
 			new List<string>() {"posIDs", "gid"}, // deletePolygon(DELETE_POLYGON)
-			new List<string>() {"posIDs", "transMatrix", "gid"} // movePolygon((MOVE_POLYGON)
+			new List<string>() {"posIDs", "transMatrix", "gid"} // movePolygon((MOVE_POLYGON)，廃止
 		};
 		/*
 		Debug.Log(requirements[this.opType].Count);
