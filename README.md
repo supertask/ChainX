@@ -21,8 +21,12 @@ ChainVoxelを使った3Dモデルのための協調編集システムです．�
 	- Scripter: NodeJS 6.11.2
 	- Library: WebSocket 3.0.0
 
+## ソースコード
+`./Assets/App/`にクライアント側ソースコード，`./server/websocket/`にサーバ側ソースコード，`./server/websocket/evaluated_data/`に計測用ソースコードがあります．
+
 ## 性能評価
 `./server/websocket/evaluated_data/img/`に性能評価の結果があります．
+
 
 ## 参考文献&リンク
 - K. Imae and N. Hayashibara, "ChainVoxel: A Data Structure for Scalable Distributed Collaborative Editing for 3D Models," In Proc. of The 14th IEEE International Conference on Dependable, Autonomic and Secure Computing (DASC-2016), August 2016. (Auckland, New Zealand)
