@@ -29,8 +29,10 @@ ChainVoxelを使った3Dモデルのための協調編集システムです．�
 
 
 ## 参考文献&リンク
-- K. Imae and N. Hayashibara, "ChainVoxel: A Data Structure for Scalable Distributed Collaborative Editing for 3D Models," In Proc. of The 14th IEEE International Conference on Dependable, Autonomic and Secure Computing (DASC-2016), August 2016. (Auckland, New Zealand)
+- Tasuku Takahashi, Kengo Imae, Naohiro Hayashibara:
+Conflict-free Multi-user Collaborative Editing System for 3D Models. CISIS 2018: 269-279
 - Tasuku Takahashi, Kengo Imae, Naohiro Hayashibara, “Towards A Collaborative Editing System on 3D Space”, BWCCA 2017/3PGCIC-2017, Nov 8-10, 2017.(Barcelona, Spain)
+- K. Imae and N. Hayashibara, "ChainVoxel: A Data Structure for Scalable Distributed Collaborative Editing for 3D Models," In Proc. of The 14th IEEE International Conference on Dependable, Autonomic and Secure Computing (DASC-2016), August 2016. (Auckland, New Zealand)
 - [ChainVoxel-Simulator](http://github.com/kengo92i/ChainVoxel-Simulator) - A simulator for ChainVoxel
 
 
